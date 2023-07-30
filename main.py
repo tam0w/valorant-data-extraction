@@ -1,16 +1,27 @@
-# This is a sample Python script.
+import cv2 as cv, easyocr, tkinter, numpy as np, matplotlib.pyplot as plt
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+reader = easyocr.Reader(['en'])
+
+# def preprocessing(img):
+#     """ Perfrom all the image preprocessing here. Not sure how to handle different images needing different preprocessing
+#     but lets see."""
+#     return finalimg
+#
+# def run_ocr(img):
+#     result = reader.readtext(img, detail=0)
+#     return result
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+ogfile = cv.imread('frame.png')
+# cv.imshow('test',file[50:200,50:200])
+file = ogfile[50:200,50:200]
+gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
+plt.imshow(gray)
+plt.show()
+print(reader.readtext(gray,detail=0))
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+cv.waitKey(0)
+
+
