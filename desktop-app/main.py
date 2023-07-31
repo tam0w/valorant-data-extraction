@@ -33,16 +33,16 @@ welc.pack(pady=(20,15))
 
 canvas = tk.Canvas(can, height=5, bg="#217247").pack(fill='x', pady=(5,20))
 
-welc1 = tk.Label(can,text="- Open VALORANT.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100, bg="#0F0F0F")
+welc1 = tk.Label(can,text="- Open VALORANT.", font=norm, fg='#217247', justify='left', anchor='w', width=100, bg="#0F0F0F")
 welc1.pack(pady=3, padx=30)
 
-welc2 = tk.Label(can,text="- Open the scoreboard page for the scrim.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100, bg="#0F0F0F")
+welc2 = tk.Label(can,text="- Open the scoreboard page for the scrim.", font=norm, fg='#217247', justify='left', anchor='w', width=100, bg="#0F0F0F")
 welc2.pack(pady=3, padx=30)
 
 welc3 = tk.Label(can,text="- Press the analyze button.", font=norm, fg='#217247', justify='left', anchor='w', width=100, bg="#0F0F0F")
 welc3.pack(pady=3, padx=30)
 
-welc4 = tk.Label(can,text="- Login on the website and download csv.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100, bg="#0F0F0F")
+welc4 = tk.Label(can,text="- Login on the website and download csv.", font=norm, fg='#217247', justify='left', anchor='w', width=100, bg="#0F0F0F")
 welc4.pack(pady=3, padx=30)
 
 
