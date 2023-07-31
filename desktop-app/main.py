@@ -3,9 +3,13 @@ from tkinter import ttk, filedialog as fd, font
 
 root = tk.Tk()
 root.title('SCRIM ANALYSIS')
-param = ("Bahnschrift", 24)
+root.attributes('-topmost', 1)
+root.iconbitmap(r'D:\PROJECTS\demo-analysis-timeline\res\ico.ico')
+norm = ("Bahnschrift", 16, 'bold')
+param = ("Bahnschrift", 24, 'bold')
 window_width = 700
 window_height = 450
+
 
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
@@ -14,23 +18,45 @@ center_y = int(screen_height/2 - window_height / 2)
 
 root.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
 root.resizable(False, False)
-
-# Import the tcl file
 root.tk.call('source', r'D:\PROJECTS\demo-analysis-timeline\desktop-app\forest\forest-dark.tcl')
+
 s = ttk.Style()
-# Set the theme with the theme_use method
+
 s.theme_use('forest-dark')
-root.attributes('-topmost', 1)
-root.iconbitmap(r'D:\PROJECTS\demo-analysis-timeline\res\ico.ico')
 
-welc = tk.Label(root,text="WELCOME", font=param)
-welc.pack(pady=10)
+background_image= tk.PhotoImage(file=r'D:\PROJECTS\demo-analysis-timeline\res\bg.gif')
+can = tk.Canvas(root,width = 700, height = 450)
+can.pack()
+can.create_image(0,0,image=background_image)
 
-exit_button = ttk.Button(root, style='Accent.TButton', text='Exit', command=lambda: root.quit())
-exit_button.pack(pady=10)
+# welc = tk.Label(can,text="SCRIM ANALYSIS CSV", font=param, fg='#217247', bg="#0F0F0F")
+# welc.pack(pady=(20,15))
+#
+# canvas = tk.Canvas(can, height=5, bg="#217247").pack(fill='x', pady=(5,20))
+#
+# welc1 = tk.Label(can,text="- Open VALORANT.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100)
+# welc1.pack(pady=3, padx=30)
+#
+# welc2 = tk.Label(can,text="- Open the scoreboard page for the scrim.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100)
+# welc2.pack(pady=3, padx=30)
+#
+# welc3 = tk.Label(can,text="- Press the analyze button.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100)
+# welc3.pack(pady=3, padx=30)
+#
+# welc4 = tk.Label(can,text="- Login on the website and download csv.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100)
+# welc4.pack(pady=3, padx=30)
+#
+# canvas1 = tk.Canvas(can, height=5, bg="#217247").pack(fill='x', pady=(20,20))
+#
+# button_border = tk.Frame(can, highlightbackground = "#217247", highlightthickness = 2)
+# exit_button = tk.Button(button_border, text='Analyze', borderwidth=0, bg="#0F0F0F",fg="#217247", command=lambda: root.quit(), font=param)
+# exit_button.pack(ipadx=30,ipady=0,side=tk.LEFT)
+# button_border.pack(pady=20,padx=10,side=tk.LEFT)
+#
+# button_border1 = tk.Frame(can, highlightbackground = "#217247", highlightthickness = 2)
+# exit_button1 = tk.Button(button_border1, text='HMMMMMMMMMMMM', borderwidth=0, bg="#0F0F0F",fg="#217247", command=lambda: root.quit(), font=param)
+# exit_button1.pack(ipadx=30,ipady=0,side=tk.RIGHT)
+# button_border1.pack(pady=20,padx=10,side=tk.RIGHT)
 
-# A themed (ttk) button
-# button = ttk.Button(root, text="I'm a themed button")
-# button.pack(pady=20)
 
 root.mainloop()
