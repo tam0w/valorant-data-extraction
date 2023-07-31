@@ -3,7 +3,6 @@ from tkinter import ttk, filedialog as fd, font
 
 root = tk.Tk()
 root.title('SCRIM ANALYSIS')
-root.attributes('-topmost', 1)
 root.iconbitmap(r'D:\PROJECTS\demo-analysis-timeline\res\ico.ico')
 norm = ("Bahnschrift", 16, 'bold')
 param = ("Bahnschrift", 24, 'bold')
