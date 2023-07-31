@@ -1,9 +1,9 @@
 import cv2 as cv, easyocr, tkinter as tk, numpy as np, matplotlib.pyplot as plt
-from tkinter import ttk
+from tkinter import ttk, filedialog as fd, font
 
 root = tk.Tk()
 root.title('SCRIM ANALYSIS')
-
+param = ("Bahnschrift", 24)
 window_width = 700
 window_height = 450
 
@@ -17,15 +17,20 @@ root.resizable(False, False)
 
 # Import the tcl file
 root.tk.call('source', r'D:\PROJECTS\demo-analysis-timeline\desktop-app\forest\forest-dark.tcl')
-
+s = ttk.Style()
 # Set the theme with the theme_use method
-ttk.Style().theme_use('forest-dark')
+s.theme_use('forest-dark')
+root.attributes('-topmost', 1)
+root.iconbitmap(r'D:\PROJECTS\demo-analysis-timeline\res\ico.ico')
 
+welc = tk.Label(root,text="WELCOME", font=param)
+welc.pack(pady=10)
 
+exit_button = ttk.Button(root, style='Accent.TButton', text='Exit', command=lambda: root.quit())
+exit_button.pack(pady=10)
 
 # A themed (ttk) button
 # button = ttk.Button(root, text="I'm a themed button")
 # button.pack(pady=20)
 
 root.mainloop()
-
