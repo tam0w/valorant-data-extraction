@@ -23,39 +23,40 @@ s = ttk.Style()
 
 s.theme_use('forest-dark')
 
-background_image= tk.PhotoImage(file=r'D:\PROJECTS\demo-analysis-timeline\res\bg.gif')
+background_image= tk.PhotoImage(file=r'D:\PROJECTS\demo-analysis-timeline\res\blur.gif')
 can = tk.Canvas(root,width = 700, height = 450)
-can.pack()
-can.create_image(0,0,image=background_image)
-#test
-# welc = tk.Label(can,text="SCRIM ANALYSIS CSV", font=param, fg='#217247', bg="#0F0F0F")
-# welc.pack(pady=(20,15))
-#
-# canvas = tk.Canvas(can, height=5, bg="#217247").pack(fill='x', pady=(5,20))
-#
-# welc1 = tk.Label(can,text="- Open VALORANT.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100)
-# welc1.pack(pady=3, padx=30)
-#
-# welc2 = tk.Label(can,text="- Open the scoreboard page for the scrim.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100)
-# welc2.pack(pady=3, padx=30)
-#
-# welc3 = tk.Label(can,text="- Press the analyze button.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100)
-# welc3.pack(pady=3, padx=30)
-#
-# welc4 = tk.Label(can,text="- Login on the website and download csv.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100)
-# welc4.pack(pady=3, padx=30)
-#
-# canvas1 = tk.Canvas(can, height=5, bg="#217247").pack(fill='x', pady=(20,20))
-#
-# button_border = tk.Frame(can, highlightbackground = "#217247", highlightthickness = 2)
-# exit_button = tk.Button(button_border, text='Analyze', borderwidth=0, bg="#0F0F0F",fg="#217247", command=lambda: root.quit(), font=param)
-# exit_button.pack(ipadx=30,ipady=0,side=tk.LEFT)
-# button_border.pack(pady=20,padx=10,side=tk.LEFT)
-#
-# button_border1 = tk.Frame(can, highlightbackground = "#217247", highlightthickness = 2)
-# exit_button1 = tk.Button(button_border1, text='HMMMMMMMMMMMM', borderwidth=0, bg="#0F0F0F",fg="#217247", command=lambda: root.quit(), font=param)
-# exit_button1.pack(ipadx=30,ipady=0,side=tk.RIGHT)
-# button_border1.pack(pady=20,padx=10,side=tk.RIGHT)
+can.pack(padx=0,pady=0,ipady=50,ipadx=50)
+can.create_image(350,230,image=background_image)
+
+welc = tk.Label(can,text="SCRIM ANALYSIS CSV", font=param, fg='#217247', bg="#0F0F0F")
+welc.pack(pady=(20,15))
+
+canvas = tk.Canvas(can, height=5, bg="#217247").pack(fill='x', pady=(5,20))
+
+welc1 = tk.Label(can,text="- Open VALORANT.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100, bg="#0F0F0F")
+welc1.pack(pady=3, padx=30)
+
+welc2 = tk.Label(can,text="- Open the scoreboard page for the scrim.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100, bg="#0F0F0F")
+welc2.pack(pady=3, padx=30)
+
+welc3 = tk.Label(can,text="- Press the analyze button.", font=norm, fg='#217247', justify='left', anchor='w', width=100, bg="#0F0F0F")
+welc3.pack(pady=3, padx=30)
+
+welc4 = tk.Label(can,text="- Login on the website and download csv.", font=norm, fg="#0F0F0F", justify='left', anchor='w', width=100, bg="#0F0F0F")
+welc4.pack(pady=3, padx=30)
+
+
+canvas1 = tk.Canvas(can, height=5, bg="#217247").pack(fill='x', pady=(20,20))
+
+button_border = tk.Frame(can, highlightbackground = "#217247", highlightthickness = 2)
+exit_button = tk.Button(button_border, text='Analyze', borderwidth=0, bg="#0F0F0F",fg="#217247", command=lambda: root.quit(), font=param)
+exit_button.pack(ipadx=30,ipady=0,side=tk.LEFT)
+button_border.pack(pady=20,padx=10,side=tk.LEFT)
+
+button_border1 = tk.Frame(can, highlightbackground = "#217247", highlightthickness = 2)
+exit_button1 = tk.Button(button_border1, text='HMMMMMMMMMMMM', borderwidth=0, bg="#0F0F0F",fg="#217247", command=lambda: root.quit(), font=param)
+exit_button1.pack(ipadx=30,ipady=0,side=tk.RIGHT)
+button_border1.pack(pady=20,padx=10,side=tk.RIGHT)
 
 
 root.mainloop()
