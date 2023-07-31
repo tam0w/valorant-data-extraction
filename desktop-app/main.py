@@ -27,7 +27,7 @@ background_image= tk.PhotoImage(file=r'D:\PROJECTS\demo-analysis-timeline\res\bg
 can = tk.Canvas(root,width = 700, height = 450)
 can.pack()
 can.create_image(0,0,image=background_image)
-
+#test
 # welc = tk.Label(can,text="SCRIM ANALYSIS CSV", font=param, fg='#217247', bg="#0F0F0F")
 # welc.pack(pady=(20,15))
 #
