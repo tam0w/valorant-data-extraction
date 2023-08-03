@@ -17,10 +17,10 @@ py.leftClick()
 py.moveTo(187,333,duration=0.45)
 py.leftClick()
 
-imageObj = py.screenshot()
-cv_imageObj = cv.cvtColor(np.array(imageObj), cv.COLOR_RGB2BGR)
-ss.append(cv_imageObj)
 def screenshots_rounds(total_rounds):
+
+
+    ss = []
 
     imageObj = py.screenshot()
     cv_imageObj = cv.cvtColor(np.array(imageObj), cv.COLOR_RGB2BGR)
@@ -31,16 +31,20 @@ def screenshots_rounds(total_rounds):
         py.moveRel(63,0,duration=0.12)
         py.leftClick()
 
-        imageObj = py.screenshot()
-        cv_imageObj = cv.cvtColor(np.array(imageObj), cv.COLOR_RGB2BGR)
-        ss.append(cv_imageObj)
-
         if i == 11:
             py.moveRel(-20, 0, duration=0.2)
             continue
 
-screenshots_rounds(23)
+        imageObj = py.screenshot()
+        cv_imageObj = cv.cvtColor(np.array(imageObj), cv.COLOR_RGB2BGR)
+        ss.append(cv_imageObj)
 
-print(len(ss))
+
+
+    return ss
+
+scrim1 = screenshots_rounds(23)
+
+print(len(scrim1))
 
 
