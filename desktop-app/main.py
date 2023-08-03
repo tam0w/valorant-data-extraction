@@ -1,4 +1,4 @@
-import cv2 as cv, easyocr, tkinter as tk, numpy as np, matplotlib.pyplot as plt
+import cv2 as cv, easyocr, tkinter as tk, numpy as np, matplotlib.pyplot as plt, pandas as pd
 from tkinter import ttk, filedialog as fd, font
 from functions import *
 
