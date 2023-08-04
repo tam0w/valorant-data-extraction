@@ -1,9 +1,6 @@
-import time
-import numpy as np
-import pyautogui as py
-import cv2 as cv
-import pandas as pd
+import time, numpy as np, pyautogui as py, cv2 as cv, pandas as pd, easyocr
 
+reader = easyocr.Reader(['en'])
 def go_timeline():
     py.leftClick(x=1020, y=190, duration=0.35)
     py.leftClick(x=187, y=333, duration=0.3)
@@ -44,4 +41,10 @@ def scoreboard_ocr():
 def rounds_ocr(all_round_images):
     '''Perform OCR And preprocessing of all the rounds to extract, which player got the first kill, when they get it
     if the spike was planted or not. Possibly in a dataframe?'''
+
+    rounds = pd.DataFrame(['first_kill','time','opponent','planted','round_win'])
+    all_round_images_cropped = [for images[505:840,980:1040] in all_round_images]
+    timestamps = [reader.readtext(image,detail=0) for image in all_round_images_cropped]
+
     # Perform your preprocessing and OCR here. If all preprocessing is the same, we can make that a seperate function.
+    return timestamps
