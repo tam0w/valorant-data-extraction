@@ -7,6 +7,9 @@ def go_timeline():
 
 
 def rounds_ss(total_rounds):
+    global timestamps
+    time.sleep(2)
+    go_timeline()
     tl_ss = []
 
     image = py.screenshot()
@@ -28,7 +31,9 @@ def rounds_ss(total_rounds):
 
     # The preprocessing and ocr can either be done in this function or another.
 
-    return tl_ss
+    timestamps = rounds_ocr(tl_ss)
+
+
 
 def scoreboard_ocr():
     py.leftClick(x=875, y=190, duration=0.35)
@@ -43,7 +48,7 @@ def rounds_ocr(all_round_images):
     if the spike was planted or not. Possibly in a dataframe?'''
 
     rounds = pd.DataFrame(['first_kill','time','opponent','planted','round_win'])
-    all_round_images_cropped = [for images[505:840,980:1040] in all_round_images]
+    all_round_images_cropped = [images[505:840,980:1040] for images in all_round_images]
     timestamps = [reader.readtext(image,detail=0) for image in all_round_images_cropped]
 
     # Perform your preprocessing and OCR here. If all preprocessing is the same, we can make that a seperate function.
