@@ -4,7 +4,15 @@ reader = easyocr.Reader(['en'])
 
 def analyze(rounds):
     return_value = rounds_ss(rounds)
-    print("analyze",return_value)
+    print("analyze",len(return_value))
+    print("analyze22",return_value)
+
+    rounds = pd.DataFrame(['first_kill','time','opponent','planted','round_win'])
+
+    first_kills = return_value[0][:]
+
+    # rounds['first_kill'] = first_kills
+    print(first_kills)
 def go_timeline():
     py.leftClick(x=1020, y=190, duration=0.37)
     py.leftClick(x=187, y=333, duration=0.37)
@@ -15,14 +23,12 @@ def rounds_ss(total_rounds):
     time.sleep(2)
     go_timeline()
     tl_ss = []
+    time.sleep(0.5)
 
-    image = py.screenshot()
-    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-    tl_ss.append(cv_image)
 
     for i in range(total_rounds):
 
-        py.moveRel(63, 0, duration=0.12)
+        py.moveRel(56, 0, duration=0.12)
         py.leftClick()
 
         if i == 11:
@@ -33,7 +39,12 @@ def rounds_ss(total_rounds):
         cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
         tl_ss.append(cv_image)
 
+        time.sleep(0.15)
+
     # The preprocessing and ocr can either be done in this function or another.
+    image = py.screenshot()
+    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+    tl_ss.append(cv_image)
 
     timestamps = rounds_ocr(tl_ss)
 
@@ -53,7 +64,7 @@ def rounds_ocr(all_round_images):
     '''Perform OCR And preprocessing of all the rounds to extract, which player got the first kill, when they get it
     if the spike was planted or not. Possibly in a dataframe?'''
 
-    rounds = pd.DataFrame(['first_kill','time','opponent','planted','round_win'])
+
     all_round_images_cropped = [images[505:840,980:1040] for images in all_round_images]
     timestamps = [reader.readtext(image,detail=0) for image in all_round_images_cropped]
 
