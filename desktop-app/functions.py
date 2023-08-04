@@ -1,6 +1,10 @@
 import time, numpy as np, pyautogui as py, cv2 as cv, pandas as pd, easyocr
 
 reader = easyocr.Reader(['en'])
+
+def analyze(rounds):
+    return_value = rounds_ss(rounds)
+    print("analyze",return_value)
 def go_timeline():
     py.leftClick(x=1020, y=190, duration=0.35)
     py.leftClick(x=187, y=333, duration=0.3)
@@ -32,6 +36,8 @@ def rounds_ss(total_rounds):
     # The preprocessing and ocr can either be done in this function or another.
 
     timestamps = rounds_ocr(tl_ss)
+
+    return timestamps
 
 
 
