@@ -6,12 +6,12 @@ def analyze(rounds):
     return_value = rounds_ss(rounds)
     print("analyze",return_value)
 def go_timeline():
-    py.leftClick(x=1020, y=190, duration=0.35)
-    py.leftClick(x=187, y=333, duration=0.3)
+    py.leftClick(x=1020, y=190, duration=0.37)
+    py.leftClick(x=187, y=333, duration=0.37)
 
 
 def rounds_ss(total_rounds):
-    global timestamps
+
     time.sleep(2)
     go_timeline()
     tl_ss = []
