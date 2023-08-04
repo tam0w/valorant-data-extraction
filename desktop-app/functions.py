@@ -4,14 +4,10 @@ reader = easyocr.Reader(['en'])
 
 def analyze(rounds):
     return_value = rounds_ss(rounds)
-    print("analyze",len(return_value))
-    print("analyze22",return_value)
-
     rounds = pd.DataFrame(columns=['first_kill','time','opponent','planted','round_win'])
 
     first_kills = [list[0] for list in return_value]
     rounds['time'] = first_kills
-    print(rounds)
 
 def go_timeline():
     py.leftClick(x=1020, y=190, duration=0.37)
