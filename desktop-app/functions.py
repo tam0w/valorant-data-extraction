@@ -7,12 +7,12 @@ def analyze(rounds):
     print("analyze",len(return_value))
     print("analyze22",return_value)
 
-    rounds = pd.DataFrame(['first_kill','time','opponent','planted','round_win'])
+    rounds = pd.DataFrame(columns=['first_kill','time','opponent','planted','round_win'])
 
-    first_kills = return_value[0][:]
+    first_kills = [list[0] for list in return_value]
+    rounds['time'] = first_kills
+    print(rounds)
 
-    # rounds['first_kill'] = first_kills
-    print(first_kills)
 def go_timeline():
     py.leftClick(x=1020, y=190, duration=0.37)
     py.leftClick(x=187, y=333, duration=0.37)
