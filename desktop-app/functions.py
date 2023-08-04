@@ -9,15 +9,16 @@ def analyze(rounds):
     first_kills = [list[0] for list in return_value]
     rounds['time'] = first_kills
 
-def go_timeline():
-    py.leftClick(x=1020, y=190, duration=0.37)
-    py.leftClick(x=187, y=333, duration=0.37)
-
 
 def rounds_ss(total_rounds):
 
+    """ This function will go to the timeline page of the match in question and screenshot every page of the timeline.
+    It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
+    list will be returned to the analyze function. """
+
     time.sleep(2)
-    go_timeline()
+    py.leftClick(x=1020, y=190, duration=0.37)
+    py.leftClick(x=187, y=333, duration=0.37)
     tl_ss = []
     time.sleep(0.5)
 
@@ -49,17 +50,20 @@ def rounds_ss(total_rounds):
 
 
 def scoreboard_ocr():
+
+    """Any preprocessing or other shenanigans here. And then perform OCR and return match metadata, individual player
+        stats aswell as match score / outcome. This can be a data frame. Also distinctly return total no of rounds."""
+
     py.leftClick(x=875, y=190, duration=0.35)
     scoreboard_ss = py.screenshot()
     scoreboard_ss = cv.cvtColor(np.array(scoreboard_ss), cv.COLOR_RGB2BGR)
-    """Any preprocessing or other shenanigans here. And then perform OCR and return match metadata, individual player
-    stats aswell as match score / outcome. This can be a data frame. Also distinctly return total no of rounds."""
+
     # return
 
 def rounds_ocr(all_round_images):
-    '''Perform OCR And preprocessing of all the rounds to extract, which player got the first kill, when they get it
-    if the spike was planted or not. Possibly in a dataframe?'''
 
+    """Perform OCR And preprocessing of all the rounds to extract, which player got the first kill, when they get it
+    if the spike was planted or not. Possibly in a dataframe?"""
 
     all_round_images_cropped = [images[505:840,980:1040] for images in all_round_images]
     timestamps = [reader.readtext(image,detail=0) for image in all_round_images_cropped]
