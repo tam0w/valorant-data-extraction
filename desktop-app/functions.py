@@ -9,7 +9,7 @@ def analyze(rounds):
     first_kills = [list[0] for list in return_value1]
     rounds['time'] = first_kills
 
-    plants = [list.__contains__('planted') for list in return_value2]
+    plants = [list.__contains__('Planted') for list in return_value2]
 
     rounds['planted'] = plants
     # rounds['planted'].replace(1,'yes')
@@ -30,7 +30,7 @@ def rounds_ss(total_rounds):
 
     for i in range(total_rounds):
 
-        py.moveRel(56, 0, duration=0.12)
+        py.moveRel(63, 0, duration=0.12)
         py.leftClick()
 
         if i == 11:
