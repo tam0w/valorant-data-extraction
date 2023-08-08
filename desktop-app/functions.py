@@ -3,12 +3,18 @@ import time, numpy as np, pyautogui as py, cv2 as cv, pandas as pd, easyocr
 reader = easyocr.Reader(['en'])
 
 def analyze(rounds):
-    return_value = rounds_ss(rounds)
+    return_value1, return_value2 = rounds_ss(rounds)
     rounds = pd.DataFrame(columns=['first_kill','time','opponent','planted','round_win'])
 
-    first_kills = [list[0] for list in return_value]
+    first_kills = [list[0] for list in return_value1]
     rounds['time'] = first_kills
 
+    plant = [list[0].lower() for list in return_value2]
+
+    # rounds['planted'] = plant
+    # planted = rounds['planted'].astype(str).query('planted')
+    # rounds['planted'] = planted
+    # print(rounds)
 
 def rounds_ss(total_rounds):
 
@@ -43,9 +49,9 @@ def rounds_ss(total_rounds):
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
     tl_ss.append(cv_image)
 
-    timestamps = rounds_ocr(tl_ss)
+    timestamps, plants = rounds_ocr(tl_ss)
 
-    return timestamps
+    return timestamps, plants
 
 
 
@@ -65,8 +71,11 @@ def rounds_ocr(all_round_images):
     """Perform OCR And preprocessing of all the rounds to extract, which player got the first kill, when they get it
     if the spike was planted or not. Possibly in a dataframe?"""
 
-    all_round_images_cropped = [images[505:840,980:1040] for images in all_round_images]
-    timestamps = [reader.readtext(image,detail=0) for image in all_round_images_cropped]
+    all_round_images_cropped = [images[505:970, 980:1040] for images in all_round_images]
+    timestamps = [reader.readtext(image, detail=0) for image in all_round_images_cropped]
+
+    all_round_images_cropped_plants = [images[505:970,1150:1230] for images in all_round_images]
+    plants = [reader.readtext(image, detail=0) for image in all_round_images_cropped_plants]
 
     # Perform your preprocessing and OCR here. If all preprocessing is the same, we can make that a seperate function.
-    return timestamps
+    return timestamps, plants
