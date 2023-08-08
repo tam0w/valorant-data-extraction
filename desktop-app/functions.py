@@ -3,6 +3,11 @@ import time, numpy as np, pyautogui as py, cv2 as cv, pandas as pd, easyocr
 reader = easyocr.Reader(['en'])
 
 def analyze(rounds):
+
+    """ This function will analyze the returned information from each individual round OCR and POST the
+    final dataframe into the API endpoint? Or maybe this function will just give the final dataframe from the TL round
+    analysis, into a json converting function which will then be posted into the website perhaps."""
+
     first_action_times, plants_or_not = rounds_ss(rounds)
     rounds = pd.DataFrame(columns=['first_kill','time','death','planted','defuse','round_win'])
 
@@ -30,7 +35,6 @@ def rounds_ss(total_rounds):
     tl_ss = []
     time.sleep(0.5)
 
-
     for i in range(total_rounds):
 
         py.moveRel(63, 0, duration=0.12)
@@ -55,16 +59,17 @@ def rounds_ss(total_rounds):
 
     return timestamps, plants
 
-
+def df_to_json():
+    """Preferably take in the final dataframe and convert it into the JSON before POSTing into the API endpoint."""
 
 def scoreboard_ocr():
 
     """Any preprocessing or other shenanigans here. And then perform OCR and return match metadata, individual player
         stats aswell as match score / outcome. This can be a data frame. Also distinctly return total no of rounds."""
 
-    py.leftClick(x=875, y=190, duration=0.35)
-    scoreboard_ss = py.screenshot()
-    scoreboard_ss = cv.cvtColor(np.array(scoreboard_ss), cv.COLOR_RGB2BGR)
+    # py.leftClick(x=875, y=190, duration=0.35)
+    # scoreboard_ss = py.screenshot()
+    # scoreboard_ss = cv.cvtColor(np.array(scoreboard_ss), cv.COLOR_RGB2BGR)
 
     # return
 
@@ -79,5 +84,4 @@ def rounds_ocr(all_round_images):
     all_round_images_cropped_plants = [images[505:970,1150:1230] for images in all_round_images]
     plants = [reader.readtext(image, detail=0) for image in all_round_images_cropped_plants]
 
-    # Perform your preprocessing and OCR here. If all preprocessing is the same, we can make that a seperate function.
     return timestamps, plants
