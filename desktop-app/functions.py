@@ -3,16 +3,19 @@ import time, numpy as np, pyautogui as py, cv2 as cv, pandas as pd, easyocr
 reader = easyocr.Reader(['en'])
 
 def analyze(rounds):
-    return_value1, return_value2 = rounds_ss(rounds)
-    rounds = pd.DataFrame(columns=['first_kill','time','opponent','planted','round_win'])
+    first_action_times, plants_or_not = rounds_ss(rounds)
+    rounds = pd.DataFrame(columns=['first_kill','time','death','planted','defuse','round_win'])
 
-    first_kills = [list[0] for list in return_value1]
-    rounds['time'] = first_kills
+    first_actions = [round_instance[0] for round_instance in first_action_times]
+    # add the validation code for the first kills here
+    rounds['time'] = first_actions
 
-    plants = [list.__contains__('Planted') for list in return_value2]
-
+    plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     rounds['planted'] = plants
-    # rounds['planted'].replace(1,'yes')
+
+    defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
+    rounds['defuse'] = defuses
+
     print(rounds)
 
 def rounds_ss(total_rounds):
