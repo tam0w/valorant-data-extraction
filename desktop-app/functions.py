@@ -9,12 +9,11 @@ def analyze(rounds):
     first_kills = [list[0] for list in return_value1]
     rounds['time'] = first_kills
 
-    plant = [list[0].lower() for list in return_value2]
+    plants = [list.__contains__('planted') for list in return_value2]
 
-    # rounds['planted'] = plant
-    # planted = rounds['planted'].astype(str).query('planted')
-    # rounds['planted'] = planted
-    # print(rounds)
+    rounds['planted'] = plants
+    # rounds['planted'].replace(1,'yes')
+    print(rounds)
 
 def rounds_ss(total_rounds):
 
