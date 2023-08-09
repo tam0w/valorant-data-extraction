@@ -1,4 +1,9 @@
-import time, numpy as np, pyautogui as py, cv2 as cv, pandas as pd, easyocr
+import cv2 as cv
+import easyocr
+import numpy as np
+import pandas as pd
+import pyautogui as py
+import time
 
 reader = easyocr.Reader(['en'])
 
@@ -6,7 +11,7 @@ reader = easyocr.Reader(['en'])
 def analyze(rounds):
     """ This function will analyze the returned information from each individual round OCR and POST the
     final dataframe into the API endpoint? Or maybe this function will just give the final dataframe from the TL round
-    analysis, into a json converting function which will then be posted into the website perhaps."""
+    analysis, into a json converting function which will then be posted into the website, perhaps."""
 
     first_action_times, plants_or_not = rounds_ss(rounds)
     rounds = pd.DataFrame(columns=['first_kill', 'time', 'death', 'planted', 'defuse', 'round_win'])
@@ -17,13 +22,13 @@ def analyze(rounds):
     defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
     rounds['defuse'] = defuses
 
-    first_is_kill = [round_instance[0].isdigit() for round_instance in plants_or_not]
+    first_is_plant = [round_instance[0].__contains__('Planted') for round_instance in plants_or_not]
     # first_actions = [round_instance[0] for i, round_instance in enumerate(first_action_times) if first_plants[i]]
     for i in range(len(plants_or_not)):
         for round_instance in first_action_times:
-            first_kill = [round_instance[0] if first_is_kill else round_instance[1]]
+            first_kill_times = [round_instance[0] if first_is_plant is False else round_instance[1]]
 
-    rounds['time'] = first_kill
+    rounds['time'] = first_kill_times
 
     print(rounds)
 
@@ -31,7 +36,7 @@ def analyze(rounds):
 def rounds_ss(total_rounds):
     """ This function will go to the timeline page of the match in question and screenshot every page of the timeline.
     It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
-    list will be returned to the analyze function. """
+    list will be returned to the 'analyze' function. """
 
     time.sleep(2)
     py.leftClick(x=1020, y=190, duration=0.37)
@@ -70,7 +75,7 @@ def df_to_json():
 
 def scoreboard_ocr():
     """Any preprocessing or other shenanigans here. And then perform OCR and return match metadata, individual player
-        stats aswell as match score / outcome. This can be a data frame. Also distinctly return total no of rounds."""
+        stats as well as match score / outcome. This can be a data frame. Also, distinctly return total no of rounds."""
 
     # py.leftClick(x=875, y=190, duration=0.35)
     # scoreboard_ss = py.screenshot()
