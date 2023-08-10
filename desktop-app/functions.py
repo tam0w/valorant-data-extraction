@@ -7,6 +7,8 @@ import time
 
 reader = easyocr.Reader(['en'])
 
+agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agents.csv', columns=[])
+
 
 def analyze(rounds):
     """ This function will analyze the returned information from each individual round OCR and POST the
@@ -95,3 +97,6 @@ def rounds_ocr(all_round_images):
     plants = [reader.readtext(image, detail=0) for image in all_round_images_cropped_plants]
 
     return timestamps, plants
+
+def match_agent(image)
+
