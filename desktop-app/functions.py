@@ -82,6 +82,7 @@ def rounds_ss(total_rounds):
     tl_ss.append(cv_image)
 
     timestamps, plants = rounds_ocr(tl_ss)
+    fk_player, fk_death = match_agent(tl_ss)
     print(plants)
 
     return timestamps, plants
@@ -116,3 +117,29 @@ def rounds_ocr(all_round_images):
 
 def match_agent(image):
     """ """
+    file = cv.imread(r'D:\PROJECTS\demo-analysis-timeline\res\frame.png', 0)
+    tl = file[503:539,945:980]
+    jett = cv.imread(r'D:\PROJECTS\demo-analysis-timeline\res\sprites\jett.png', 0)
+    # agent_list = agents['sprites']
+    values = []
+    sprite_path = r'D:\PROJECTS\demo-analysis-timeline\res\sprites'
+    dir_list = os.listdir(sprite_path)
+    print(len(dir_list))
+    sprite_list = []
+    for i,file in enumerate(dir_list):
+      file = os.path.join(sprite_path,file)
+      img = cv.imread(file,0)
+      sprite_list.append(img)
+    for agent in sprite_list:
+        agent = cv.resize(agent,(0, 0),fx=0.39, fy=0.39, interpolation = cv.INTER_AREA)
+        result = cv.matchTemplate(tl, agent, cv.TM_CCORR_NORMED)
+        min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
+        values.append(max_val)
+
+    # return fk_player, fk_death
+
+
+    values
+    # print(agent_list)
+    # agents = [cv.imread(agent,0) for agent in agent_list]
+
