@@ -10,6 +10,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\res\agentinfond.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\res\agents.csv">
           <value>
             <Attribute>
