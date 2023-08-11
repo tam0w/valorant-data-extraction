@@ -30,15 +30,18 @@ def analyze(rounds):
 
     defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
     rounds['defuse'] = defuses
-
+    first_kill_times = []
     first_is_plant = [round_instance[0].__contains__('Planted') for round_instance in plants_or_not]
+    print(first_is_plant)
     # first_actions = [round_instance[0] for i, round_instance in enumerate(first_action_times) if first_plants[i]]
-    for i in range(len(plants_or_not)):
-        for round_instance in first_action_times:
-            first_kill_times = [round_instance[0] if first_is_plant is False else round_instance[1]]
-
-            if first_is_plant is False:
-
+    # for i in range(len(plants_or_not)):
+    for i, round_instance in enumerate(first_action_times):
+        print(round_instance, 'test')
+        # first_kill_times = [round_instance[0] if first_is_plant[i] is False else round_instance[1]]
+        if first_is_plant[i] is False:
+            first_kill_times.append(round_instance[0])
+        else:
+            first_kill_times.append(round_instance[1])
 
 
     rounds['time'] = first_kill_times
@@ -79,6 +82,7 @@ def rounds_ss(total_rounds):
     tl_ss.append(cv_image)
 
     timestamps, plants = rounds_ocr(tl_ss)
+    print(plants)
 
     return timestamps, plants
 
@@ -94,7 +98,7 @@ def scoreboard_ocr():
     # py.leftClick(x=875, y=190, duration=0.35)
     # scoreboard_ss = py.screenshot()
     # scoreboard_ss = cv.cvtColor(np.array(scoreboard_ss), cv.COLOR_RGB2BGR)
-
+    #
     # return
 
 
