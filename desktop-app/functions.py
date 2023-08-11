@@ -4,12 +4,19 @@ import numpy as np
 import pandas as pd
 import pyautogui as py
 import time
+import os
+
+# Load resources
 
 reader = easyocr.Reader(['en'])
 
-agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agents.csv', columns=[])
+agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agents.csv', names=['no','names','roles','sprites'])
+sprite_path = r'D:\PROJECTS\demo-analysis-timeline\res\sprites'
+dir_list = os.listdir(sprite_path)
+sprite_list = [cv.imread(file) for file in dir_list]
+agents['sprites'] = sprite_list
 
-
+# Functions
 def analyze(rounds):
     """ This function will analyze the returned information from each individual round OCR and POST the
     final dataframe into the API endpoint? Or maybe this function will just give the final dataframe from the TL round
@@ -30,7 +37,12 @@ def analyze(rounds):
         for round_instance in first_action_times:
             first_kill_times = [round_instance[0] if first_is_plant is False else round_instance[1]]
 
+            if first_is_plant is False:
+
+
+
     rounds['time'] = first_kill_times
+
 
     print(rounds)
 
@@ -98,5 +110,9 @@ def rounds_ocr(all_round_images):
 
     return timestamps, plants
 
-def match_agent(image)
+def match_agent(image):
+    """ """
 
+if first_is_plant is False:
+
+else round_instance[1]
