@@ -112,7 +112,3 @@ def rounds_ocr(all_round_images):
 
 def match_agent(image):
     """ """
-
-if first_is_plant is False:
-
-else round_instance[1]
