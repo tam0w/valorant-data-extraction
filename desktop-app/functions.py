@@ -23,7 +23,7 @@ def analyze(rounds):
     analysis, into a json converting function which will then be posted into the website, perhaps."""
 
     first_action_times, plants_or_not = rounds_ss(rounds)
-    rounds = pd.DataFrame(columns=['first_kill', 'time', 'death', 'planted', 'defuse', 'round_win'])
+    rounds = pd.DataFrame(columns=['first_kill', 'time', 'first_death', 'planted', 'defuse', 'round_win'])
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     rounds['planted'] = plants
@@ -134,7 +134,7 @@ def match_agent(images):
 
         for agent in sprite_list:
             agent = cv.resize(agent, (0, 0), fx=0.39, fy=0.39, interpolation=cv.INTER_AREA)
-            result = cv.matchTemplate(tl_gray, agent, cv.TM_CCORR_NORMED)
+            result = cv.matchTemplate(tl_gray, agent, cv.TM_CCOEFF_NORMED)
             min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
             values.append(max_val)
 
