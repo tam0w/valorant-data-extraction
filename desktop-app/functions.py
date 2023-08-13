@@ -9,12 +9,7 @@ import os
 # Load resources
 
 reader = easyocr.Reader(['en'])
-
-# agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agents.csv', names=['no','names','roles','sprites'])
-# sprite_path = r'D:\PROJECTS\demo-analysis-timeline\res\sprites'
-# dir_list = os.listdir(sprite_path)
-# sprite_list = [cv.imread(file) for file in dir_list]
-# agents['sprites'] = sprite_list
+agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
 
 # Functions
 def analyze(rounds):
@@ -22,14 +17,18 @@ def analyze(rounds):
     final dataframe into the API endpoint? Or maybe this function will just give the final dataframe from the TL round
     analysis, into a json converting function which will then be posted into the website, perhaps."""
 
-    first_action_times, plants_or_not = rounds_ss(rounds)
-    rounds = pd.DataFrame(columns=['first_kill', 'time', 'first_death', 'planted', 'defuse', 'round_win'])
+    df = pd.DataFrame(columns=['first_kill', 'time', 'first_death', 'planted', 'defuse', 'round_win'])
+
+    first_action_times, plants_or_not, fk_player, fk_death = rounds_ss(rounds)
+
+    df['first_kill'] = fk_player
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
-    rounds['planted'] = plants
+    df['planted'] = plants
 
     defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
-    rounds['defuse'] = defuses
+    df['defuse'] = defuses
+
     first_kill_times = []
     first_is_plant = [round_instance[0].__contains__('Planted') for round_instance in plants_or_not]
     print(first_is_plant)
@@ -44,10 +43,10 @@ def analyze(rounds):
             first_kill_times.append(round_instance[1])
 
 
-    rounds['time'] = first_kill_times
+    df['time'] = first_kill_times
 
 
-    print(rounds)
+    print(df)
 
 
 def rounds_ss(total_rounds):
@@ -82,10 +81,10 @@ def rounds_ss(total_rounds):
     tl_ss.append(cv_image)
 
     timestamps, plants = rounds_ocr(tl_ss)
-    match_agent(tl_ss)
+    fk_player = match_agent(tl_ss)
     print(plants)
 
-    return timestamps, plants
+    return timestamps, plants, fk_player, fk_death
 
 
 def df_to_json():
@@ -118,6 +117,7 @@ def rounds_ocr(all_round_images):
 def match_agent(images):
 
     """ """
+    indexes = []
     for image in images:
         tl = image[506:539,945:980]
         tl_gray = cv.cvtColor(tl, cv.COLOR_BGR2GRAY)
@@ -126,6 +126,7 @@ def match_agent(images):
         sprite_path = r'D:\PROJECTS\demo-analysis-timeline\res\sprites'
         dir_list = os.listdir(sprite_path)
         sprite_list = []
+
 
         for i, file in enumerate(dir_list):
             file = os.path.join(sprite_path, file)
@@ -138,9 +139,15 @@ def match_agent(images):
             min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
             values.append(max_val)
 
-        print(values.index(max(values)),"HI",max(values))
+        indexes.append(values.index(max(values)))
+        print(indexes)
 
-    # return fk_player, fk_death
+        # print(fk_player)
+
+    list_of_agents = agents['names'].to_list()
+    fk_player = [list_of_agents[index] for index in indexes]
+    print(fk_player)
+    return fk_player
 
 
 
