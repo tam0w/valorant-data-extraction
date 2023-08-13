@@ -119,7 +119,7 @@ def match_agent(images):
 
     """ """
     for image in images:
-        tl = image[503:539,945:980]
+        tl = image[506:539,945:980]
         tl_gray = cv.cvtColor(tl, cv.COLOR_BGR2GRAY)
 
         values = []
