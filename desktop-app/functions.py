@@ -22,6 +22,7 @@ def analyze(rounds):
     first_action_times, plants_or_not, fk_player, fk_death = rounds_ss(rounds)
 
     df['first_kill'] = fk_player
+    df['first_death'] = fk_death
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     df['planted'] = plants
@@ -81,7 +82,7 @@ def rounds_ss(total_rounds):
     tl_ss.append(cv_image)
 
     timestamps, plants = rounds_ocr(tl_ss)
-    fk_player = match_agent(tl_ss)
+    fk_player, fk_death = match_agent(tl_ss)
     print(plants)
 
     return timestamps, plants, fk_player, fk_death
@@ -117,16 +118,23 @@ def rounds_ocr(all_round_images):
 def match_agent(images):
 
     """ """
-    indexes = []
+    list_of_agents = agents['names'].to_list()
+    indexes_fk = []
+    indexes_dt = []
+    sprite_path = r'D:\PROJECTS\demo-analysis-timeline\res\sprites'
+    dir_list = os.listdir(sprite_path)
+
     for image in images:
         tl = image[506:539,945:980]
         tl_gray = cv.cvtColor(tl, cv.COLOR_BGR2GRAY)
 
-        values = []
-        sprite_path = r'D:\PROJECTS\demo-analysis-timeline\res\sprites'
-        dir_list = os.listdir(sprite_path)
-        sprite_list = []
+        tl_dt = image[506:539,1232:1265]
+        tl_gray_dt = cv.cvtColor(tl_dt, cv.COLOR_BGR2GRAY)
 
+        values_dt = []
+        values = []
+
+        sprite_list = []
 
         for i, file in enumerate(dir_list):
             file = os.path.join(sprite_path, file)
@@ -135,19 +143,22 @@ def match_agent(images):
 
         for agent in sprite_list:
             agent = cv.resize(agent, (0, 0), fx=0.39, fy=0.39, interpolation=cv.INTER_AREA)
+
             result = cv.matchTemplate(tl_gray, agent, cv.TM_CCOEFF_NORMED)
             min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
             values.append(max_val)
 
-        indexes.append(values.index(max(values)))
-        print(indexes)
+            result_dt = cv.matchTemplate(tl_gray_dt, agent, cv.TM_CCOEFF_NORMED)
+            min_val_dt, max_val_dt, min_loc_dt, max_loc_dt = cv.minMaxLoc(result_dt)
+            values_dt.append(max_val_dt)
 
-        # print(fk_player)
+        indexes_dt.append(values_dt.index(max(values_dt)))
+        indexes_fk.append(values.index(max(values)))
 
-    list_of_agents = agents['names'].to_list()
-    fk_player = [list_of_agents[index] for index in indexes]
-    print(fk_player)
-    return fk_player
+    fk_player = [list_of_agents[index] for index in indexes_fk]
+    fk_dt = [list_of_agents[index] for index in indexes_dt]
+
+    return fk_player, fk_dt
 
 
 
