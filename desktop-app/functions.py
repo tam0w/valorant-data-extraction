@@ -22,9 +22,9 @@ def analyze():
     df = pd.DataFrame(columns=header)
 
     rounds = scoreboard_ocr()
+    map_name = get_metadata()
 
     first_action_times, plants_or_not, fk_player, fk_death, outcomes = rounds_ss(rounds)
-
 
     df['round_win'] = outcomes
     df['first_kill'] = fk_player
@@ -53,7 +53,7 @@ def analyze():
     date = datetime.now()
     dt_string = date.strftime("%d_%m_%Y_time_%H_%M")
 
-    df.to_csv(path_or_buf=rf'D:\PROJECTS\demo-analysis-timeline\res\scrims\scrim_{dt_string}.csv', sep='\t', header=header)
+    df.to_csv(path_or_buf=rf'D:\PROJECTS\demo-analysis-timeline\res\scrims\{map_name}_{dt_string}.csv', sep='\t', header=header)
     print(df)
 
 
@@ -195,6 +195,15 @@ def final_score_ocr():
     score = reader.readtext(score,detail=0)
 
     return score[0].__str__(),score[1].__str__(),score[2].__str__()
+
+def get_metadata():
+
+    image = py.screenshot()
+    file = image[125:145, 120:210]
+    gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
+    gray = cv.convertScaleAbs(gray, 1, 5)
+    result = reader.readtext(gray,detail=0)
+    return result.__str__().lower()
 
 
 
