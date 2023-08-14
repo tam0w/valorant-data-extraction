@@ -20,6 +20,7 @@ def analyze(rounds):
 
     df = pd.DataFrame(columns=['first_kill', 'time', 'first_death', 'planted', 'defuse', 'round_win'])
 
+
     first_action_times, plants_or_not, fk_player, fk_death, outcomes = rounds_ss(rounds)
 
 
@@ -45,6 +46,7 @@ def analyze(rounds):
             first_kill_times.append(round_instance[1])
 
     df['time'] = first_kill_times
+    df.index += 1
 
     print(df)
 
