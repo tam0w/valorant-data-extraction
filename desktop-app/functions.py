@@ -56,12 +56,12 @@ def rounds_ss(total_rounds):
 
     time.sleep(2)
     py.leftClick(x=1020, y=190, duration=0.37)
-    py.leftClick(x=187, y=333, duration=0.37)
+    py.leftClick(x=187, y=333, duration=0.4)
     tl_ss = []
     time.sleep(0.5)
 
     my_rounds, match_result, opp_rounds = final_score_ocr()
-    print("Score: ", my_rounds, "-", opp_rounds, "\nResult: ", match_result)
+    print("Score:", my_rounds, "-", opp_rounds, "\nResult: ", match_result)
 
     for i in range(total_rounds):
 
