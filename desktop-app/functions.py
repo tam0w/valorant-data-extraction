@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
-header = ['first_kill', 'time', 'first_death', 'planted', 'defuse', 'round_win']
+header = ['first_kill', 'time', 'first_death', 'planted', 'defuse', 'round_win','side']
 # Functions
 def analyze():
     """ This function will analyze the returned information from each individual round OCR and POST the
@@ -21,7 +21,10 @@ def analyze():
 
     df = pd.DataFrame(columns=header)
 
-    rounds = scoreboard_ocr()
+    rounds, sides = scores_ocr()
+    print(len(sides))
+    df['side'] = sides[:rounds]
+
     map_name = get_metadata()
 
     first_action_times, plants_or_not, fk_player, fk_death, outcomes = rounds_ss(rounds)
@@ -100,10 +103,12 @@ def df_to_json():
 
 
 
-def scoreboard_ocr():
+def scores_ocr():
     """Any preprocessing or other shenanigans here. And then perform OCR and return match metadata, individual player
         stats as well as match score / outcome. This can be a data frame. Also, distinctly return total no of rounds."""
     time.sleep(2)
+    sides = side_first_half()
+
     py.leftClick(x=875, y=190, duration=0.35)
     time.sleep(0.15)
 
@@ -111,7 +116,7 @@ def scoreboard_ocr():
     print("Score:", my_rounds, "-", opp_rounds, "\nResult: ", match_result)
     total_rounds = int(my_rounds)+int(opp_rounds)
 
-    return total_rounds
+    return total_rounds, sides
 
 
 def rounds_ocr(all_round_images):
@@ -199,12 +204,46 @@ def final_score_ocr():
 def get_metadata():
 
     image = py.screenshot()
-    file = image[125:145, 120:210]
+    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+    file = cv_image[125:145, 120:210]
     gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
     gray = cv.convertScaleAbs(gray, 1, 5)
     result = reader.readtext(gray,detail=0)
-    return result.__str__().lower()
+    return result[0].__str__().lower()
 
+def map_player_agents():
+
+    image = py.screenshot()
+    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+    file = cv_image[495:940, 150:370]
+    gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
+    result = reader.readtext(gray, detail=0)
+
+    player_names = [name for name in result if (result.index(name) % 2) == 0]
+    agent_names = [name for name in result if (result.index(name) % 2) == 1]
+
+    player_agents_zipped = list(zip(agent_names, player_names))
+
+    return player_agents_zipped
+
+def side_first_half():
+
+    image = py.screenshot()
+    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+    file = cv_image[300:400, 1300:1500]
+    gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
+    res1 = reader.readtext(gray, detail=0)
+    result = res1[0].__str__().lower()
+
+    if result.__contains__('def'):
+        first = "Defense"
+        second = "Attack"
+    else:
+        second = "Defense"
+        first = "Attack"
+    sides = ([first] * 12 + [second] * 12)
+
+    return sides
 
 
 
