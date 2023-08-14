@@ -34,19 +34,16 @@ def analyze(rounds):
 
     first_kill_times = []
     first_is_plant = [round_instance[0].__contains__('Planted') for round_instance in plants_or_not]
-    print(first_is_plant)
-    # first_actions = [round_instance[0] for i, round_instance in enumerate(first_action_times) if first_plants[i]]
-    # for i in range(len(plants_or_not)):
+
     for i, round_instance in enumerate(first_action_times):
-        print(round_instance, 'test')
-        # first_kill_times = [round_instance[0] if first_is_plant[i] is False else round_instance[1]]
+
         if first_is_plant[i] is False:
             first_kill_times.append(round_instance[0])
+
         else:
             first_kill_times.append(round_instance[1])
 
     df['time'] = first_kill_times
-
 
     print(df)
 
@@ -85,7 +82,6 @@ def rounds_ss(total_rounds):
     timestamps, plants = rounds_ocr(tl_ss)
     fk_player, fk_death = match_agent(tl_ss)
     outcomes = ocr_round_win(tl_ss)
-    print(plants)
 
     return timestamps, plants, fk_player, fk_death, outcomes
 
@@ -172,12 +168,10 @@ def ocr_round_win(images):
         file = image[430:470, 130:700]
         gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
         round_outcome = reader.readtext(gray,detail=0)
-        print(round_outcome)
         if round_outcome.__str__().__contains__('LOSS'):
             round_outcomes.append('loss')
         else:
             round_outcomes.append('win')
-    print("ROUNDS",round_outcomes)
     return round_outcomes
 
 
