@@ -23,7 +23,7 @@ def analyze():
 
     rounds = scoreboard_ocr()
 
-    first_action_times, plants_or_not, fk_player, fk_death, outcomes = rounds_ss(4)
+    first_action_times, plants_or_not, fk_player, fk_death, outcomes = rounds_ss(rounds)
 
 
     df['round_win'] = outcomes
