@@ -5,6 +5,7 @@ import pandas as pd
 import pyautogui as py
 import time
 import os
+import matplotlib.pyplot as plt
 
 # Load resources
 
@@ -19,8 +20,9 @@ def analyze(rounds):
 
     df = pd.DataFrame(columns=['first_kill', 'time', 'first_death', 'planted', 'defuse', 'round_win'])
 
-    first_action_times, plants_or_not, fk_player, fk_death = rounds_ss(rounds)
+    first_action_times, plants_or_not, fk_player, fk_death, outcomes = rounds_ss(rounds)
 
+    df['round_win'] = outcomes
     df['first_kill'] = fk_player
     df['first_death'] = fk_death
 
@@ -42,7 +44,6 @@ def analyze(rounds):
             first_kill_times.append(round_instance[0])
         else:
             first_kill_times.append(round_instance[1])
-
 
     df['time'] = first_kill_times
 
@@ -83,9 +84,10 @@ def rounds_ss(total_rounds):
 
     timestamps, plants = rounds_ocr(tl_ss)
     fk_player, fk_death = match_agent(tl_ss)
+    outcomes = ocr_round_win(tl_ss)
     print(plants)
 
-    return timestamps, plants, fk_player, fk_death
+    return timestamps, plants, fk_player, fk_death, outcomes
 
 
 def df_to_json():
@@ -117,7 +119,9 @@ def rounds_ocr(all_round_images):
 
 def match_agent(images):
 
-    """ """
+    """This function matches all the agents first kills and death sprites to the their actual agent names and returns
+    what agent got the first kill and died first."""
+
     list_of_agents = agents['names'].to_list()
     indexes_fk = []
     indexes_dt = []
@@ -159,6 +163,26 @@ def match_agent(images):
     fk_dt = [list_of_agents[index] for index in indexes_dt]
 
     return fk_player, fk_dt
+
+def ocr_round_win(images):
+
+    round_outcomes = []
+
+    for image in images:
+        file = image[430:470, 130:700]
+        gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
+        round_outcome = reader.readtext(gray,detail=0)
+        print(round_outcome)
+        if round_outcome.__str__().__contains__('LOSS'):
+            round_outcomes.append('loss')
+        else:
+            round_outcomes.append('win')
+    print("ROUNDS",round_outcomes)
+    return round_outcomes
+
+
+
+
 
 
 
