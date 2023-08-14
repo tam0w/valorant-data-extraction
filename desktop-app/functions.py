@@ -1,3 +1,4 @@
+from datetime import datetime
 import cv2 as cv
 import easyocr
 import numpy as np
@@ -11,17 +12,18 @@ import matplotlib.pyplot as plt
 
 reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
-
+header = ['first_kill', 'time', 'first_death', 'planted', 'defuse', 'round_win']
 # Functions
-def analyze(rounds):
+def analyze():
     """ This function will analyze the returned information from each individual round OCR and POST the
     final dataframe into the API endpoint? Or maybe this function will just give the final dataframe from the TL round
     analysis, into a json converting function which will then be posted into the website, perhaps."""
 
-    df = pd.DataFrame(columns=['first_kill', 'time', 'first_death', 'planted', 'defuse', 'round_win'])
+    df = pd.DataFrame(columns=header)
 
+    rounds = scoreboard_ocr()
 
-    first_action_times, plants_or_not, fk_player, fk_death, outcomes = rounds_ss(rounds)
+    first_action_times, plants_or_not, fk_player, fk_death, outcomes = rounds_ss(4)
 
 
     df['round_win'] = outcomes
@@ -48,6 +50,10 @@ def analyze(rounds):
     df['time'] = first_kill_times
     df.index += 1
 
+    date = datetime.now()
+    dt_string = date.strftime("%d_%m_%Y_time_%H_%M")
+
+    df.to_csv(path_or_buf=rf'D:\PROJECTS\demo-analysis-timeline\res\scrims\scrim_{dt_string}.csv', sep='\t', header=header)
     print(df)
 
 
@@ -56,14 +62,11 @@ def rounds_ss(total_rounds):
     It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
     list will be returned to the 'analyze' function. """
 
-    time.sleep(2)
-    py.leftClick(x=1020, y=190, duration=0.37)
-    py.leftClick(x=187, y=333, duration=0.4)
+    py.leftClick(x=1020, y=190, duration=0.13)
+    time.sleep(0.4)
+    py.leftClick(x=187, y=333, duration=0.35)
     tl_ss = []
-    time.sleep(0.5)
-
-    my_rounds, match_result, opp_rounds = final_score_ocr()
-    print("Score:", my_rounds, "-", opp_rounds, "\nResult: ", match_result)
+    time.sleep(0.25)
 
     for i in range(total_rounds):
 
@@ -96,15 +99,19 @@ def df_to_json():
     """Preferably take in the final dataframe and convert it into the JSON before POSTing into the API endpoint."""
 
 
+
 def scoreboard_ocr():
     """Any preprocessing or other shenanigans here. And then perform OCR and return match metadata, individual player
         stats as well as match score / outcome. This can be a data frame. Also, distinctly return total no of rounds."""
+    time.sleep(2)
+    py.leftClick(x=875, y=190, duration=0.35)
+    time.sleep(0.15)
 
-    # py.leftClick(x=875, y=190, duration=0.35)
-    # scoreboard_ss = py.screenshot()
-    # scoreboard_ss = cv.cvtColor(np.array(scoreboard_ss), cv.COLOR_RGB2BGR)
-    #
-    # return
+    my_rounds, match_result, opp_rounds = final_score_ocr()
+    print("Score:", my_rounds, "-", opp_rounds, "\nResult: ", match_result)
+    total_rounds = int(my_rounds)+int(opp_rounds)
+
+    return total_rounds
 
 
 def rounds_ocr(all_round_images):
@@ -174,7 +181,7 @@ def ocr_round_win(images):
         file = image[430:470, 130:700]
         gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
         round_outcome = reader.readtext(gray,detail=0)
-        if round_outcome.__str__().__contains__('LOSS'):
+        if round_outcome.__str__().upper().__contains__('LOSS'):
             round_outcomes.append('loss')
         else:
             round_outcomes.append('win')

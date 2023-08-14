@@ -51,7 +51,7 @@ welc4.pack(pady=3, padx=30)
 canvas1 = tk.Canvas(can, height=5, bg="#217247").pack(fill='x', pady=(20,20))
 
 button_border = tk.Frame(can, highlightbackground = "#217247", highlightthickness = 2)
-exit_button = tk.Button(button_border, text='Analyze', borderwidth=0, bg="#0F0F0F",fg="#217247", command=lambda: analyze(4), font=param)
+exit_button = tk.Button(button_border, text='Analyze', borderwidth=0, bg="#0F0F0F",fg="#217247", command=lambda: analyze(), font=param)
 exit_button.pack(ipadx=30,ipady=0,side=tk.LEFT)
 button_border.pack(pady=20,padx=(20,10),side=tk.LEFT)
 
