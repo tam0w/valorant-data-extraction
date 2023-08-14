@@ -22,6 +22,7 @@ def analyze(rounds):
 
     first_action_times, plants_or_not, fk_player, fk_death, outcomes = rounds_ss(rounds)
 
+
     df['round_win'] = outcomes
     df['first_kill'] = fk_player
     df['first_death'] = fk_death
@@ -58,6 +59,9 @@ def rounds_ss(total_rounds):
     py.leftClick(x=187, y=333, duration=0.37)
     tl_ss = []
     time.sleep(0.5)
+
+    my_rounds, match_result, opp_rounds = final_score_ocr()
+    print("Score: ", my_rounds, "-", opp_rounds, "\nResult: ", match_result)
 
     for i in range(total_rounds):
 
@@ -174,6 +178,14 @@ def ocr_round_win(images):
             round_outcomes.append('win')
     return round_outcomes
 
+def final_score_ocr():
+
+    image = py.screenshot()
+    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+    score = cv_image[70:170,700:1150]
+    score = reader.readtext(score,detail=0)
+
+    return score[0].__str__(),score[1].__str__(),score[2].__str__()
 
 
 
