@@ -144,7 +144,7 @@ def match_agent(images):
     indexes_dt = []
     sprite_path = r'D:\PROJECTS\demo-analysis-timeline\res\sprites'
     dir_list = os.listdir(sprite_path)
-
+    zipped = map_player_agents()
     for image in images:
         tl = image[506:539,945:980]
         tl_gray = cv.cvtColor(tl, cv.COLOR_BGR2GRAY)
@@ -176,20 +176,23 @@ def match_agent(images):
         indexes_dt.append(values_dt.index(max(values_dt)))
         indexes_fk.append(values.index(max(values)))
 
-    zipped = map_player_agents()
+
     ign_fk = []
     ign_dt = []
 
     fk_player = [list_of_agents[index] for index in indexes_fk]
 
     for agentname, playername in zipped:
+        print(agentname,playername)
         if agentname in fk_player:
+            print("TEST CONDITION:",playername)
             ign_fk.append(playername)
 
+    print(zipped)
     fk_dt = [list_of_agents[index] for index in indexes_dt]
 
     for agentname, playername in zipped:
-        if agentname in fk_dt:
+        if playername in fk_dt:
             ign_dt.append(playername)
 
     return fk_player, fk_dt, ign_fk, ign_dt
@@ -215,7 +218,7 @@ def final_score_ocr():
     score = cv_image[70:170,700:1150]
     score = reader.readtext(score,detail=0)
 
-    return score[0].__str__(),score[1].__str__(),score[2].__str__()
+    return score[0].__str__(), score[1].__str__(), score[2].__str__()
 
 def get_metadata():
 
@@ -233,6 +236,8 @@ def map_player_agents():
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
     file = cv_image[495:940, 150:370]
     gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
+    plt.imshow(gray)
+    plt.show()
     result = reader.readtext(gray, detail=0)
 
     player_names = [name for name in result if (result.index(name) % 2) == 0]
