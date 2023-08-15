@@ -28,13 +28,12 @@ def analyze():
 
     map_name = get_metadata()
 
-    first_action_times, plants_or_not, fk_player, fk_death, ignfk, igndt, outcomes = rounds_ss(rounds)
+    first_action_times, plants_or_not, fk_player, fk_death, outcomes = rounds_ss(rounds)
 
     df['round_win'] = outcomes
     df['first_kill'] = fk_player
     df['first_death'] = fk_death
-    df['fk_player'] = ignfk
-    df['fk_opponent'] = igndt
+
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     df['planted'] = plants
@@ -95,10 +94,10 @@ def rounds_ss(total_rounds):
     tl_ss.append(cv_image)
 
     timestamps, plants = rounds_ocr(tl_ss)
-    fk_player, fk_death, ign_fk, ign_dt = match_agent(tl_ss)
+    fk_player, fk_death = match_agent(tl_ss)
     outcomes = ocr_round_win(tl_ss)
 
-    return timestamps, plants, fk_player, fk_death, ign_fk, ign_dt, outcomes
+    return timestamps, plants, fk_player, fk_death, outcomes
 
 
 def df_to_json():
@@ -144,7 +143,7 @@ def match_agent(images):
     indexes_dt = []
     sprite_path = r'D:\PROJECTS\demo-analysis-timeline\res\sprites'
     dir_list = os.listdir(sprite_path)
-    zipped = map_player_agents()
+
     for image in images:
         tl = image[506:539,945:980]
         tl_gray = cv.cvtColor(tl, cv.COLOR_BGR2GRAY)
@@ -177,25 +176,25 @@ def match_agent(images):
         indexes_fk.append(values.index(max(values)))
 
 
-    ign_fk = []
-    ign_dt = []
+    # ign_fk = []
+    # ign_dt = []
 
     fk_player = [list_of_agents[index] for index in indexes_fk]
 
-    for agentname, playername in zipped:
-        print(agentname,playername)
-        if agentname in fk_player:
-            print("TEST CONDITION:",playername)
-            ign_fk.append(playername)
-
-    print(zipped)
+    # for agentname, playername in zipped:
+    #     print(agentname,playername)
+    #     if agentname in fk_player:
+    #         print("TEST CONDITION:",playername)
+    #         ign_fk.append(playername)
+    #
+    # print(zipped)
     fk_dt = [list_of_agents[index] for index in indexes_dt]
 
-    for agentname, playername in zipped:
-        if playername in fk_dt:
-            ign_dt.append(playername)
+    # for agentname, playername in zipped:
+    #     if playername in fk_dt:
+    #         ign_dt.append(playername)
 
-    return fk_player, fk_dt, ign_fk, ign_dt
+    return fk_player, fk_dt
 
 def ocr_round_win(images):
 
