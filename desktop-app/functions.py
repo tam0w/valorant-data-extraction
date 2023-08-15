@@ -12,9 +12,10 @@ import matplotlib.pyplot as plt
 
 reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
-header = ['first_kill', 'time', 'first_death', 'planted', 'defuse', 'round_win','side']
+header = ['first_kill', 'time', 'first_death', 'planted', 'defuse', 'round_win', 'side','fk_player','fk_opponent']
 # Functions
 def analyze():
+
     """ This function will analyze the returned information from each individual round OCR and POST the
     final dataframe into the API endpoint? Or maybe this function will just give the final dataframe from the TL round
     analysis, into a json converting function which will then be posted into the website, perhaps."""
@@ -27,11 +28,13 @@ def analyze():
 
     map_name = get_metadata()
 
-    first_action_times, plants_or_not, fk_player, fk_death, outcomes = rounds_ss(rounds)
+    first_action_times, plants_or_not, fk_player, fk_death, ignfk, igndt, outcomes = rounds_ss(rounds)
 
     df['round_win'] = outcomes
     df['first_kill'] = fk_player
     df['first_death'] = fk_death
+    df['fk_player'] = ignfk
+    df['fk_opponent'] = igndt
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     df['planted'] = plants
@@ -92,10 +95,10 @@ def rounds_ss(total_rounds):
     tl_ss.append(cv_image)
 
     timestamps, plants = rounds_ocr(tl_ss)
-    fk_player, fk_death = match_agent(tl_ss)
+    fk_player, fk_death, ign_fk, ign_dt = match_agent(tl_ss)
     outcomes = ocr_round_win(tl_ss)
 
-    return timestamps, plants, fk_player, fk_death, outcomes
+    return timestamps, plants, fk_player, fk_death, ign_fk, ign_dt, outcomes
 
 
 def df_to_json():
@@ -173,10 +176,23 @@ def match_agent(images):
         indexes_dt.append(values_dt.index(max(values_dt)))
         indexes_fk.append(values.index(max(values)))
 
+    zipped = map_player_agents()
+    ign_fk = []
+    ign_dt = []
+
     fk_player = [list_of_agents[index] for index in indexes_fk]
+
+    for agentname, playername in zipped:
+        if agentname in fk_player:
+            ign_fk.append(playername)
+
     fk_dt = [list_of_agents[index] for index in indexes_dt]
 
-    return fk_player, fk_dt
+    for agentname, playername in zipped:
+        if agentname in fk_dt:
+            ign_dt.append(playername)
+
+    return fk_player, fk_dt, ign_fk, ign_dt
 
 def ocr_round_win(images):
 

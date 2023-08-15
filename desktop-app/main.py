@@ -55,8 +55,13 @@ exit_button = tk.Button(button_border, text='Analyze Scrim', borderwidth=0, bg="
 exit_button.pack(ipadx=30,ipady=0,side=tk.LEFT)
 button_border.pack(pady=20,padx=(20,10),side=tk.LEFT)
 
+# button_border2 = tk.Frame(can, highlightbackground = "#217247", highlightthickness = 2)
+# exit_button2 = tk.Button(button_border2, text='Website', borderwidth=0, bg="#0F0F0F",fg="#217247", command=lambda: root.quit(), font=param)
+# exit_button2.pack(ipadx=30,ipady=0,side=tk.CENTER)
+# button_border2.pack(pady=20,padx=(10,20),side=tk.CENTER)
+
 button_border1 = tk.Frame(can, highlightbackground = "#217247", highlightthickness = 2)
-exit_button1 = tk.Button(button_border1, text='Website', borderwidth=0, bg="#0F0F0F",fg="#217247", command=lambda: root.quit(), font=param)
+exit_button1 = tk.Button(button_border1, text='Exit', borderwidth=0, bg="#0F0F0F",fg="#217247", command=lambda: root.quit(), font=param)
 exit_button1.pack(ipadx=30,ipady=0,side=tk.RIGHT)
 button_border1.pack(pady=20,padx=(10,20),side=tk.RIGHT)
 
