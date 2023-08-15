@@ -243,7 +243,7 @@ def map_player_agents():
     player_names = [name for name in result if (result.index(name) % 2) == 0]
     agent_names = [name for name in result if (result.index(name) % 2) == 1]
 
-    player_agents_zipped = list(zip(agent_names, player_names))
+    player_agents_zipped = dict(zip(agent_names, player_names))
 
     return player_agents_zipped
 
