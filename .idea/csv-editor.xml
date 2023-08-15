@@ -10,27 +10,6 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\res\agentinfond.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\res\agents.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\res\scrims\scrim_14_08_2023_time_14_51.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="&#9;" />
-            </Attribute>
-          </value>
-        </entry>
       </map>
     </option>
   </component>
