@@ -24,8 +24,8 @@ def analyze():
 
     rounds, sides = scores_ocr()
     map_name = get_metadata()
-    first_action_times, plants_or_not, fk_player, fk_death, outcomes, fb_team = rounds_ss(rounds)
-    players_agents = zip_player_agents()
+    first_action_times, plants_or_not, fk_player, fk_death, outcomes, fb_team, players_agents= rounds_ss(rounds)
+
 
     df['side'] = sides[:rounds]
     df['round_win'] = outcomes
@@ -76,7 +76,7 @@ def rounds_ss(total_rounds):
     time.sleep(0.25)
     who_fb = []
     greens = []
-
+    players_agents = zip_player_agents()
     for i in range(total_rounds):
 
         py.moveRel(63, 0, duration=0.12)
@@ -111,7 +111,7 @@ def rounds_ss(total_rounds):
         flag = 'you' if green > 100 else 'opponent'
         who_fb.append(flag)
 
-    return timestamps, plants, fk_player, fk_death, outcomes, who_fb
+    return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents
 
 
 def df_to_json():
@@ -238,9 +238,9 @@ def zip_player_agents():
 
     player_names = [name for name in result if (result.index(name) % 2) == 0]
     agent_names = [name for name in result if (result.index(name) % 2) == 1]
-
-    player_agents_zipped = dict(zip(agent_names, player_names))
-
+    print(player_names,agent_names)
+    player_agents_zipped = dict(zip(player_names, agent_names))
+    print(player_agents_zipped)
     return player_agents_zipped
 
 def side_first_half():
@@ -267,6 +267,8 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
     print(players_agents)
     players_agents_team = dict(list(players_agents.items())[:5])
     players_agents_oppo = dict(list(players_agents.items())[5:])
+    players_agents_team = {value: key for key, value in players_agents_team.items()}
+    players_agents_oppo = {value: key for key, value in players_agents_oppo.items()}
     print(players_agents_team,players_agents_oppo)
 
     final_player_fk_list = []
@@ -274,7 +276,6 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
 
     for i, agent in enumerate(fk_player):
         if who_fb[i] == 'you':
-            print(i)
             final_player_fk_list.append(players_agents_team.get(agent))
         else:
             final_player_fk_list.append(players_agents_oppo.get(agent))
