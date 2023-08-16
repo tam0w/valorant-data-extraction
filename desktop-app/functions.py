@@ -6,19 +6,21 @@ import pandas as pd
 import pyautogui as py
 import time
 import os
+
 # import matplotlib.pyplot as plt
 
 # Load resources
 
 reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
-header = ['first_kill', 'time', 'first_death', 'planted', 'fb_team', 'defuse', 'side', 'fb_players', 'dt_players', 'round_win']
+header = ['first_kill', 'time', 'first_death', 'planted', 'fb_team',
+          'defuse', 'side', 'fb_players', 'dt_players', 'round_win']
+
 
 # Functions
 
 
 def analyze():
-
     """ This function will analyze the returned information from each individual round OCR and POST the
     final dataframe into the API endpoint? Or maybe this function will just give the final dataframe from the TL round
     analysis, into a json converting function which will then be posted into the website, perhaps."""
@@ -27,7 +29,7 @@ def analyze():
 
     rounds, sides = scores_ocr()
     map_name = get_metadata()
-    first_action_times, plants_or_not, fk_player, fk_death, outcomes, fb_team, players_agents= rounds_ss(rounds)
+    first_action_times, plants_or_not, fk_player, fk_death, outcomes, fb_team, players_agents = rounds_ss(rounds)
 
     df['side'] = sides[:rounds]
     df['round_win'] = outcomes
@@ -62,7 +64,8 @@ def analyze():
     date = datetime.now()
     dt_string = date.strftime("%d_%m_%Y_time_%H_%M")
 
-    df.to_csv(path_or_buf=rf'D:\PROJECTS\demo-analysis-timeline\res\scrims\{map_name}_{dt_string}.csv', sep='\t', header=header)
+    df.to_csv(path_or_buf=rf'D:\PROJECTS\demo-analysis-timeline\res\scrims\{map_name}_{dt_string}.csv',
+              sep='\t', header=header)
     print(df)
 
 
@@ -131,7 +134,7 @@ def scores_ocr():
 
     my_rounds, match_result, opp_rounds = final_score_ocr()
     print("Score:", my_rounds, "-", opp_rounds, "\nResult: ", match_result)
-    total_rounds = int(my_rounds)+int(opp_rounds)
+    total_rounds = int(my_rounds) + int(opp_rounds)
 
     return total_rounds, sides
 
@@ -139,7 +142,6 @@ def scores_ocr():
 def rounds_ocr(all_round_images):
     """Perform OCR And preprocessing of all the rounds to extract, which player got the first kill, when they get it
     if the spike was planted or not. Possibly in a dataframe?"""
-
 
     all_round_images_cropped = [images[505:970, 980:1040] for images in all_round_images]
     timestamps = [reader.readtext(image, detail=0) for image in all_round_images_cropped]
@@ -151,7 +153,6 @@ def rounds_ocr(all_round_images):
 
 
 def match_agent(images):
-
     """This function matches all the agents first kills and death sprites to the their actual agent names and returns
     what agent got the first kill and died first."""
 
@@ -165,7 +166,7 @@ def match_agent(images):
         tl = image[506:539, 945:980]
         tl_gray = cv.cvtColor(tl, cv.COLOR_BGR2GRAY)
 
-        tl_dt = image[506:539,1232:1265]
+        tl_dt = image[506:539, 1232:1265]
         tl_gray_dt = cv.cvtColor(tl_dt, cv.COLOR_BGR2GRAY)
 
         values_dt = []
@@ -197,41 +198,41 @@ def match_agent(images):
 
     return fk_player, fk_dt
 
-def ocr_round_win(images):
 
+def ocr_round_win(images):
     round_outcomes = []
 
     for image in images:
         file = image[430:470, 130:700]
         gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
-        round_outcome = reader.readtext(gray,detail=0)
+        round_outcome = reader.readtext(gray, detail=0)
         if round_outcome.__str__().upper().__contains__('LOSS'):
             round_outcomes.append('loss')
         else:
             round_outcomes.append('win')
     return round_outcomes
 
-def final_score_ocr():
 
+def final_score_ocr():
     image = py.screenshot()
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-    score = cv_image[70:170,700:1150]
-    score = reader.readtext(score,detail=0)
+    score = cv_image[70:170, 700:1150]
+    score = reader.readtext(score, detail=0)
 
     return score[0].__str__(), score[1].__str__(), score[2].__str__()
 
-def get_metadata():
 
+def get_metadata():
     image = py.screenshot()
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
     file = cv_image[125:145, 120:210]
     gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
     gray = cv.convertScaleAbs(gray, 1, 5)
-    result = reader.readtext(gray,detail=0)
+    result = reader.readtext(gray, detail=0)
     return result[0].__str__().lower()
 
-def zip_player_agents():
 
+def zip_player_agents():
     image = py.screenshot()
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
     file = cv_image[495:940, 150:370]
@@ -243,8 +244,8 @@ def zip_player_agents():
     player_agents_zipped = dict(zip(player_names, agent_names))
     return player_agents_zipped
 
-def side_first_half():
 
+def side_first_half():
     image = py.screenshot()
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
     file = cv_image[300:400, 1300:1500]
@@ -262,8 +263,8 @@ def side_first_half():
 
     return sides
 
-def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
 
+def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
     players_agents_team = dict(list(players_agents.items())[:5])
     players_agents_oppo = dict(list(players_agents.items())[5:])
     players_agents_team = {value: key for key, value in players_agents_team.items()}
@@ -285,11 +286,3 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
             final_opponent_dt_list.append(players_agents_oppo.get(agent))
 
     return final_player_fk_list, final_opponent_dt_list
-
-
-
-
-
-
-
-
