@@ -264,8 +264,10 @@ def side_first_half():
 
 def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
 
+    print(players_agents)
     players_agents_team = dict(list(players_agents.items())[:5])
     players_agents_oppo = dict(list(players_agents.items())[5:])
+    print(players_agents_team,players_agents_oppo)
 
     final_player_fk_list = []
     final_opponent_dt_list = []
@@ -283,7 +285,7 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
         else:
             final_opponent_dt_list.append(players_agents_oppo.get(agent))
 
-
+    print(final_player_fk_list, final_opponent_dt_list)
 
     return final_player_fk_list, final_opponent_dt_list
 
