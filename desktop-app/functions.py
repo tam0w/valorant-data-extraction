@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
-header = ['first_kill', 'time', 'first_death', 'planted', 'defuse', 'round_win', 'side','fk_player','fk_opponent']
+header = ['first_kill', 'time', 'first_death', 'planted', 'fb_team', 'defuse', 'side', 'round_win']
 # Functions
 def analyze():
 
@@ -28,12 +28,12 @@ def analyze():
 
     map_name = get_metadata()
 
-    first_action_times, plants_or_not, fk_player, fk_death, outcomes = rounds_ss(rounds)
+    first_action_times, plants_or_not, fk_player, fk_death, outcomes, fb_team = rounds_ss(rounds)
 
     df['round_win'] = outcomes
     df['first_kill'] = fk_player
     df['first_death'] = fk_death
-
+    df['fb_team'] = fb_team
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     df['planted'] = plants
@@ -72,6 +72,8 @@ def rounds_ss(total_rounds):
     py.leftClick(x=187, y=333, duration=0.35)
     tl_ss = []
     time.sleep(0.25)
+    who_fb = []
+    greens = []
 
     for i in range(total_rounds):
 
@@ -86,6 +88,9 @@ def rounds_ss(total_rounds):
         cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
         tl_ss.append(cv_image)
 
+        b, g, r = cv_image[520, 1150]
+        greens.append(g)
+
         time.sleep(0.15)
 
     # The preprocessing and ocr can either be done in this function or another.
@@ -93,11 +98,18 @@ def rounds_ss(total_rounds):
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
     tl_ss.append(cv_image)
 
+    b, g, r = cv_image[520, 1150]
+    greens.append(g)
+
     timestamps, plants = rounds_ocr(tl_ss)
     fk_player, fk_death = match_agent(tl_ss)
     outcomes = ocr_round_win(tl_ss)
 
-    return timestamps, plants, fk_player, fk_death, outcomes
+    for green in greens:
+        flag = 'you' if green > 100 else 'opponent'
+        who_fb.append(flag)
+    print(who_fb)
+    return timestamps, plants, fk_player, fk_death, outcomes, who_fb
 
 
 def df_to_json():
@@ -124,6 +136,7 @@ def scores_ocr():
 def rounds_ocr(all_round_images):
     """Perform OCR And preprocessing of all the rounds to extract, which player got the first kill, when they get it
     if the spike was planted or not. Possibly in a dataframe?"""
+
 
     all_round_images_cropped = [images[505:970, 980:1040] for images in all_round_images]
     timestamps = [reader.readtext(image, detail=0) for image in all_round_images_cropped]
@@ -175,24 +188,8 @@ def match_agent(images):
         indexes_dt.append(values_dt.index(max(values_dt)))
         indexes_fk.append(values.index(max(values)))
 
-
-    # ign_fk = []
-    # ign_dt = []
-
     fk_player = [list_of_agents[index] for index in indexes_fk]
-
-    # for agentname, playername in zipped:
-    #     print(agentname,playername)
-    #     if agentname in fk_player:
-    #         print("TEST CONDITION:",playername)
-    #         ign_fk.append(playername)
-    #
-    # print(zipped)
     fk_dt = [list_of_agents[index] for index in indexes_dt]
-
-    # for agentname, playername in zipped:
-    #     if playername in fk_dt:
-    #         ign_dt.append(playername)
 
     return fk_player, fk_dt
 
