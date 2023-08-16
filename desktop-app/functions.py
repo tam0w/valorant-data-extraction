@@ -283,6 +283,8 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
         else:
             final_opponent_dt_list.append(players_agents_oppo.get(agent))
 
+
+
     return final_player_fk_list, final_opponent_dt_list
 
 
