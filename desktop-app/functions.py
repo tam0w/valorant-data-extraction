@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
-header = ['first_kill', 'time', 'first_death', 'planted', 'fb_team', 'defuse', 'side', 'round_win']
+header = ['first_kill', 'time', 'first_death', 'planted', 'fb_team', 'defuse', 'side', 'fb_players', 'dt_players', 'round_win']
 # Functions
 def analyze():
 
@@ -23,13 +23,11 @@ def analyze():
     df = pd.DataFrame(columns=header)
 
     rounds, sides = scores_ocr()
-    print(len(sides))
-    df['side'] = sides[:rounds]
-
     map_name = get_metadata()
-
     first_action_times, plants_or_not, fk_player, fk_death, outcomes, fb_team = rounds_ss(rounds)
+    players_agents = zip_player_agents()
 
+    df['side'] = sides[:rounds]
     df['round_win'] = outcomes
     df['first_kill'] = fk_player
     df['first_death'] = fk_death
@@ -54,6 +52,10 @@ def analyze():
 
     df['time'] = first_kill_times
     df.index += 1
+
+    fbs_players, dt_players = map_player_agents(fb_team, fk_player, fk_death, players_agents)
+    df['fb_players'] = fbs_players
+    df['dt_players'] = dt_players
 
     date = datetime.now()
     dt_string = date.strftime("%d_%m_%Y_time_%H_%M")
@@ -108,7 +110,7 @@ def rounds_ss(total_rounds):
     for green in greens:
         flag = 'you' if green > 100 else 'opponent'
         who_fb.append(flag)
-    print(who_fb)
+
     return timestamps, plants, fk_player, fk_death, outcomes, who_fb
 
 
@@ -226,14 +228,12 @@ def get_metadata():
     result = reader.readtext(gray,detail=0)
     return result[0].__str__().lower()
 
-def map_player_agents():
+def zip_player_agents():
 
     image = py.screenshot()
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
     file = cv_image[495:940, 150:370]
     gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
-    plt.imshow(gray)
-    plt.show()
     result = reader.readtext(gray, detail=0)
 
     player_names = [name for name in result if (result.index(name) % 2) == 0]
@@ -261,6 +261,30 @@ def side_first_half():
     sides = ([first] * 12 + [second] * 12)
 
     return sides
+
+def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
+
+    players_agents_team = dict(list(players_agents.items())[:5])
+    players_agents_oppo = dict(list(players_agents.items())[5:])
+
+    final_player_fk_list = []
+    final_opponent_dt_list = []
+
+    for i, agent in enumerate(fk_player):
+        if who_fb[i] == 'you':
+            print(i)
+            final_player_fk_list.append(players_agents_team.get(agent))
+        else:
+            final_player_fk_list.append(players_agents_oppo.get(agent))
+
+    for i, agent in enumerate(fk_dt):
+        if who_fb[i] == 'opponent':
+            final_opponent_dt_list.append(players_agents_team.get(agent))
+        else:
+            final_opponent_dt_list.append(players_agents_oppo.get(agent))
+
+    return final_player_fk_list, final_opponent_dt_list
+
 
 
 
