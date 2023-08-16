@@ -6,14 +6,17 @@ import pandas as pd
 import pyautogui as py
 import time
 import os
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 # Load resources
 
 reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
 header = ['first_kill', 'time', 'first_death', 'planted', 'fb_team', 'defuse', 'side', 'fb_players', 'dt_players', 'round_win']
+
 # Functions
+
+
 def analyze():
 
     """ This function will analyze the returned information from each individual round OCR and POST the
@@ -25,7 +28,6 @@ def analyze():
     rounds, sides = scores_ocr()
     map_name = get_metadata()
     first_action_times, plants_or_not, fk_player, fk_death, outcomes, fb_team, players_agents= rounds_ss(rounds)
-
 
     df['side'] = sides[:rounds]
     df['round_win'] = outcomes
@@ -118,7 +120,6 @@ def df_to_json():
     """Preferably take in the final dataframe and convert it into the JSON before POSTing into the API endpoint."""
 
 
-
 def scores_ocr():
     """Any preprocessing or other shenanigans here. And then perform OCR and return match metadata, individual player
         stats as well as match score / outcome. This can be a data frame. Also, distinctly return total no of rounds."""
@@ -148,6 +149,7 @@ def rounds_ocr(all_round_images):
 
     return timestamps, plants
 
+
 def match_agent(images):
 
     """This function matches all the agents first kills and death sprites to the their actual agent names and returns
@@ -160,7 +162,7 @@ def match_agent(images):
     dir_list = os.listdir(sprite_path)
 
     for image in images:
-        tl = image[506:539,945:980]
+        tl = image[506:539, 945:980]
         tl_gray = cv.cvtColor(tl, cv.COLOR_BGR2GRAY)
 
         tl_dt = image[506:539,1232:1265]
@@ -238,9 +240,7 @@ def zip_player_agents():
 
     player_names = [name for name in result if (result.index(name) % 2) == 0]
     agent_names = [name for name in result if (result.index(name) % 2) == 1]
-    print(player_names,agent_names)
     player_agents_zipped = dict(zip(player_names, agent_names))
-    print(player_agents_zipped)
     return player_agents_zipped
 
 def side_first_half():
@@ -264,12 +264,10 @@ def side_first_half():
 
 def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
 
-    print(players_agents)
     players_agents_team = dict(list(players_agents.items())[:5])
     players_agents_oppo = dict(list(players_agents.items())[5:])
     players_agents_team = {value: key for key, value in players_agents_team.items()}
     players_agents_oppo = {value: key for key, value in players_agents_oppo.items()}
-    print(players_agents_team,players_agents_oppo)
 
     final_player_fk_list = []
     final_opponent_dt_list = []
@@ -285,8 +283,6 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
             final_opponent_dt_list.append(players_agents_team.get(agent))
         else:
             final_opponent_dt_list.append(players_agents_oppo.get(agent))
-
-    print(final_player_fk_list, final_opponent_dt_list)
 
     return final_player_fk_list, final_opponent_dt_list
 
