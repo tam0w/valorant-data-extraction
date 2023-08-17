@@ -1,6 +1,7 @@
 from datetime import datetime
 import cv2 as cv
 import easyocr
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyautogui as py
@@ -14,7 +15,7 @@ import os
 reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
 header = ['first_kill', 'time', 'first_death', 'planted', 'fb_team',
-          'defuse', 'side', 'fb_players', 'dt_players', 'round_win']
+          'defuse', 'side', 'fb_players', 'dt_players', 'team_buy', 'oppo_buy', 'round_win']
 
 
 # Functions
@@ -29,13 +30,16 @@ def analyze():
 
     rounds, sides = scores_ocr()
     map_name = get_metadata()
-    first_action_times, plants_or_not, fk_player, fk_death, outcomes, fb_team, players_agents = rounds_ss(rounds)
+    (first_action_times, plants_or_not, fk_player, fk_death, outcomes,
+    fb_team, players_agents, buy_info_team, buy_info_oppo) = rounds_ss(rounds)
 
     df['side'] = sides[:rounds]
     df['round_win'] = outcomes
     df['first_kill'] = fk_player
     df['first_death'] = fk_death
     df['fb_team'] = fb_team
+    df['team_buy'] = buy_info_team
+    df['oppo_buy'] = buy_info_oppo
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     df['planted'] = plants
@@ -108,7 +112,7 @@ def rounds_ss(total_rounds):
     b, g, r = cv_image[520, 1150]
     greens.append(g)
 
-    timestamps, plants = rounds_ocr(tl_ss)
+    timestamps, plants, buy_info_team, buy_info_oppo = rounds_ocr(tl_ss)
     fk_player, fk_death = match_agent(tl_ss)
     outcomes = ocr_round_win(tl_ss)
 
@@ -116,7 +120,7 @@ def rounds_ss(total_rounds):
         flag = 'you' if green > 100 else 'opponent'
         who_fb.append(flag)
 
-    return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents
+    return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents, buy_info_team, buy_info_oppo
 
 
 def df_to_json():
@@ -143,13 +147,21 @@ def rounds_ocr(all_round_images):
     """Perform OCR And preprocessing of all the rounds to extract, which player got the first kill, when they get it
     if the spike was planted or not. Possibly in a dataframe?"""
 
+    buys = [images[425:480, 1020:1145] for images in all_round_images]
+    buy_info = [reader.readtext(image,allowlist=['0','1','2','3','4','5','6','7','8','9',','], detail=0) for image in buys]
+    for image in buys:
+        plt.imshow(image)
+        plt.show()
+    buy_info_team = [buy[0] for buy in buy_info]
+    buy_info_oppo = [buy[1] for buy in buy_info]
+
     all_round_images_cropped = [images[505:970, 980:1040] for images in all_round_images]
     timestamps = [reader.readtext(image, detail=0) for image in all_round_images_cropped]
 
     all_round_images_cropped_plants = [images[505:970, 1150:1230] for images in all_round_images]
     plants = [reader.readtext(image, detail=0) for image in all_round_images_cropped_plants]
 
-    return timestamps, plants
+    return timestamps, plants, buy_info_team, buy_info_oppo
 
 
 def match_agent(images):
@@ -159,7 +171,7 @@ def match_agent(images):
     list_of_agents = agents['names'].to_list()
     indexes_fk = []
     indexes_dt = []
-    sprite_path = r'D:\PROJECTS\demo-analysis-timeline\res\sprites'
+    sprite_path = r'D:\PROJECTS\demo-analysis-timeline\res\New folder'
     dir_list = os.listdir(sprite_path)
 
     for image in images:
