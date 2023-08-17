@@ -7,7 +7,7 @@ import pyautogui as py
 import time
 import os
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 # Load resources
 
@@ -153,7 +153,7 @@ def rounds_ocr(all_round_images):
 
 
 def match_agent(images):
-    """This function matches all the agents first kills and death sprites to the their actual agent names and returns
+    """This function matches all the agents first kills and death sprites to their actual agent names and returns
     what agent got the first kill and died first."""
 
     list_of_agents = agents['names'].to_list()
@@ -163,7 +163,7 @@ def match_agent(images):
     dir_list = os.listdir(sprite_path)
 
     for image in images:
-        tl = image[506:539, 945:980]
+        tl = image[506:542, 945:980]
         tl_gray = cv.cvtColor(tl, cv.COLOR_BGR2GRAY)
 
         tl_dt = image[506:539, 1232:1265]
@@ -238,8 +238,8 @@ def zip_player_agents():
     file = cv_image[495:940, 150:370]
     gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
     result = reader.readtext(gray, detail=0)
-
     player_names = [name for name in result if (result.index(name) % 2) == 0]
+    print(player_names)
     agent_names = [name for name in result if (result.index(name) % 2) == 1]
     player_agents_zipped = dict(zip(player_names, agent_names))
     return player_agents_zipped
@@ -269,17 +269,20 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
     players_agents_oppo = dict(list(players_agents.items())[5:])
     players_agents_team = {value: key for key, value in players_agents_team.items()}
     players_agents_oppo = {value: key for key, value in players_agents_oppo.items()}
+    print(players_agents_team,players_agents_oppo)
 
     final_player_fk_list = []
     final_opponent_dt_list = []
 
     for i, agent in enumerate(fk_player):
+        print(i,agent)
         if who_fb[i] == 'you':
             final_player_fk_list.append(players_agents_team.get(agent))
         else:
             final_player_fk_list.append(players_agents_oppo.get(agent))
 
     for i, agent in enumerate(fk_dt):
+        print("death",i,agent)
         if who_fb[i] == 'opponent':
             final_opponent_dt_list.append(players_agents_team.get(agent))
         else:
