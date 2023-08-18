@@ -24,20 +24,6 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\res\scrims\fracture_14_08_2023_time_21_12.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="&#9;" />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\res\scrims\lotus_16_08_2023_time_17_10.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="&#9;" />
-            </Attribute>
-          </value>
-        </entry>
         <entry key="\res\scrims\lotus_17_08_2023_time_13_34.csv">
           <value>
             <Attribute>
@@ -74,6 +60,34 @@
           </value>
         </entry>
         <entry key="\res\scrims\lotus_17_08_2023_time_16_07.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="&#9;" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\res\scrims\lotus_18_08_2023_time_21_41.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="&#9;" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\res\scrims\lotus_18_08_2023_time_21_44.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="&#9;" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\res\scrims\lotus_18_08_2023_time_21_55.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="&#9;" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\res\scrims\lotus_18_08_2023_time_21_57.csv">
           <value>
             <Attribute>
               <option name="separator" value="&#9;" />
