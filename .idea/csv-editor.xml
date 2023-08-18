@@ -94,6 +94,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\res\scrims\lotus_18_08_2023_time_22_10.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="&#9;" />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\res\scrims\pearl_17_08_2023_time_15_19.csv">
           <value>
             <Attribute>
