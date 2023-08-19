@@ -79,6 +79,7 @@ def take_ss(tl_ss, greens):
     tl_ss.append(cv_image)
 
 
+
 def rounds_ss(total_rounds):
     """ This function will go to the timeline page of the match in question and screenshot every page of the timeline.
     It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
@@ -86,11 +87,17 @@ def rounds_ss(total_rounds):
 
     tl_ss = []
     greens = []
-    time.sleep(0.15)
-    py.leftClick(x=1020, y=190, duration=0.13)
-    time.sleep(0.15)
+    time.sleep(0.10)
+
+    py.moveTo(x=1020, y=190, duration=0.2)
+    py.leftClick()
+
+    time.sleep(0.2)
+
     py.moveTo(x=187, y=333, duration=0.35)
     py.leftClick()
+
+    time.sleep(0.05)
 
     take_ss(tl_ss, greens)
 
