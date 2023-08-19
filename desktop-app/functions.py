@@ -8,8 +8,6 @@ import pyautogui as py
 import time
 import os
 
-import matplotlib.pyplot as plt
-
 # Load resources
 
 reader = easyocr.Reader(['en'])
@@ -79,9 +77,6 @@ def take_ss(tl_ss, greens):
     b, g, r = cv_image[520, 1150]
     greens.append(g)
     tl_ss.append(cv_image)
-    plt.imshow(cv_image)
-    plt.show()
-    print("counter:",len(greens),len(tl_ss))
 
 
 def rounds_ss(total_rounds):
@@ -127,58 +122,6 @@ def rounds_ss(total_rounds):
 
 
     return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents, buy_info_team, buy_info_oppo
-
-
-# def rounds_ss(total_rounds):
-#     """ This function will go to the timeline page of the match in question and screenshot every page of the timeline.
-#     It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
-#     list will be returned to the 'analyze' function. """
-#
-#     py.leftClick(x=1020, y=190, duration=0.13)
-#     time.sleep(0.4)
-#     py.leftClick(x=187, y=333, duration=0.35)
-#     tl_ss = []
-#     time.sleep(0.25)
-#     who_fb = []
-#     greens = []
-#     players_agents, agents_names = zip_player_agents()
-#     agent_list = all_agents()
-#     for i in range(total_rounds):
-#
-#         py.moveRel(63, 0, duration=0.12)
-#         py.leftClick()
-#
-#         if i == 11:
-#             py.moveRel(-20, 0, duration=0.2)
-#             continue
-#
-#         image = py.screenshot()
-#         cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-#         tl_ss.append(cv_image)
-#         plt.imshow(cv_image)
-#         plt.show()
-#         b, g, r = cv_image[520, 1150]
-#         greens.append(g)
-#
-#         time.sleep(0.07)
-#
-#     # The preprocessing and ocr can either be done in this function or another.
-#     image = py.screenshot()
-#     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-#     tl_ss.append(cv_image)
-#
-#     b, g, r = cv_image[520, 1150]
-#     greens.append(g)
-#
-#     timestamps, plants, buy_info_team, buy_info_oppo = rounds_ocr(tl_ss)
-#     fk_player, fk_death = match_agent(agent_list, tl_ss, agents_names)
-#     outcomes = ocr_round_win(tl_ss)
-#
-#     for green in greens:
-#         flag = 'you' if green > 100 else 'opponent'
-#         who_fb.append(flag)
-#
-#     return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents, buy_info_team, buy_info_oppo
 
 
 def df_to_json():
