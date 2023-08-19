@@ -216,10 +216,7 @@ def match_agent(agent_images, images, agents_names):
 
     for image in images:
         tl = image[506:542, 945:980]
-        tl_gray = cv.cvtColor(tl, cv.COLOR_BGR2GRAY)
-
         tl_dt = image[506:539, 1232:1265]
-        tl_gray_dt = cv.cvtColor(tl_dt, cv.COLOR_BGR2GRAY)
 
         values_dt = []
         values = []
@@ -239,46 +236,6 @@ def match_agent(agent_images, images, agents_names):
     fk_player = [agents_names[index] for index in indexes_fk]
     fk_dt = [agents_names[index] for index in indexes_dt]
 
-    # list_of_agents = agents['names'].to_list()
-    # indexes_fk = []
-    # indexes_dt = []
-    # sprite_path = r'D:\PROJECTS\demo-analysis-timeline\res\New folder'
-    # dir_list = os.listdir(sprite_path)
-    #
-    # for image in images:
-    #     tl = image[506:542, 945:980]
-    #     tl_gray = cv.cvtColor(tl, cv.COLOR_BGR2GRAY)
-    #
-    #     tl_dt = image[506:539, 1232:1265]
-    #     tl_gray_dt = cv.cvtColor(tl_dt, cv.COLOR_BGR2GRAY)
-    #
-    #     values_dt = []
-    #     values = []
-    #
-    #     sprite_list = []
-    #
-    #     for i, file in enumerate(dir_list):
-    #         file = os.path.join(sprite_path, file)
-    #         img = cv.imread(file, 0)
-    #         sprite_list.append(img)
-    #
-    #     for agent in sprite_list:
-    #         agent = cv.resize(agent, (0, 0), fx=0.39, fy=0.39, interpolation=cv.INTER_AREA)
-    #
-    #         result = cv.matchTemplate(tl_gray, agent, cv.TM_CCOEFF_NORMED)
-    #         min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
-    #         values.append(max_val)
-    #
-    #         result_dt = cv.matchTemplate(tl_gray_dt, agent, cv.TM_CCOEFF_NORMED)
-    #         min_val_dt, max_val_dt, min_loc_dt, max_loc_dt = cv.minMaxLoc(result_dt)
-    #         values_dt.append(max_val_dt)
-    #
-    #     indexes_dt.append(values_dt.index(max(values_dt)))
-    #     indexes_fk.append(values.index(max(values)))
-    #
-    # fk_player = [list_of_agents[index] for index in indexes_fk]
-    # fk_dt = [list_of_agents[index] for index in indexes_dt]
-    #
     return fk_player, fk_dt
 
 
