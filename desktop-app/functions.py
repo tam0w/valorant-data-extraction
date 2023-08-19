@@ -125,8 +125,6 @@ def rounds_ss(total_rounds):
         flag = 'you' if green > 100 else 'opponent'
         who_fb.append(flag)
 
-    print(len(greens))
-    print(len(tl_ss))
 
     return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents, buy_info_team, buy_info_oppo
 
@@ -410,20 +408,20 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
     players_agents_oppo = dict(list(players_agents.items())[5:])
     players_agents_team = {value: key for key, value in players_agents_team.items()}
     players_agents_oppo = {value: key for key, value in players_agents_oppo.items()}
-    print(players_agents_team, players_agents_oppo)
+    print("Your team:", players_agents_team, "\n", "Oppoennt:", players_agents_oppo)
 
     final_player_fk_list = []
     final_opponent_dt_list = []
 
     for i, agent in enumerate(fk_player):
-        print(i, agent)
+
         if who_fb[i] == 'you':
             final_player_fk_list.append(players_agents_team.get(agent))
         else:
             final_player_fk_list.append(players_agents_oppo.get(agent))
 
     for i, agent in enumerate(fk_dt):
-        print("death", i, agent)
+
         if who_fb[i] == 'opponent':
             final_opponent_dt_list.append(players_agents_team.get(agent))
         else:
