@@ -31,7 +31,7 @@ def analyze():
     rounds, sides = scores_ocr()
     map_name = get_metadata()
     (first_action_times, plants_or_not, fk_player, fk_death, outcomes,
-    fb_team, players_agents, buy_info_team, buy_info_oppo) = rounds_ss(rounds)
+     fb_team, players_agents, buy_info_team, buy_info_oppo) = rounds_ss(rounds)
 
     df['side'] = sides[:rounds]
     df['round_win'] = outcomes
@@ -73,45 +73,49 @@ def analyze():
     print(df)
 
 
+def take_ss(tl_ss, greens):
+    image = py.screenshot()
+    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+    b, g, r = cv_image[520, 1150]
+    greens.append(g)
+    tl_ss.append(cv_image)
+    plt.imshow(cv_image)
+    plt.show()
+    print("counter:",len(greens),len(tl_ss))
+
+
 def rounds_ss(total_rounds):
     """ This function will go to the timeline page of the match in question and screenshot every page of the timeline.
     It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
     list will be returned to the 'analyze' function. """
 
-    py.leftClick(x=1020, y=190, duration=0.13)
-    time.sleep(0.4)
-    py.leftClick(x=187, y=333, duration=0.35)
     tl_ss = []
-    time.sleep(0.25)
-    who_fb = []
     greens = []
+    time.sleep(0.15)
+    py.leftClick(x=1020, y=190, duration=0.13)
+    time.sleep(0.15)
+    py.moveTo(x=187, y=333, duration=0.35)
+    py.leftClick()
+
+    take_ss(tl_ss, greens)
+
+    time.sleep(0.05)
+
+    who_fb = []
     players_agents, agents_names = zip_player_agents()
     agent_list = all_agents()
+
     for i in range(total_rounds):
 
         py.moveRel(63, 0, duration=0.12)
         py.leftClick()
+        time.sleep(0.07)
 
         if i == 11:
-            py.moveRel(-20, 0, duration=0.2)
+            py.moveRel(-20, 0, duration=0.12)
             continue
 
-        image = py.screenshot()
-        cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-        tl_ss.append(cv_image)
-
-        b, g, r = cv_image[520, 1150]
-        greens.append(g)
-
-        time.sleep(0.15)
-
-    # The preprocessing and ocr can either be done in this function or another.
-    image = py.screenshot()
-    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-    tl_ss.append(cv_image)
-
-    b, g, r = cv_image[520, 1150]
-    greens.append(g)
+        take_ss(tl_ss, greens)
 
     timestamps, plants, buy_info_team, buy_info_oppo = rounds_ocr(tl_ss)
     fk_player, fk_death = match_agent(agent_list, tl_ss, agents_names)
@@ -121,7 +125,62 @@ def rounds_ss(total_rounds):
         flag = 'you' if green > 100 else 'opponent'
         who_fb.append(flag)
 
+    print(len(greens))
+    print(len(tl_ss))
+
     return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents, buy_info_team, buy_info_oppo
+
+
+# def rounds_ss(total_rounds):
+#     """ This function will go to the timeline page of the match in question and screenshot every page of the timeline.
+#     It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
+#     list will be returned to the 'analyze' function. """
+#
+#     py.leftClick(x=1020, y=190, duration=0.13)
+#     time.sleep(0.4)
+#     py.leftClick(x=187, y=333, duration=0.35)
+#     tl_ss = []
+#     time.sleep(0.25)
+#     who_fb = []
+#     greens = []
+#     players_agents, agents_names = zip_player_agents()
+#     agent_list = all_agents()
+#     for i in range(total_rounds):
+#
+#         py.moveRel(63, 0, duration=0.12)
+#         py.leftClick()
+#
+#         if i == 11:
+#             py.moveRel(-20, 0, duration=0.2)
+#             continue
+#
+#         image = py.screenshot()
+#         cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+#         tl_ss.append(cv_image)
+#         plt.imshow(cv_image)
+#         plt.show()
+#         b, g, r = cv_image[520, 1150]
+#         greens.append(g)
+#
+#         time.sleep(0.07)
+#
+#     # The preprocessing and ocr can either be done in this function or another.
+#     image = py.screenshot()
+#     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+#     tl_ss.append(cv_image)
+#
+#     b, g, r = cv_image[520, 1150]
+#     greens.append(g)
+#
+#     timestamps, plants, buy_info_team, buy_info_oppo = rounds_ocr(tl_ss)
+#     fk_player, fk_death = match_agent(agent_list, tl_ss, agents_names)
+#     outcomes = ocr_round_win(tl_ss)
+#
+#     for green in greens:
+#         flag = 'you' if green > 100 else 'opponent'
+#         who_fb.append(flag)
+#
+#     return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents, buy_info_team, buy_info_oppo
 
 
 def df_to_json():
@@ -134,7 +193,7 @@ def scores_ocr():
     time.sleep(2)
     sides = side_first_half()
 
-    py.leftClick(x=875, y=190, duration=0.35)
+    py.leftClick(x=875, y=190, duration=0.15)
     time.sleep(0.15)
 
     my_rounds, match_result, opp_rounds = final_score_ocr()
@@ -149,7 +208,8 @@ def rounds_ocr(all_round_images):
     if the spike was planted or not. Possibly in a dataframe?"""
 
     buys = [images[425:480, 1020:1145] for images in all_round_images]
-    buy_info = [reader.readtext(image,allowlist=['0','1','2','3','4','5','6','7','8','9',','], detail=0) for image in buys]
+    buy_info = [reader.readtext(image, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ','], detail=0) for
+                image in buys]
     buy_info_team = [buy[0] for buy in buy_info]
     buy_info_oppo = [buy[1] for buy in buy_info]
 
@@ -163,14 +223,12 @@ def rounds_ocr(all_round_images):
 
 
 def all_agents():
-
     ss = py.screenshot()
     image = cv.cvtColor(np.array(ss), cv.COLOR_RGB2BGR)
     agent_list = []
 
     st_u = 503
     gr_check = 161
-
 
     for i in range(5):
 
@@ -212,7 +270,6 @@ def match_agent(agent_images, images, agents_names):
     """This function matches all the agents first kills and death sprites to their actual agent names and returns
     what agent got the first kill and died first."""
 
-
     indexes_fk = []
     indexes_dt = []
 
@@ -227,7 +284,6 @@ def match_agent(agent_images, images, agents_names):
         values = []
 
         for agent in agent_images:
-
             result = cv.matchTemplate(tl, agent, cv.TM_CCOEFF_NORMED)
             min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
             values.append(max_val)
@@ -324,9 +380,6 @@ def zip_player_agents():
     file = cv_image[495:940, 150:370]
     gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
     result = reader.readtext(gray, detail=0)
-    print(result)
-    plt.imshow(gray)
-    plt.show()
     player_names = [name for name in result if (result.index(name) % 2) == 0]
     agent_names = [name for name in result if (result.index(name) % 2) == 1]
     player_agents_zipped = dict(zip(player_names, agent_names))
@@ -357,20 +410,20 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
     players_agents_oppo = dict(list(players_agents.items())[5:])
     players_agents_team = {value: key for key, value in players_agents_team.items()}
     players_agents_oppo = {value: key for key, value in players_agents_oppo.items()}
-    print(players_agents_team,players_agents_oppo)
+    print(players_agents_team, players_agents_oppo)
 
     final_player_fk_list = []
     final_opponent_dt_list = []
 
     for i, agent in enumerate(fk_player):
-        print(i,agent)
+        print(i, agent)
         if who_fb[i] == 'you':
             final_player_fk_list.append(players_agents_team.get(agent))
         else:
             final_player_fk_list.append(players_agents_oppo.get(agent))
 
     for i, agent in enumerate(fk_dt):
-        print("death",i,agent)
+        print("death", i, agent)
         if who_fb[i] == 'opponent':
             final_opponent_dt_list.append(players_agents_team.get(agent))
         else:
