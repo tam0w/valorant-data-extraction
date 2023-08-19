@@ -85,7 +85,8 @@ def rounds_ss(total_rounds):
     time.sleep(0.25)
     who_fb = []
     greens = []
-    players_agents = zip_player_agents()
+    players_agents, agents_names = zip_player_agents()
+    agent_list = all_agents()
     for i in range(total_rounds):
 
         py.moveRel(63, 0, duration=0.12)
@@ -113,7 +114,7 @@ def rounds_ss(total_rounds):
     greens.append(g)
 
     timestamps, plants, buy_info_team, buy_info_oppo = rounds_ocr(tl_ss)
-    fk_player, fk_death = match_agent(tl_ss)
+    fk_player, fk_death = match_agent(agent_list, tl_ss, agents_names)
     outcomes = ocr_round_win(tl_ss)
 
     for green in greens:
@@ -149,9 +150,6 @@ def rounds_ocr(all_round_images):
 
     buys = [images[425:480, 1020:1145] for images in all_round_images]
     buy_info = [reader.readtext(image,allowlist=['0','1','2','3','4','5','6','7','8','9',','], detail=0) for image in buys]
-    for image in buys:
-        plt.imshow(image)
-        plt.show()
     buy_info_team = [buy[0] for buy in buy_info]
     buy_info_oppo = [buy[1] for buy in buy_info]
 
@@ -164,15 +162,59 @@ def rounds_ocr(all_round_images):
     return timestamps, plants, buy_info_team, buy_info_oppo
 
 
-def match_agent(images):
+def all_agents():
+
+    ss = py.screenshot()
+    image = cv.cvtColor(np.array(ss), cv.COLOR_RGB2BGR)
+    agent_list = []
+
+    st_u = 503
+    gr_check = 161
+
+
+    for i in range(5):
+
+        b, g, r = image[st_u, gr_check]
+        u = st_u
+
+        while g < 180:
+            u = u + 1
+            b, g, r = image[u, gr_check]
+
+        st_l = gr_check + 3
+        b, new_g, r = image[u, st_l]
+        cur_img = image[u:u + 40, st_l:st_l + 40]
+        st_u = u + 42
+
+        agent_list.append(cur_img)
+
+    st_u = 726
+
+    for i in range(5):
+
+        b, g, r = image[st_u, gr_check]
+        u = st_u
+        while r < 180:
+            u = u + 1
+            b, g, r = image[u, gr_check]
+
+        st_l = gr_check + 3
+        b, g, new_r = image[u, st_l]
+        cur_img = image[u:u + 40, st_l:st_l + 40]
+        st_u = u + 42
+
+        agent_list.append(cur_img)
+
+    return agent_list
+
+
+def match_agent(agent_images, images, agents_names):
     """This function matches all the agents first kills and death sprites to their actual agent names and returns
     what agent got the first kill and died first."""
 
-    list_of_agents = agents['names'].to_list()
+
     indexes_fk = []
     indexes_dt = []
-    sprite_path = r'D:\PROJECTS\demo-analysis-timeline\res\New folder'
-    dir_list = os.listdir(sprite_path)
 
     for image in images:
         tl = image[506:542, 945:980]
@@ -184,30 +226,62 @@ def match_agent(images):
         values_dt = []
         values = []
 
-        sprite_list = []
+        for agent in agent_images:
 
-        for i, file in enumerate(dir_list):
-            file = os.path.join(sprite_path, file)
-            img = cv.imread(file, 0)
-            sprite_list.append(img)
-
-        for agent in sprite_list:
-            agent = cv.resize(agent, (0, 0), fx=0.39, fy=0.39, interpolation=cv.INTER_AREA)
-
-            result = cv.matchTemplate(tl_gray, agent, cv.TM_CCOEFF_NORMED)
+            result = cv.matchTemplate(tl, agent, cv.TM_CCOEFF_NORMED)
             min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
             values.append(max_val)
 
-            result_dt = cv.matchTemplate(tl_gray_dt, agent, cv.TM_CCOEFF_NORMED)
+            result_dt = cv.matchTemplate(tl_dt, agent, cv.TM_CCOEFF_NORMED)
             min_val_dt, max_val_dt, min_loc_dt, max_loc_dt = cv.minMaxLoc(result_dt)
             values_dt.append(max_val_dt)
 
         indexes_dt.append(values_dt.index(max(values_dt)))
         indexes_fk.append(values.index(max(values)))
 
-    fk_player = [list_of_agents[index] for index in indexes_fk]
-    fk_dt = [list_of_agents[index] for index in indexes_dt]
+    fk_player = [agents_names[index] for index in indexes_fk]
+    fk_dt = [agents_names[index] for index in indexes_dt]
 
+    # list_of_agents = agents['names'].to_list()
+    # indexes_fk = []
+    # indexes_dt = []
+    # sprite_path = r'D:\PROJECTS\demo-analysis-timeline\res\New folder'
+    # dir_list = os.listdir(sprite_path)
+    #
+    # for image in images:
+    #     tl = image[506:542, 945:980]
+    #     tl_gray = cv.cvtColor(tl, cv.COLOR_BGR2GRAY)
+    #
+    #     tl_dt = image[506:539, 1232:1265]
+    #     tl_gray_dt = cv.cvtColor(tl_dt, cv.COLOR_BGR2GRAY)
+    #
+    #     values_dt = []
+    #     values = []
+    #
+    #     sprite_list = []
+    #
+    #     for i, file in enumerate(dir_list):
+    #         file = os.path.join(sprite_path, file)
+    #         img = cv.imread(file, 0)
+    #         sprite_list.append(img)
+    #
+    #     for agent in sprite_list:
+    #         agent = cv.resize(agent, (0, 0), fx=0.39, fy=0.39, interpolation=cv.INTER_AREA)
+    #
+    #         result = cv.matchTemplate(tl_gray, agent, cv.TM_CCOEFF_NORMED)
+    #         min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
+    #         values.append(max_val)
+    #
+    #         result_dt = cv.matchTemplate(tl_gray_dt, agent, cv.TM_CCOEFF_NORMED)
+    #         min_val_dt, max_val_dt, min_loc_dt, max_loc_dt = cv.minMaxLoc(result_dt)
+    #         values_dt.append(max_val_dt)
+    #
+    #     indexes_dt.append(values_dt.index(max(values_dt)))
+    #     indexes_fk.append(values.index(max(values)))
+    #
+    # fk_player = [list_of_agents[index] for index in indexes_fk]
+    # fk_dt = [list_of_agents[index] for index in indexes_dt]
+    #
     return fk_player, fk_dt
 
 
@@ -250,11 +324,13 @@ def zip_player_agents():
     file = cv_image[495:940, 150:370]
     gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
     result = reader.readtext(gray, detail=0)
+    print(result)
+    plt.imshow(gray)
+    plt.show()
     player_names = [name for name in result if (result.index(name) % 2) == 0]
-    print(player_names)
     agent_names = [name for name in result if (result.index(name) % 2) == 1]
     player_agents_zipped = dict(zip(player_names, agent_names))
-    return player_agents_zipped
+    return player_agents_zipped, agent_names
 
 
 def side_first_half():
