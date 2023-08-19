@@ -77,8 +77,9 @@ def take_ss(tl_ss, greens):
     b, g, r = cv_image[520, 1150]
     greens.append(g)
     tl_ss.append(cv_image)
-
-
+    plt.imshow(cv_image)
+    plt.show()
+    time.sleep(0.1)
 
 def rounds_ss(total_rounds):
     """ This function will go to the timeline page of the match in question and screenshot every page of the timeline.
@@ -89,19 +90,18 @@ def rounds_ss(total_rounds):
     greens = []
     time.sleep(0.10)
 
-    py.moveTo(x=1020, y=190, duration=0.2)
-    py.leftClick()
+    py.moveTo(x=1020, y=190, duration=0.13)
+    time.sleep(0.1)
+    py.leftClick(duration=0)
 
     time.sleep(0.2)
 
     py.moveTo(x=187, y=333, duration=0.35)
     py.leftClick()
 
-    time.sleep(0.05)
+    time.sleep(0.15)
 
     take_ss(tl_ss, greens)
-
-    time.sleep(0.05)
 
     who_fb = []
     players_agents, agents_names = zip_player_agents()
@@ -111,7 +111,7 @@ def rounds_ss(total_rounds):
 
         py.moveRel(63, 0, duration=0.12)
         py.leftClick()
-        time.sleep(0.07)
+        time.sleep(0.1)
 
         if i == 11:
             py.moveRel(-20, 0, duration=0.12)
