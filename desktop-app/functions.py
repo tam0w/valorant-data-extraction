@@ -71,16 +71,6 @@ def analyze():
     print(df)
 
 
-def take_ss(tl_ss, greens):
-    image = py.screenshot()
-    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-    b, g, r = cv_image[520, 1150]
-    greens.append(g)
-    tl_ss.append(cv_image)
-    plt.imshow(cv_image)
-    plt.show()
-    time.sleep(0.1)
-
 def rounds_ss(total_rounds):
     """ This function will go to the timeline page of the match in question and screenshot every page of the timeline.
     It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
@@ -88,37 +78,24 @@ def rounds_ss(total_rounds):
 
     tl_ss = []
     greens = []
-    time.sleep(0.10)
-
-    py.moveTo(x=1020, y=190, duration=0.13)
-    time.sleep(0.1)
-    py.leftClick(duration=0)
-
-    time.sleep(0.2)
-
-    py.moveTo(x=187, y=333, duration=0.35)
-    py.leftClick()
-
-    time.sleep(0.15)
-
-    take_ss(tl_ss, greens)
-
     who_fb = []
+
+    while True:
+        if py.keyboard.is_pressed('p'):
+            image = py.screenshot()
+            cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+            b, g, r = cv_image[520, 1150]
+            greens.append(g)
+            tl_ss.append(cv_image)
+            plt.imshow(cv_image)
+            plt.show()
+            time.sleep(0.5)
+
+        if py.keyboard.is_pressed('q'):
+            break
+
     players_agents, agents_names = zip_player_agents()
     agent_list = all_agents()
-
-    for i in range(total_rounds):
-
-        py.moveRel(63, 0, duration=0.12)
-        py.leftClick()
-        time.sleep(0.1)
-
-        if i == 11:
-            py.moveRel(-20, 0, duration=0.12)
-            continue
-
-        take_ss(tl_ss, greens)
-
     timestamps, plants, buy_info_team, buy_info_oppo = rounds_ocr(tl_ss)
     fk_player, fk_death = match_agent(agent_list, tl_ss, agents_names)
     outcomes = ocr_round_win(tl_ss)
@@ -126,7 +103,6 @@ def rounds_ss(total_rounds):
     for green in greens:
         flag = 'you' if green > 100 else 'opponent'
         who_fb.append(flag)
-
 
     return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents, buy_info_team, buy_info_oppo
 
@@ -140,8 +116,6 @@ def scores_ocr():
         stats as well as match score / outcome. This can be a data frame. Also, distinctly return total no of rounds."""
     time.sleep(2)
     sides = side_first_half()
-
-    py.leftClick(x=875, y=190, duration=0.15)
     time.sleep(0.15)
 
     my_rounds, match_result, opp_rounds = final_score_ocr()
