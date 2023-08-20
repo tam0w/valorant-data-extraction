@@ -7,6 +7,7 @@ import pandas as pd
 import pyautogui as py
 import time
 import os
+import keyboard
 
 # Load resources
 
@@ -27,9 +28,8 @@ def analyze():
     df = pd.DataFrame(columns=header)
 
     rounds, sides = scores_ocr()
-    map_name = get_metadata()
     (first_action_times, plants_or_not, fk_player, fk_death, outcomes,
-     fb_team, players_agents, buy_info_team, buy_info_oppo) = rounds_ss(rounds)
+     fb_team, players_agents, buy_info_team, buy_info_oppo, map_name) = rounds_ss(rounds)
 
     df['side'] = sides[:rounds]
     df['round_win'] = outcomes
@@ -81,17 +81,17 @@ def rounds_ss(total_rounds):
     who_fb = []
 
     while True:
-        if py.keyboard.is_pressed('p'):
+        if keyboard.is_pressed('p'):
             image = py.screenshot()
             cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
             b, g, r = cv_image[520, 1150]
             greens.append(g)
             tl_ss.append(cv_image)
+            print(len(tl_ss))
             plt.imshow(cv_image)
             plt.show()
-            time.sleep(0.5)
 
-        if py.keyboard.is_pressed('q'):
+        if keyboard.is_pressed('q'):
             break
 
     players_agents, agents_names = zip_player_agents()
@@ -99,12 +99,13 @@ def rounds_ss(total_rounds):
     timestamps, plants, buy_info_team, buy_info_oppo = rounds_ocr(tl_ss)
     fk_player, fk_death = match_agent(agent_list, tl_ss, agents_names)
     outcomes = ocr_round_win(tl_ss)
+    map_name = get_metadata(tl_ss)
 
     for green in greens:
         flag = 'you' if green > 100 else 'opponent'
         who_fb.append(flag)
 
-    return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents, buy_info_team, buy_info_oppo
+    return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents, buy_info_team, buy_info_oppo, map_name
 
 
 def df_to_json():
@@ -243,13 +244,13 @@ def final_score_ocr():
     return score[0].__str__(), score[1].__str__(), score[2].__str__()
 
 
-def get_metadata():
-    image = py.screenshot()
-    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+def get_metadata(tl_ss):
+    cv_image = tl_ss[0]
     file = cv_image[125:145, 120:210]
     gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
     gray = cv.convertScaleAbs(gray, 1, 5)
     result = reader.readtext(gray, detail=0)
+    print(result)
     return result[0].__str__().lower()
 
 
