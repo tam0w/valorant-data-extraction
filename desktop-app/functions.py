@@ -1,7 +1,6 @@
 from datetime import datetime
 import cv2 as cv
 import easyocr
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyautogui as py
@@ -15,7 +14,7 @@ reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
 header = ['first_kill', 'time', 'first_death', 'planted', 'fb_team',
           'defuse', 'side', 'fb_players', 'dt_players', 'team_buy', 'oppo_buy', 'round_win']
-
+username = os.getlogin()
 
 # Functions
 
@@ -30,6 +29,9 @@ def analyze():
     rounds, sides = scores_ocr()
     (first_action_times, plants_or_not, fk_player, fk_death, outcomes,
      fb_team, players_agents, buy_info_team, buy_info_oppo, map_name) = rounds_ss(rounds)
+
+    if not os.path.exists(rf'C:\Users\{username}\Desktop\scrims'):
+        os.makedirs(rf'C:\Users\{username}\Desktop\scrims')
 
     df['side'] = sides[:rounds]
     df['round_win'] = outcomes
@@ -66,7 +68,7 @@ def analyze():
     date = datetime.now()
     dt_string = date.strftime("%d_%m_%Y_time_%H_%M")
 
-    df.to_csv(path_or_buf=rf'D:\PROJECTS\demo-analysis-timeline\res\scrims\{map_name}_{dt_string}.csv',
+    df.to_csv(path_or_buf=rf'C:\Users\{username}\Desktop\scrims\{map_name}_{dt_string}.csv',
               sep='\t', header=header)
     print(df)
 
@@ -87,9 +89,7 @@ def rounds_ss(total_rounds):
             b, g, r = cv_image[520, 1150]
             greens.append(g)
             tl_ss.append(cv_image)
-            print(len(tl_ss))
-            plt.imshow(cv_image)
-            plt.show()
+            print("Round screenshotted: ", len(tl_ss))
 
         if keyboard.is_pressed('q'):
             break
@@ -250,7 +250,6 @@ def get_metadata(tl_ss):
     gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
     gray = cv.convertScaleAbs(gray, 1, 5)
     result = reader.readtext(gray, detail=0)
-    print(result)
     return result[0].__str__().lower()
 
 
