@@ -90,8 +90,10 @@ def rounds_ss(total_rounds):
             greens.append(g)
             tl_ss.append(cv_image)
             print("Round screenshotted: ", len(tl_ss))
+            time.sleep(0.3)
 
         if keyboard.is_pressed('q'):
+            print('Timeline screenshotting complete.')
             break
 
     players_agents, agents_names = zip_player_agents()
