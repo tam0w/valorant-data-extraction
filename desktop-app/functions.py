@@ -28,7 +28,7 @@ def analyze():
 
     rounds, sides = scores_ocr()
     (first_action_times, plants_or_not, fk_player, fk_death, outcomes,
-     fb_team, players_agents, buy_info_team, buy_info_oppo, map_name) = rounds_ss(rounds)
+     fb_team, players_agents, buy_info_team, buy_info_oppo, map_name) = rounds_ss()
 
     if not os.path.exists(rf'C:\Users\{username}\Desktop\scrims'):
         os.makedirs(rf'C:\Users\{username}\Desktop\scrims')
@@ -73,7 +73,7 @@ def analyze():
     print(df)
 
 
-def rounds_ss(total_rounds):
+def rounds_ss():
     """ This function will go to the timeline page of the match in question and screenshot every page of the timeline.
     It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
     list will be returned to the 'analyze' function. """
@@ -101,13 +101,13 @@ def rounds_ss(total_rounds):
     timestamps, plants, buy_info_team, buy_info_oppo = rounds_ocr(tl_ss)
     fk_player, fk_death = match_agent(agent_list, tl_ss, agents_names)
     outcomes = ocr_round_win(tl_ss)
-    map_name = get_metadata(tl_ss)
+    ma = get_metadata(tl_ss)
 
     for green in greens:
         flag = 'you' if green > 100 else 'opponent'
         who_fb.append(flag)
 
-    return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents, buy_info_team, buy_info_oppo, map_name
+    return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents, buy_info_team, buy_info_oppo, ma
 
 
 def df_to_json():
@@ -165,7 +165,7 @@ def all_agents():
             b, g, r = image[u, gr_check]
 
         st_l = gr_check + 3
-        b, new_g, r = image[u, st_l]
+        _, new_g, _ = image[u, st_l]
         cur_img = image[u:u + 40, st_l:st_l + 40]
         st_u = u + 42
 
@@ -175,14 +175,14 @@ def all_agents():
 
     for i in range(5):
 
-        b, g, r = image[st_u, gr_check]
+        _, _, r = image[st_u, gr_check]
         u = st_u
         while r < 180:
             u = u + 1
             b, g, r = image[u, gr_check]
 
         st_l = gr_check + 3
-        b, g, new_r = image[u, st_l]
+        _, _, new_r = image[u, st_l]
         cur_img = image[u:u + 40, st_l:st_l + 40]
         st_u = u + 42
 
