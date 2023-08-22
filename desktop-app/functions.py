@@ -334,6 +334,9 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
 
 
 def total_events(tl_ss):
+
+    """Total kills including plants and defuses."""
+
     events_team = []
     events_opp = []
 
