@@ -27,8 +27,8 @@ def analyze():
     df = pd.DataFrame(columns=header)
 
     rounds, sides = scores_ocr()
-    (first_action_times, plants_or_not, fk_player, fk_death, outcomes,
-     fb_team, players_agents, buy_info_team, buy_info_oppo, map_name) = rounds_ss()
+    (first_action_times, plants, defuses, fk_player, fk_death, outcomes,
+     fb_team, players_agents, buy_info_team, buy_info_oppo, map_name, events, first_is_plant) = rounds_ss()
 
     if not os.path.exists(rf'C:\Users\{username}\Desktop\scrims'):
         os.makedirs(rf'C:\Users\{username}\Desktop\scrims')
@@ -40,15 +40,10 @@ def analyze():
     df['fb_team'] = fb_team
     df['team_buy'] = buy_info_team
     df['oppo_buy'] = buy_info_oppo
-
-    plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     df['planted'] = plants
-
-    defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
     df['defuse'] = defuses
 
     first_kill_times = []
-    first_is_plant = [round_instance[0].__contains__('Planted') for round_instance in plants_or_not]
 
     for i, round_instance in enumerate(first_action_times):
 
@@ -71,6 +66,7 @@ def analyze():
     df.to_csv(path_or_buf=rf'C:\Users\{username}\Desktop\scrims\{map_name}_{dt_string}.csv',
               sep='\t', header=header)
     print(df)
+    print(events)
 
 
 def rounds_ss():
@@ -98,16 +94,28 @@ def rounds_ss():
 
     players_agents, agents_names = zip_player_agents()
     agent_list = all_agents()
-    timestamps, plants, buy_info_team, buy_info_oppo = rounds_ocr(tl_ss)
+    timestamps, plants_or_not, buy_info_team, buy_info_oppo = rounds_ocr(tl_ss)
     fk_player, fk_death = match_agent(agent_list, tl_ss, agents_names)
     outcomes = ocr_round_win(tl_ss)
-    ma = get_metadata(tl_ss)
+    map_info = get_metadata(tl_ss)
+    events = total_events(tl_ss)
+
+    plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
+    defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
+    first_is_plant = [round_instance[0].__contains__('Planted') for round_instance in plants_or_not]
+
+    for i in len(events):
+        if plants[i]:
+            events[i] -= 1
+        if defuses[i]:
+            events[i] -= 1
 
     for green in greens:
         flag = 'you' if green > 100 else 'opponent'
         who_fb.append(flag)
 
-    return timestamps, plants, fk_player, fk_death, outcomes, who_fb, players_agents, buy_info_team, buy_info_oppo, ma
+    return (timestamps, plants, defuses, fk_player, fk_death, outcomes, who_fb, players_agents,
+            buy_info_team, buy_info_oppo, map_info, events, first_is_plant)
 
 
 def df_to_json():
@@ -311,3 +319,19 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
             final_opponent_dt_list.append(players_agents_oppo.get(agent))
 
     return final_player_fk_list, final_opponent_dt_list
+
+
+def total_events(tl_ss):
+    events = []
+    for pic in tl_ss:
+        start = 510
+        counter = 0
+        while True:
+            b1, g1, r1 = pic[start,940]
+            if g1 > 200 or r1 > 200 or b1 > 200:
+                counter += 1
+            if b1 < 100 and g1 < 100 and r1 < 100:
+                events.append(counter)
+                break
+            start += 38
+    return events
