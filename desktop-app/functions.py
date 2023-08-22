@@ -12,8 +12,8 @@ import keyboard
 
 reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
-header = ['first_kill', 'time', 'first_death', 'planted', 'fb_team',
-          'defuse', 'side', 'fb_players', 'dt_players', 'team_buy', 'oppo_buy', 'round_win']
+header = ['first_kill', 'time', 'first_death', 'planted', 'fb_team', 'defuse', 'side', 'fb_players', 'dt_players',
+          'team_buy', 'oppo_buy', 'total_kills', 'total_deaths', 'round_win']
 username = os.getlogin()
 
 # Functions
@@ -26,9 +26,8 @@ def analyze():
 
     df = pd.DataFrame(columns=header)
 
-    rounds, sides = scores_ocr()
-    (first_action_times, plants, defuses, fk_player, fk_death, outcomes,
-     fb_team, players_agents, buy_info_team, buy_info_oppo, map_name, events, first_is_plant) = rounds_ss()
+    (first_action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, players_agents, buy_info_team,
+     buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds) = rounds_ss()
 
     if not os.path.exists(rf'C:\Users\{username}\Desktop\scrims'):
         os.makedirs(rf'C:\Users\{username}\Desktop\scrims')
@@ -42,6 +41,8 @@ def analyze():
     df['oppo_buy'] = buy_info_oppo
     df['planted'] = plants
     df['defuse'] = defuses
+    df['total_kills'] = kills_team
+    df['total_deaths'] = kills_opp
 
     first_kill_times = []
 
@@ -66,13 +67,14 @@ def analyze():
     df.to_csv(path_or_buf=rf'C:\Users\{username}\Desktop\scrims\{map_name}_{dt_string}.csv',
               sep='\t', header=header)
     print(df)
-    print(events)
 
 
 def rounds_ss():
     """ This function will go to the timeline page of the match in question and screenshot every page of the timeline.
     It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
     list will be returned to the 'analyze' function. """
+
+    rounds, sides = scores_ocr()
 
     tl_ss = []
     greens = []
@@ -93,29 +95,43 @@ def rounds_ss():
             break
 
     players_agents, agents_names = zip_player_agents()
-    agent_list = all_agents()
+    agent_list = all_agents(tl_ss)
     timestamps, plants_or_not, buy_info_team, buy_info_oppo = rounds_ocr(tl_ss)
     fk_player, fk_death = match_agent(agent_list, tl_ss, agents_names)
     outcomes = ocr_round_win(tl_ss)
     map_info = get_metadata(tl_ss)
-    events = total_events(tl_ss)
+    events_team, events_opp = total_events(tl_ss)
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
     first_is_plant = [round_instance[0].__contains__('Planted') for round_instance in plants_or_not]
 
-    for i in len(events):
-        if plants[i]:
-            events[i] -= 1
-        if defuses[i]:
-            events[i] -= 1
-
     for green in greens:
         flag = 'you' if green > 100 else 'opponent'
         who_fb.append(flag)
+    print(plants,"TEST\n",defuses)
+
+    for i in range(len(events_team)):
+        try:
+            print(plants[i])
+        finally:
+            print('welp')
+
+        if plants[i] == 'True':
+
+            if sides[i] == 'Attack':
+                events_team[i] -= 1
+            else:
+                events_opp[i] -= 1
+
+        if defuses[i] == 'True':
+            if sides[i] == 'Defense':
+                events_team[i] -= 1
+            else:
+                events_opp[i] -= 1
 
     return (timestamps, plants, defuses, fk_player, fk_death, outcomes, who_fb, players_agents,
-            buy_info_team, buy_info_oppo, map_info, events, first_is_plant)
+            buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds)
 
 
 def df_to_json():
@@ -155,9 +171,9 @@ def rounds_ocr(all_round_images):
     return timestamps, plants, buy_info_team, buy_info_oppo
 
 
-def all_agents():
-    ss = py.screenshot()
-    image = cv.cvtColor(np.array(ss), cv.COLOR_RGB2BGR)
+def all_agents(tl_ss):
+
+    image =  tl_ss[0]
     agent_list = []
 
     st_u = 503
@@ -322,16 +338,22 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
 
 
 def total_events(tl_ss):
-    events = []
+    events_team = []
+    events_opp = []
+
     for pic in tl_ss:
         start = 510
-        counter = 0
+        counter_opp = 0
+        counter_team = 0
         while True:
-            b1, g1, r1 = pic[start,940]
-            if g1 > 200 or r1 > 200 or b1 > 200:
-                counter += 1
+            b1, g1, r1 = pic[start, 940]
+            if g1 > 190 and b1 > 100:
+                counter_team += 1
+            if g1 < 100 or r1 > 200 or b1 < 100:
+                counter_opp += 1
             if b1 < 100 and g1 < 100 and r1 < 100:
-                events.append(counter)
+                events_team.append(counter_team)
+                events_opp.append(counter_opp)
                 break
             start += 38
-    return events
+    return events_team, events_opp
