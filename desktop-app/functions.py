@@ -112,19 +112,15 @@ def rounds_ss():
     print(plants,"TEST\n",defuses)
 
     for i in range(len(events_team)):
-        try:
-            print(plants[i])
-        finally:
-            print('welp')
 
-        if plants[i] == 'True':
+        if plants[i] is True:
 
             if sides[i] == 'Attack':
                 events_team[i] -= 1
             else:
                 events_opp[i] -= 1
 
-        if defuses[i] == 'True':
+        if defuses[i] is True:
             if sides[i] == 'Defense':
                 events_team[i] -= 1
             else:
@@ -349,7 +345,7 @@ def total_events(tl_ss):
             b1, g1, r1 = pic[start, 940]
             if g1 > 190 and b1 > 100:
                 counter_team += 1
-            if g1 < 100 or r1 > 200 or b1 < 100:
+            if g1 < 100 and r1 > 200 and b1 < 100:
                 counter_opp += 1
             if b1 < 100 and g1 < 100 and r1 < 100:
                 events_team.append(counter_team)
