@@ -164,6 +164,11 @@ def rounds_ocr(all_round_images):
     all_round_images_cropped_plants = [images[505:970, 1150:1230] for images in all_round_images]
     plants = [reader.readtext(image, detail=0) for image in all_round_images_cropped_plants]
 
+    awp_or_no = [images[450:950, 650:785] for images in all_round_images]
+    awps = [reader.readtext(image, detail=0) for image in awp_or_no]
+    counter = [awp.count('Operator') for awp in awps]
+    print(counter)
+
     return timestamps, plants, buy_info_team, buy_info_oppo
 
 
