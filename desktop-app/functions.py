@@ -126,7 +126,7 @@ def rounds_ss():
             awp_info.append('both')
 
     for green in greens:
-        flag = 'you' if green > 100 else 'opponent'
+        flag = 'team' if green > 100 else 'opponent'
         who_fb.append(flag)
 
     for i in range(len(events_team)):
@@ -184,7 +184,6 @@ def rounds_ocr(all_round_images):
 
     awp_or_no = [images[450:950, 650:785] for images in all_round_images]
     awps = [reader.readtext(image, detail=0) for image in awp_or_no]
-    print(awps)
 
     return timestamps, plants, buy_info_team, buy_info_oppo, awps
 
@@ -333,7 +332,7 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
     players_agents_oppo = dict(list(players_agents.items())[5:])
     players_agents_team = {value: key for key, value in players_agents_team.items()}
     players_agents_oppo = {value: key for key, value in players_agents_oppo.items()}
-    print("Your team:", players_agents_team, "\n", "Oppoennt:", players_agents_oppo)
+    print("Your team:", players_agents_team, "\n", "Opponent:", players_agents_oppo)
 
     final_player_fk_list = []
     final_opponent_dt_list = []
@@ -377,4 +376,5 @@ def total_events(tl_ss):
                 events_opp.append(counter_opp)
                 break
             start += 38
+
     return events_team, events_opp
