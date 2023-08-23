@@ -109,19 +109,19 @@ def rounds_ss():
     awp_info = []
 
     for awp in awps:
-        print(awp)
         indexes = [idx for idx, value in enumerate(awp) if value == 'Operator']
         print(indexes)
+        print(len(indexes))
         if len(indexes) == 0:
             awp_info.append('none')
-            break
+            continue
         if len(indexes) == 1:
-            if indexes[0] > 5:
+            if indexes[0] < 11:
                 awp_info.append('team')
-                break
+                continue
             else:
                 awp_info.append('opponent')
-                break
+                continue
         if len(indexes) == 2:
             awp_info.append('both')
 
