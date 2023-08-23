@@ -409,4 +409,5 @@ def bombsite(tl_ss, map_name):
 
             elif map_name == 'Fracture':
 
-            elif map_name == 'Split':
+            elif map_name == 'Split'
+
