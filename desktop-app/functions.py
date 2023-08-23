@@ -379,3 +379,36 @@ def total_events(tl_ss):
             start += 38
 
     return events_team, events_opp
+
+
+def bombsite(tl_ss, map_name):
+    spike_p = r'D:\PROJECTS\demo-analysis-timeline\legacy\test1.png'
+    spike = cv.imread(spike_p)
+    # spike = cv.resize(spike,dsize=(15,15))
+    plt.imshow(spike)
+    plt.show
+
+    for image in tl_ss:
+
+        minimap = image[490:990, 1270:1770]
+        plt.imshow(minimap)
+        plt.show()
+        resu = cv.matchTemplate(minimap, spike, cv.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv.minMaxLoc(resu)
+        print(max_loc, max_val)
+
+        if max_val > 70:
+
+            if map_name == 'Bind':
+
+            elif map_name == 'Ascent':
+
+            elif map_name == 'Haven':
+
+            elif map_name == 'Lotus':
+
+            elif map_name == 'Pearl':
+
+            elif map_name == 'Fracture':
+
+            elif map_name == 'Split':
