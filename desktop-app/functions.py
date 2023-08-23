@@ -12,8 +12,8 @@ import keyboard
 
 reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
-header = ['first_kill', 'time', 'first_death', 'planted', 'fb_team', 'defuse', 'side', 'fb_players', 'dt_players',
-          'team_buy', 'oppo_buy', 'total_kills', 'total_deaths', 'awps_info', 'round_win']
+header = ['first_kill', 'time', 'first_death', 'planted', 'fb_team', 'defuse', 'fb_players', 'dt_players',
+          'team_buy', 'oppo_buy', 'total_kills', 'total_deaths', 'awps_info', 'side', 'round_win']
 username = os.getlogin()
 
 # Functions
@@ -26,7 +26,7 @@ def analyze():
 
     df = pd.DataFrame(columns=header)
 
-    (first_action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, players_agents, awp_info,
+    (first_action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, players_agents, awp_info, fscore,
      buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds) = rounds_ss()
 
     if not os.path.exists(rf'C:\Users\{username}\Desktop\scrims'):
@@ -63,9 +63,9 @@ def analyze():
     df['dt_players'] = dt_players
 
     date = datetime.now()
-    dt_string = date.strftime("%d_%m_%Y_time_%H_%M")
+    dt_string = date.strftime("%d_%m_%Y")
 
-    df.to_csv(path_or_buf=rf'C:\Users\{username}\Desktop\scrims\{map_name}_{dt_string}.csv',
+    df.to_csv(path_or_buf=rf'C:\Users\{username}\Desktop\scrims\{dt_string}_{map_name}_{fscore}.csv',
               sep='\t', header=header)
     print(df)
 
@@ -75,7 +75,7 @@ def rounds_ss():
     It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
     list will be returned to the 'analyze' function. """
 
-    rounds, sides = scores_ocr()
+    rounds, sides, fscore = scores_ocr()
 
     tl_ss = []
     greens = []
@@ -144,7 +144,7 @@ def rounds_ss():
             else:
                 events_opp[i] -= 1
 
-    return (timestamps, plants, defuses, fk_player, fk_death, outcomes, who_fb, players_agents, awp_info,
+    return (timestamps, plants, defuses, fk_player, fk_death, outcomes, who_fb, players_agents, awp_info, fscore,
             buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds)
 
 
@@ -160,10 +160,11 @@ def scores_ocr():
     time.sleep(0.15)
 
     my_rounds, match_result, opp_rounds = final_score_ocr()
-    print("Score:", my_rounds, "-", opp_rounds, "\nResult: ", match_result)
+    fscore = my_rounds+" - "+opp_rounds
+    print("Score:", fscore, "\nResult: ", match_result)
     total_rounds = int(my_rounds) + int(opp_rounds)
 
-    return total_rounds, sides
+    return total_rounds, sides, fscore
 
 
 def rounds_ocr(all_round_images):
