@@ -7,6 +7,7 @@ import pyautogui as py
 import time
 import os
 import keyboard
+import matplotlib.pyplot as plt
 
 # Load resources
 
@@ -391,11 +392,8 @@ def bombsite(tl_ss, map_name):
     for image in tl_ss:
 
         minimap = image[490:990, 1270:1770]
-        plt.imshow(minimap)
-        plt.show()
         resu = cv.matchTemplate(minimap, spike, cv.TM_CCOEFF_NORMED)
         min_val, max_val, min_loc, max_loc = cv.minMaxLoc(resu)
-        print(max_loc, max_val)
 
         if max_val > 70:
 
