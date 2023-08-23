@@ -96,7 +96,7 @@ def rounds_ss():
 
     players_agents, agents_names = zip_player_agents()
     agent_list = all_agents(tl_ss)
-    timestamps, plants_or_not, buy_info_team, buy_info_oppo = rounds_ocr(tl_ss)
+    timestamps, plants_or_not, buy_info_team, buy_info_oppo, awps = rounds_ocr(tl_ss)
     fk_player, fk_death = match_agent(agent_list, tl_ss, agents_names)
     outcomes = ocr_round_win(tl_ss)
     map_info = get_metadata(tl_ss)
@@ -106,10 +106,30 @@ def rounds_ss():
     defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
     first_is_plant = [round_instance[0].__contains__('Planted') for round_instance in plants_or_not]
 
+    awp_info = []
+
+    for awp in awps:
+        print(awp)
+        indexes = [idx for idx, value in enumerate(awp) if value == 'Operator']
+        print(indexes)
+        if len(indexes) == 0:
+            awp_info.append('none')
+            break
+        if len(indexes) == 1:
+            if indexes[0] > 5:
+                awp_info.append('team')
+                break
+            else:
+                awp_info.append('opponent')
+                break
+        if len(indexes) == 2:
+            awp_info.append('both')
+
+    print(awp_info)
+
     for green in greens:
         flag = 'you' if green > 100 else 'opponent'
         who_fb.append(flag)
-    print(plants,"TEST\n",defuses)
 
     for i in range(len(events_team)):
 
@@ -166,15 +186,14 @@ def rounds_ocr(all_round_images):
 
     awp_or_no = [images[450:950, 650:785] for images in all_round_images]
     awps = [reader.readtext(image, detail=0) for image in awp_or_no]
-    counter = [awp.count('Operator') for awp in awps]
-    print(counter)
+    print(awps)
 
-    return timestamps, plants, buy_info_team, buy_info_oppo
+    return timestamps, plants, buy_info_team, buy_info_oppo, awps
 
 
 def all_agents(tl_ss):
 
-    image =  tl_ss[0]
+    image = tl_ss[0]
     agent_list = []
 
     st_u = 503
