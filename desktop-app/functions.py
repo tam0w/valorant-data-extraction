@@ -103,6 +103,7 @@ def rounds_ss():
     outcomes = ocr_round_win(tl_ss)
     map_info = get_metadata(tl_ss)
     events_team, events_opp = total_events(tl_ss)
+    site_list = bombsites_plants(tl_ss, map_info)
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
@@ -382,32 +383,65 @@ def total_events(tl_ss):
     return events_team, events_opp
 
 
-def bombsite(tl_ss, map_name):
+def bombsites_plants(tl_ss, map_name):
+
     spike_p = r'D:\PROJECTS\demo-analysis-timeline\legacy\test1.png'
     spike = cv.imread(spike_p)
-    # spike = cv.resize(spike,dsize=(15,15))
-    plt.imshow(spike)
-    plt.show
+
+    sites = []
 
     for image in tl_ss:
 
         minimap = image[490:990, 1270:1770]
         resu = cv.matchTemplate(minimap, spike, cv.TM_CCOEFF_NORMED)
         min_val, max_val, min_loc, max_loc = cv.minMaxLoc(resu)
+        x, y = max_loc
 
-        if max_val > 70:
+        if max_val > 0.70:
 
             if map_name == 'Bind':
+                site = 'B' if x < 250 else 'A'
 
             elif map_name == 'Ascent':
+                site = 'B' if y < 250 else 'A'
 
             elif map_name == 'Haven':
+                if y < 150:
+                    site = 'A'
+                elif 150 < y < 280:
+                    site = 'B'
+                else:
+                    site = 'C'
 
             elif map_name == 'Lotus':
+                if x < 150:
+                    site = 'C'
+                elif 150 < x < 3000:
+                    site = 'B'
+                else:
+                    site = 'A'
 
             elif map_name == 'Pearl':
+                if x < 250 and 90 < y < 210:
+                    site = 'B'
+                if x > 250 and 90 < y < 210:
+                    site = 'A'
 
             elif map_name == 'Fracture':
+                if x > 250 and 190 < y < 290:
+                    site = 'A'
+                if x < 250 and 190 < y < 290:
+                    site = 'B'
 
-            elif map_name == 'Split'
+            elif map_name == 'Split':
+                site = 'B' if y > 250 else 'A'
 
+            sites.append(site)
+
+        else:
+
+            sites.append("not planted")
+
+        print(site)
+
+    return sites
