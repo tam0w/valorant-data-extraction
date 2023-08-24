@@ -436,12 +436,15 @@ def bombsites_plants(tl_ss, map_name):
             elif map_name == 'Split':
                 site = 'B' if y > 250 else 'A'
 
+            else:
+                site = 'unclear'
+
             sites.append(site)
 
         else:
 
             sites.append("not planted")
 
-        print(sites)
+    print(sites)
 
     return sites
