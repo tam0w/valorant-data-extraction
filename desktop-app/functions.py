@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
-header = ['first_kill', 'time', 'first_death', 'planted', 'fb_team', 'defuse', 'fb_players', 'dt_players',
+header = ['first_kill', 'time', 'first_death', 'spike_plant', 'defuse', 'fb_team', 'fb_players', 'dt_players',
           'team_buy', 'oppo_buy', 'total_kills', 'total_deaths', 'awps_info', 'side', 'round_win']
 username = os.getlogin()
 
@@ -46,7 +46,7 @@ def analyze():
     df['total_kills'] = kills_team
     df['total_deaths'] = kills_opp
     df['awps_info'] = awp_info
-    df['planted'] = bombsites
+    df['spike_plant'] = bombsites
 
     first_kill_times = []
 
