@@ -442,6 +442,6 @@ def bombsites_plants(tl_ss, map_name):
 
             sites.append("not planted")
 
-        print(site)
+        print(sites)
 
     return sites
