@@ -28,7 +28,8 @@ def analyze():
     df = pd.DataFrame(columns=header)
 
     (first_action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, players_agents, awp_info, fscore,
-     buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds) = rounds_ss()
+     buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds, bombsites
+     ) = rounds_ss()
 
     if not os.path.exists(rf'C:\Users\{username}\Desktop\scrims'):
         os.makedirs(rf'C:\Users\{username}\Desktop\scrims')
@@ -45,6 +46,7 @@ def analyze():
     df['total_kills'] = kills_team
     df['total_deaths'] = kills_opp
     df['awps_info'] = awp_info
+    df['planted'] = bombsites
 
     first_kill_times = []
 
@@ -151,7 +153,7 @@ def rounds_ss():
                 events_opp[i] -= 1
 
     return (timestamps, plants, defuses, fk_player, fk_death, outcomes, who_fb, players_agents, awp_info, fscore,
-            buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds)
+            buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds, site_list)
 
 
 def df_to_json():
@@ -447,7 +449,7 @@ def bombsites_plants(tl_ss, map_name):
 
         else:
 
-            sites.append("not planted")
+            sites.append("False")
 
     print(sites)
 
