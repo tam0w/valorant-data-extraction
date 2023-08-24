@@ -403,13 +403,13 @@ def bombsites_plants(tl_ss, map_name):
 
         if max_val > 0.70:
 
-            if map_name == 'Bind':
+            if map_name == 'bind':
                 site = 'B' if x < 250 else 'A'
 
-            elif map_name == 'Ascent':
+            elif map_name == 'ascent':
                 site = 'B' if y < 250 else 'A'
 
-            elif map_name == 'Haven':
+            elif map_name == 'haven':
                 if y < 150:
                     site = 'A'
                 elif 150 < y < 280:
@@ -417,7 +417,7 @@ def bombsites_plants(tl_ss, map_name):
                 else:
                     site = 'C'
 
-            elif map_name == 'Lotus':
+            elif map_name == 'lotus':
                 if x < 150:
                     site = 'C'
                 elif 150 < x < 3000:
@@ -425,19 +425,19 @@ def bombsites_plants(tl_ss, map_name):
                 else:
                     site = 'A'
 
-            elif map_name == 'Pearl':
+            elif map_name == 'pearl':
                 if x < 250 and 90 < y < 210:
                     site = 'B'
                 if x > 250 and 90 < y < 210:
                     site = 'A'
 
-            elif map_name == 'Fracture':
+            elif map_name == 'fracture':
                 if x > 250 and 190 < y < 290:
                     site = 'A'
                 if x < 250 and 190 < y < 290:
                     site = 'B'
 
-            elif map_name == 'Split':
+            elif map_name == 'split':
                 site = 'B' if y > 250 else 'A'
 
             else:
