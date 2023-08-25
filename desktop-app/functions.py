@@ -41,7 +41,6 @@ def analyze():
     df['fb_team'] = fb_team
     df['team_buy'] = buy_info_team
     df['oppo_buy'] = buy_info_oppo
-    df['planted'] = plants
     df['defuse'] = defuses
     df['total_kills'] = kills_team
     df['total_deaths'] = kills_opp
@@ -391,7 +390,7 @@ def total_events(tl_ss):
 
 def bombsites_plants(tl_ss, map_name):
 
-    spike_p = r'D:\PROJECTS\demo-analysis-timeline\legacy\test1.png'
+    spike_p = r'D:\PROJECTS\demo-analysis-timeline\res\spike.png'
     spike = cv.imread(spike_p)
 
     sites = []
