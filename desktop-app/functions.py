@@ -111,8 +111,7 @@ def rounds_ss():
     first_is_plant = [round_instance[0].__contains__('Planted') for round_instance in plants_or_not]
 
     awp_info = []
-    print(len(awps))
-    print(awps)
+
 
     for awp in awps:
         indexes = [idx for idx, value in enumerate(awp) if value == 'Operator']
@@ -130,7 +129,6 @@ def rounds_ss():
         if len(indexes) == 2:
             awp_info.append('both')
 
-    print(awp_info)
 
     for green in greens:
         flag = 'team' if green > 100 else 'opponent'
@@ -449,7 +447,5 @@ def bombsites_plants(tl_ss, map_name):
         else:
 
             sites.append("False")
-
-    print(sites)
 
     return sites
