@@ -66,6 +66,8 @@ def analyze():
 
     with open('data.json','w') as jsonf:
         json.dump(data, jsonf)
+
+    jsondata = json.dumps(data)
     #
     # df.to_csv(path_or_buf=rf'C:\Users\{username}\Desktop\scrims\{dt_string}_{map_name}_{fscore}.csv',
     #           sep='\t', header=header)
