@@ -38,6 +38,26 @@ def analyze():
     names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "players_agents", "awp_info", "fscore",
      "buy_info_team", "buy_info_oppo", "map_name", "kills_team", "kills_opp", "first_is_plant", "sides", "rounds", "bombsites"]
 
+    first_kill_times = []
+
+    for i, round_instance in enumerate(first_action_times):
+
+        if first_is_plant[i] is False:
+            first_kill_times.append(round_instance[0])
+
+        else:
+            first_kill_times.append(round_instance[1])
+
+    df['time'] = first_kill_times
+    df.index += 1
+
+    fbs_players, dt_players = map_player_agents(fb_team, fk_player, fk_death, players_agents)
+    df['fb_players'] = fbs_players
+    df['dt_players'] = dt_players
+
+    date = datetime.now()
+    dt_string = date.strftime("%d_%m_%Y")
+
     data = {}
 
     for name, lst in zip(names, lists):
@@ -46,43 +66,6 @@ def analyze():
 
     with open('data.json','w') as jsonf:
         json.dump(data, jsonf)
-
-
-    # if not os.path.exists(rf'C:\Users\{username}\Desktop\scrims'):
-    #     os.makedirs(rf'C:\Users\{username}\Desktop\scrims')
-    #
-    # df['side'] = sides[:rounds]
-    # df['round_win'] = outcomes
-    # df['first_kill'] = fk_player
-    # df['first_death'] = fk_death
-    # df['fb_team'] = fb_team
-    # df['team_buy'] = buy_info_team
-    # df['oppo_buy'] = buy_info_oppo
-    # df['defuse'] = defuses
-    # df['total_kills'] = kills_team
-    # df['total_deaths'] = kills_opp
-    # df['awps_info'] = awp_info
-    # df['spike_plant'] = bombsites
-    #
-    # first_kill_times = []
-    #
-    # for i, round_instance in enumerate(first_action_times):
-    #
-    #     if first_is_plant[i] is False:
-    #         first_kill_times.append(round_instance[0])
-    #
-    #     else:
-    #         first_kill_times.append(round_instance[1])
-    #
-    # df['time'] = first_kill_times
-    # df.index += 1
-    #
-    # fbs_players, dt_players = map_player_agents(fb_team, fk_player, fk_death, players_agents)
-    # df['fb_players'] = fbs_players
-    # df['dt_players'] = dt_players
-    #
-    # date = datetime.now()
-    # dt_string = date.strftime("%d_%m_%Y")
     #
     # df.to_csv(path_or_buf=rf'C:\Users\{username}\Desktop\scrims\{dt_string}_{map_name}_{fscore}.csv',
     #           sep='\t', header=header)
