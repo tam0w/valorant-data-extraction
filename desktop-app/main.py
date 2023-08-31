@@ -9,6 +9,7 @@ import os
 import keyboard
 import matplotlib.pyplot as plt
 import json
+import requests
 
 # Load resources
 
@@ -17,6 +18,7 @@ agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', he
 header = ['first_kill', 'time', 'first_death', 'spike_plant', 'defuse', 'fb_team', 'fb_players', 'dt_players',
           'team_buy', 'oppo_buy', 'total_kills', 'total_deaths', 'awps_info', 'side', 'round_win']
 username = os.getlogin()
+
 
 # Functions
 
@@ -32,11 +34,14 @@ def analyze():
      buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds, bombsites
      ) = rounds_ss()
 
-    lists = [first_action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, players_agents, awp_info, fscore,
-     buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds, bombsites]
+    lists = [first_action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, players_agents, awp_info,
+             fscore,
+             buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds, bombsites]
 
-    names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "players_agents", "awp_info", "fscore",
-     "buy_info_team", "buy_info_oppo", "map_name", "kills_team", "kills_opp", "first_is_plant", "sides", "rounds", "bombsites"]
+    names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team",
+             "players_agents", "awp_info", "fscore",
+             "buy_info_team", "buy_info_oppo", "map_name", "kills_team", "kills_opp", "first_is_plant", "sides",
+             "rounds", "bombsites"]
 
     first_kill_times = []
 
@@ -64,10 +69,18 @@ def analyze():
         data[name] = lst
         print(data)
 
-    with open('data.json','w') as jsonf:
+    with open('data.json', 'w') as jsonf:
         json.dump(data, jsonf)
 
     jsondata = json.dumps(data)
+
+    emaildesk = input('Enter your registered email:')
+    passdesk = input('Enter your registered password:')
+
+    credentials = {"emaildesk": emaildesk, "passdesk": passdesk}
+
+    test = requests.post('http://127.0.0.1:5000/app/api', json=jsondata, headers=credentials)
+    print(test)
     #
     # df.to_csv(path_or_buf=rf'C:\Users\{username}\Desktop\scrims\{dt_string}_{map_name}_{fscore}.csv',
     #           sep='\t', header=header)
@@ -114,7 +127,6 @@ def rounds_ss():
 
     awp_info = []
 
-
     for awp in awps:
         indexes = [idx for idx, value in enumerate(awp) if value == 'Operator']
 
@@ -130,7 +142,6 @@ def rounds_ss():
                 continue
         if len(indexes) == 2:
             awp_info.append('both')
-
 
     for green in greens:
         flag = 'team' if green > 100 else 'opponent'
@@ -167,7 +178,7 @@ def scores_ocr():
     time.sleep(0.15)
 
     my_rounds, match_result, opp_rounds = final_score_ocr()
-    fscore = my_rounds+" - "+opp_rounds
+    fscore = my_rounds + " - " + opp_rounds
     print("Score:", fscore, "\nResult: ", match_result)
     total_rounds = int(my_rounds) + int(opp_rounds)
 
@@ -197,7 +208,6 @@ def rounds_ocr(all_round_images):
 
 
 def all_agents(tl_ss):
-
     image = tl_ss[0]
     agent_list = []
 
@@ -363,7 +373,6 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
 
 
 def total_events(tl_ss):
-
     """Total kills including plants and defuses."""
 
     events_team = []
@@ -389,7 +398,6 @@ def total_events(tl_ss):
 
 
 def bombsites_plants(tl_ss, map_name):
-
     spike_p = r'D:\PROJECTS\demo-analysis-timeline\res\spike.png'
     spike = cv.imread(spike_p)
 
@@ -451,5 +459,6 @@ def bombsites_plants(tl_ss, map_name):
             sites.append("False")
 
     return sites
+
 
 analyze()
