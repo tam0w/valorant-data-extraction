@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 import cv2 as cv
 import easyocr
@@ -67,7 +68,6 @@ def analyze():
 
     for name, lst in zip(names, lists):
         data[name] = lst
-        print(data)
 
     with open('data.json', 'w') as jsonf:
         json.dump(data, jsonf)
@@ -461,4 +461,10 @@ def bombsites_plants(tl_ss, map_name):
     return sites
 
 
-analyze()
+while True:
+    ans = input('Please type \'start\' when you would like to begin or \'exit\' if you are finished.\n')
+    if ans == 'start':
+        analyze()
+
+    if ans == 'exit':
+        break
