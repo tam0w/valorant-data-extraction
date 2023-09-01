@@ -30,6 +30,7 @@ def analyze(creds):
     analysis, into a json converting function which will then be posted into the website, perhaps."""
 
     df = pd.DataFrame(columns=col_names)
+    global jwt
 
     (first_action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, players_agents, awp_info, fscore,
      buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds, bombsites
@@ -72,8 +73,14 @@ def analyze(creds):
     jsondata = json.dumps(data)
 
     header = {'Authorization': f'Bearer {creds}'}
-
     test = requests.post('http://127.0.0.1:5000/app/api', json=jsondata, headers=header)
+
+    if test.status_code == 401:
+        new_cred = auth()
+        header = {'Authorization': f'Bearer {new_cred}'}
+        test = requests.post('http://127.0.0.1:5000/app/api', json=jsondata, headers=header)
+        jwt = new_cred
+        print("new code", test)
 
     print(test)
 
