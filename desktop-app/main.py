@@ -1,4 +1,3 @@
-import sys
 from datetime import datetime
 import cv2 as cv
 import easyocr
@@ -8,7 +7,6 @@ import pyautogui as py
 import time
 import os
 import keyboard
-import matplotlib.pyplot as plt
 import json
 import requests
 
@@ -17,7 +15,7 @@ import requests
 reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
 col_names = ['first_kill', 'time', 'first_death', 'spike_plant', 'defuse', 'fb_team', 'fb_players', 'dt_players',
-          'team_buy', 'oppo_buy', 'total_kills', 'total_deaths', 'awps_info', 'side', 'round_win']
+             'team_buy', 'oppo_buy', 'total_kills', 'total_deaths', 'awps_info', 'side', 'round_win']
 username = os.getlogin()
 
 
@@ -35,15 +33,6 @@ def analyze(creds):
     (first_action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, players_agents, awp_info, fscore,
      buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds, bombsites
      ) = rounds_ss()
-
-    lists = [first_action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, players_agents, awp_info,
-             fscore,
-             buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds, bombsites]
-
-    names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team",
-             "players_agents", "awp_info", "fscore",
-             "buy_info_team", "buy_info_oppo", "map_name", "kills_team", "kills_opp", "first_is_plant", "sides",
-             "rounds", "bombsites"]
 
     first_kill_times = []
 
@@ -67,10 +56,20 @@ def analyze(creds):
 
     data = {}
 
+    lists = [first_action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
+             buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
+             rounds, bombsites, fscore, map_name, dt_string, players_agents]
+
+    names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "awp_info",
+             "buy_info_team", "buy_info_oppo", "kills_team", "kills_opp", "first_is_plant", "sides", "fbs_players",
+             "dt_players", "first_kill_times", "rounds", "bombsites", "fsco", "map_name", "dt_string", "players_agents"]
+
     for name, lst in zip(names, lists):
         data[name] = lst
 
     jsondata = json.dumps(data)
+    with open('data.json', 'w') as jsonf:
+        json.dump(data, jsonf)
 
     header = {'Authorization': f'Bearer {creds}'}
     test = requests.post('http://127.0.0.1:5000/app/api', json=jsondata, headers=header)
@@ -469,9 +468,11 @@ def auth():
     return login.json().get('access_token')
 
 
+jwt = 0
+
 while True:
 
-    if not jwt:
+    if jwt == 0:
         jwt = auth()
 
     ans = input('Please type \'start\' when you would like to begin or \'exit\' if you are finished.\n')
