@@ -16,7 +16,7 @@ import requests
 
 reader = easyocr.Reader(['en'])
 agents = pd.read_csv(r'D:\PROJECTS\demo-analysis-timeline\res\agentinfo.csv', header=0)
-header = ['first_kill', 'time', 'first_death', 'spike_plant', 'defuse', 'fb_team', 'fb_players', 'dt_players',
+col_names = ['first_kill', 'time', 'first_death', 'spike_plant', 'defuse', 'fb_team', 'fb_players', 'dt_players',
           'team_buy', 'oppo_buy', 'total_kills', 'total_deaths', 'awps_info', 'side', 'round_win']
 username = os.getlogin()
 
@@ -24,12 +24,12 @@ username = os.getlogin()
 # Functions
 
 
-def analyze():
+def analyze(creds):
     """ This function will analyze the returned information from each individual round OCR and POST the
     final dataframe into the API endpoint? Or maybe this function will just give the final dataframe from the TL round
     analysis, into a json converting function which will then be posted into the website, perhaps."""
 
-    df = pd.DataFrame(columns=header)
+    df = pd.DataFrame(columns=col_names)
 
     (first_action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, players_agents, awp_info, fscore,
      buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds, bombsites
@@ -69,26 +69,13 @@ def analyze():
     for name, lst in zip(names, lists):
         data[name] = lst
 
-    with open('data.json', 'w') as jsonf:
-        json.dump(data, jsonf)
-
     jsondata = json.dumps(data)
 
-    emaildesk = input('Enter your registered email:')
-    passdesk = input('Enter your registered password:')
-
-    credentials = {"emaildesk": emaildesk, "passdesk": passdesk}
-    login = requests.post('http://127.0.0.1:5000/login', json=credentials)
-    token = login.json().get('access_token')
-    header = {'Authorization': f'Bearer {token}'}
+    header = {'Authorization': f'Bearer {creds}'}
 
     test = requests.post('http://127.0.0.1:5000/app/api', json=jsondata, headers=header)
 
     print(test)
-    #
-    # df.to_csv(path_or_buf=rf'C:\Users\{username}\Desktop\scrims\{dt_string}_{map_name}_{fscore}.csv',
-    #           sep='\t', header=header)
-    # print(df)
 
 
 def rounds_ss():
@@ -464,11 +451,25 @@ def bombsites_plants(tl_ss, map_name):
 
     return sites
 
+def auth():
+
+    emaildesk = input('Enter your registered email:')
+    passdesk = input('Enter your registered password:')
+
+
+    credentials = {"emaildesk": emaildesk, "passdesk": passdesk}
+    login = requests.post('http://127.0.0.1:5000/login', json=credentials)
+    return login.json().get('access_token')
+
 
 while True:
+
+    if not jwt:
+        jwt = auth()
+
     ans = input('Please type \'start\' when you would like to begin or \'exit\' if you are finished.\n')
     if ans == 'start':
-        analyze()
+        analyze(jwt)
 
     if ans == 'exit':
         break
