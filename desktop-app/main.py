@@ -62,7 +62,7 @@ def analyze(creds):
 
     names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "awp_info",
              "buy_info_team", "buy_info_oppo", "kills_team", "kills_opp", "first_is_plant", "sides", "fbs_players",
-             "dt_players", "first_kill_times", "rounds", "bombsites", "fsco", "map_name", "dt_string", "players_agents"]
+             "dt_players", "first_kill_times", "rounds", "bombsites", "fscore", "map_name", "dt_string", "players_agents"]
 
     for name, lst in zip(names, lists):
         data[name] = lst
