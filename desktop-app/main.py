@@ -67,12 +67,11 @@ def analyze(creds):
     for name, lst in zip(names, lists):
         data[name] = lst
 
-    jsondata = json.dumps(data)
     with open('data.json', 'w') as jsonf:
         json.dump(data, jsonf)
 
     header = {'Authorization': f'Bearer {creds}'}
-    test = requests.post('http://127.0.0.1:5000/app/api', json=jsondata, headers=header)
+    test = requests.post('http://127.0.0.1:5000/app/api', json=data, headers=header)
 
     if test.status_code == 401:
         new_cred = auth()
