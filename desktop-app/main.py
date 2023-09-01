@@ -78,9 +78,12 @@ def analyze():
     passdesk = input('Enter your registered password:')
 
     credentials = {"emaildesk": emaildesk, "passdesk": passdesk}
+    login = requests.post('http://127.0.0.1:5000/login', json=credentials)
+    token = login.json().get('access_token')
+    header = {'Authorization': f'Bearer {token}'}
 
+    test = requests.post('http://127.0.0.1:5000/app/api', json=jsondata, headers=header)
 
-    test = requests.post('http://127.0.0.1:5000/app/api', json=jsondata, headers=credentials)
     print(test)
     #
     # df.to_csv(path_or_buf=rf'C:\Users\{username}\Desktop\scrims\{dt_string}_{map_name}_{fscore}.csv',
