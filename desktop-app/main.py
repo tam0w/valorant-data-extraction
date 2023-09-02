@@ -52,7 +52,7 @@ def analyze(creds):
     df['dt_players'] = dt_players
 
     date = datetime.now()
-    dt_string = date.strftime("%d_%m_%Y")
+    dt_string = date.strftime("%d/%m/%Y")
 
     data = {}
 
@@ -76,7 +76,7 @@ def analyze(creds):
     if test.status_code == 401:
         new_cred = auth()
         header = {'Authorization': f'Bearer {new_cred}'}
-        test = requests.post('http://127.0.0.1:5000/app/api', json=jsondata, headers=header)
+        test = requests.post('http://127.0.0.1:5000/app/api', json=data, headers=header)
         jwt = new_cred
         print("new code", test)
 
