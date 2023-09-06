@@ -458,13 +458,7 @@ def bombsites_plants(tl_ss, map_name):
 
 def auth():
 
-    emaildesk = input('Enter your registered email:')
-    passdesk = input('Enter your registered password:')
-
-
-    credentials = {"emaildesk": emaildesk, "passdesk": passdesk}
-    login = requests.post('http://127.0.0.1:5000/login', json=credentials)
-    return login.json().get('access_token')
+    return input('Insert your authentication key:')
 
 
 jwt = 0
