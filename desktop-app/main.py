@@ -1,6 +1,7 @@
 from datetime import datetime
 import cv2 as cv
 import easyocr
+import matplotlib.pyplot
 import numpy as np
 import pandas as pd
 import pyautogui as py
@@ -67,16 +68,13 @@ def analyze(creds):
     for name, lst in zip(names, lists):
         data[name] = lst
 
-    with open('data.json', 'w') as jsonf:
-        json.dump(data, jsonf)
-
     header = {'Authorization': f'Bearer {creds}'}
-    test = requests.post('http://127.0.0.1:5000/app/api', json=data, headers=header)
+    test = requests.post('https://imback-555z4.ondigitalocean.app/app/api', json=data, headers=header)
 
     if test.status_code == 401:
         new_cred = auth()
         header = {'Authorization': f'Bearer {new_cred}'}
-        test = requests.post('http://127.0.0.1:5000/app/api', json=data, headers=header)
+        test = requests.post('https://imback-555z4.ondigitalocean.app/app/api', json=data, headers=header)
         jwt = new_cred
         print("new code", test)
 
@@ -314,6 +312,8 @@ def zip_player_agents():
     image = py.screenshot()
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
     file = cv_image[495:940, 150:370]
+    matplotlib.pyplot.imshow(file)
+    matplotlib.pyplot.show()
     gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
     result = reader.readtext(gray, detail=0)
     player_names = [name for name in result if (result.index(name) % 2) == 0]
