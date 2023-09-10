@@ -312,8 +312,6 @@ def zip_player_agents():
     image = py.screenshot()
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
     file = cv_image[495:940, 150:370]
-    matplotlib.pyplot.imshow(file)
-    matplotlib.pyplot.show()
     gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
     result = reader.readtext(gray, detail=0)
     player_names = [name for name in result if (result.index(name) % 2) == 0]
