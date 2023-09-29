@@ -70,13 +70,6 @@ def analyze(creds):
     header = {'Authorization': f'Bearer {creds}'}
     test = requests.post('https://practistics.live/app/api', json=data, headers=header)
 
-    if test.status_code == 401:
-        new_cred = auth()
-        header = {'Authorization': f'Bearer {new_cred}'}
-        test = requests.post('https://practistics.live/app/api', json=data, headers=header)
-        jwt = new_cred
-        print("new code", test)
-
     print(test)
 
 
@@ -85,8 +78,12 @@ def rounds_ss():
     It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
     list will be returned to the 'analyze' function. """
 
-    if keyboard.is_pressed('p'):
-        rounds, sides, fscore = scores_ocr()
+    while True:
+        if keyboard.is_pressed('s'):
+            rounds, sides, fscore = scores_ocr()
+            print("Meta data obtained.")
+            time.sleep(0.3)
+            break
 
     tl_ss = []
     greens = []
@@ -167,9 +164,9 @@ def df_to_json():
 def scores_ocr():
     """Any preprocessing or other shenanigans here. And then perform OCR and return match metadata, individual player
         stats as well as match score / outcome. This can be a data frame. Also, distinctly return total no of rounds."""
+
     time.sleep(0.15)
     sides = side_first_half()
-    time.sleep(0.15)
 
     my_rounds, match_result, opp_rounds = final_score_ocr()
     fscore = my_rounds + " - " + opp_rounds
