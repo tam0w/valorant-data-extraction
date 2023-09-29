@@ -68,12 +68,12 @@ def analyze(creds):
         data[name] = lst
 
     header = {'Authorization': f'Bearer {creds}'}
-    test = requests.post('https://imback-555z4.ondigitalocean.app/app/api', json=data, headers=header)
+    test = requests.post('https://practistics.live/app/api', json=data, headers=header)
 
     if test.status_code == 401:
         new_cred = auth()
         header = {'Authorization': f'Bearer {new_cred}'}
-        test = requests.post('https://imback-555z4.ondigitalocean.app/app/api', json=data, headers=header)
+        test = requests.post('https://practistics.live/app/api', json=data, headers=header)
         jwt = new_cred
         print("new code", test)
 
@@ -85,7 +85,8 @@ def rounds_ss():
     It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
     list will be returned to the 'analyze' function. """
 
-    rounds, sides, fscore = scores_ocr()
+    if keyboard.is_pressed('p'):
+        rounds, sides, fscore = scores_ocr()
 
     tl_ss = []
     greens = []
@@ -166,7 +167,7 @@ def df_to_json():
 def scores_ocr():
     """Any preprocessing or other shenanigans here. And then perform OCR and return match metadata, individual player
         stats as well as match score / outcome. This can be a data frame. Also, distinctly return total no of rounds."""
-    time.sleep(2)
+    time.sleep(0.15)
     sides = side_first_half()
     time.sleep(0.15)
 
@@ -455,8 +456,15 @@ def bombsites_plants(tl_ss, map_name):
 
 def auth():
 
-    return input('Insert your authentication key:')
-
+    key = input('Insert your authentication key:')
+    header = {'Authorization': f'Bearer {key}'}
+    test = requests.post('https://practistics.live/app/api/verify', headers=header)
+    if test.status_code == 200:
+        jwt = key
+        return jwt
+    else:
+        jwt = 0
+        return jwt
 
 jwt = 0
 
@@ -464,6 +472,7 @@ while True:
 
     if jwt == 0:
         jwt = auth()
+        continue
 
     ans = input('Please type \'start\' when you would like to begin or \'exit\' if you are finished.\n')
     if ans == 'start':
