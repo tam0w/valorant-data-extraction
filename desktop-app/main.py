@@ -165,7 +165,6 @@ def scores_ocr():
     """Any preprocessing or other shenanigans here. And then perform OCR and return match metadata, individual player
         stats as well as match score / outcome. This can be a data frame. Also, distinctly return total no of rounds."""
 
-    time.sleep(0.15)
     sides = side_first_half()
 
     my_rounds, match_result, opp_rounds = final_score_ocr()
@@ -456,12 +455,13 @@ def auth():
     key = input('Insert your authentication key:')
     header = {'Authorization': f'Bearer {key}'}
     test = requests.post('https://practistics.live/app/api/verify', headers=header)
+
     if test.status_code == 200:
-        jwt = key
-        return jwt
+        return key
+
     else:
-        jwt = 0
-        return jwt
+        print('Token expired / invalid.')
+        return 0
 
 jwt = 0
 
