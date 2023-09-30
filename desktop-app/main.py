@@ -439,6 +439,12 @@ def bombsites_plants(tl_ss, map_name):
             elif map_name == 'split':
                 site = 'B' if y > 250 else 'A'
 
+            elif map_name == 'sunset':
+                site = 'A' if x > 250 else 'B'
+
+            elif map_name == 'breeze':
+                site = 'A' if x > 250 else 'B'
+
             else:
                 site = 'unclear'
 
