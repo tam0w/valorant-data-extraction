@@ -197,8 +197,8 @@ def rounds_ocr(all_round_images):
     return timestamps, plants, buy_info_team, buy_info_oppo, awps
 
 
-def all_agents(tl_ss):
-    image = tl_ss[0]
+def all_agents(image):
+
     agent_list = []
 
     st_u = 503
