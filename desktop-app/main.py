@@ -304,16 +304,57 @@ def get_metadata(tl_ss):
     return result[0].__str__().lower()
 
 
-def zip_player_agents():
-    image = py.screenshot()
-    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-    file = cv_image[495:940, 150:370]
-    gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
-    result = reader.readtext(gray, detail=0)
-    player_names = [name for name in result if (result.index(name) % 2) == 0]
-    agent_names = [name for name in result if (result.index(name) % 2) == 1]
-    player_agents_zipped = dict(zip(player_names, agent_names))
-    return player_agents_zipped, agent_names
+def zip_player_agents(image):
+
+    file = image[495:940, 200:340]
+
+    agent_list = []
+    player_list = []
+
+    st_u = 495
+    gr_check = 200
+
+    for i in range(5):
+
+        b, g, r = image[st_u, gr_check]
+        u = st_u
+
+        while g < 100:
+            u = u + 1
+            b, g, r = image[u, gr_check]
+
+        st_l = gr_check + 3
+        _, new_g, _ = image[u, st_l]
+        cur_img = image[u:u + 40, st_l:st_l + 140]
+        st_u = u + 42
+
+        res = reader.readtext(cur_img, detail=0, mag_ratio=1.5)
+        agent_list.append(res[1])
+        player_list.append(res[0])
+
+    st_u = 726
+
+    for i in range(5):
+
+        b, g, r = image[st_u, gr_check]
+        u = st_u
+
+        while r < 100:
+            u = u + 1
+            b, g, r = image[u, gr_check]
+
+        st_l = gr_check + 3
+        _, _, new_r = image[u, st_l]
+        cur_img = image[u:u + 40, st_l:st_l + 180]
+        st_u = u + 42
+
+        res = reader.readtext(cur_img, detail=0, mag_ratio=1.5)
+        agent_list.append(res[1])
+        player_list.append(res[0])
+
+    player_agents_zipped = dict(zip(player_list, agent_list))
+
+    return player_agents_zipped, agent_list
 
 
 def side_first_half():
