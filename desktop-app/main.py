@@ -103,8 +103,8 @@ def rounds_ss():
             print('Timeline screenshotting complete.')
             break
 
-    players_agents, agents_names = zip_player_agents()
-    agent_list = all_agents(tl_ss)
+    players_agents, agents_names = zip_player_agents(tl_ss[0])
+    agent_list = all_agents(tl_ss[0])
     timestamps, plants_or_not, buy_info_team, buy_info_oppo, awps = rounds_ocr(tl_ss)
     fk_player, fk_death = match_agent(agent_list, tl_ss, agents_names)
     outcomes = ocr_round_win(tl_ss)
@@ -209,7 +209,7 @@ def all_agents(tl_ss):
         b, g, r = image[st_u, gr_check]
         u = st_u
 
-        while g < 180:
+        while g < 100:
             u = u + 1
             b, g, r = image[u, gr_check]
 
