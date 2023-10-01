@@ -70,7 +70,7 @@ def analyze(creds):
     header = {'Authorization': f'Bearer {creds}'}
     test = requests.post('https://practistics.live/app/api', json=data, headers=header)
 
-    print(test)
+    print("Data extraction complete, create new csv on web dashboard.")
 
 
 def rounds_ss():
@@ -82,7 +82,7 @@ def rounds_ss():
         if keyboard.is_pressed('s'):
             rounds, sides, fscore = scores_ocr()
             print("Meta data obtained.")
-            time.sleep(0.3)
+            time.sleep(0.15)
             break
 
     tl_ss = []
