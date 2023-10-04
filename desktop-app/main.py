@@ -34,7 +34,7 @@ def analyze(creds):
      buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds, bombsites
      ) = rounds_ss()
 
-    first_kill_times, second_kill_times = first_and_second_kills(action_times)
+    first_kill_times, second_kill_times = first_and_second_kills(action_times, first_is_plant)
 
     df['time'] = first_kill_times
     df.index += 1
@@ -48,7 +48,7 @@ def analyze(creds):
 
     data = {}
 
-    lists = [first_action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
+    lists = [action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
              buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
              rounds, bombsites, fscore, map_name, dt_string, players_agents]
 
@@ -103,28 +103,11 @@ def rounds_ss():
     map_info = get_metadata(tl_ss)
     events_team, events_opp = total_events(tl_ss)
     site_list = bombsites_plants(tl_ss, map_info)
+    awp_info(awps)
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
     first_is_plant = [round_instance[0].__contains__('Planted') for round_instance in plants_or_not]
-
-    awp_info = []
-
-    for awp in awps:
-        indexes = [idx for idx, value in enumerate(awp) if value == 'Operator']
-
-        if len(indexes) == 0:
-            awp_info.append('none')
-            continue
-        if len(indexes) == 1:
-            if indexes[0] < 11:
-                awp_info.append('team')
-                continue
-            else:
-                awp_info.append('opponent')
-                continue
-        if len(indexes) == 2:
-            awp_info.append('both')
 
     for green in greens:
         flag = 'team' if green > 100 else 'opponent'
@@ -148,7 +131,8 @@ def rounds_ss():
     return (timestamps, plants, defuses, fk_player, fk_death, outcomes, who_fb, players_agents, awp_info, fscore,
             buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds, site_list)
 
-def first_and_second_kills(action_times):
+
+def first_and_second_kills(action_times, first_is_plant):
 
     first_kill_times = []
     second_kill_times = []
@@ -163,7 +147,41 @@ def first_and_second_kills(action_times):
             first_kill_times.append(round_instance[1])
             second_kill_times.append(round_instance[2])
 
-    return  first_kill_times, second_kill_times
+    return first_kill_times, second_kill_times
+
+
+def awp_info(awps):
+
+    awp_info = []
+
+    for awp in awps:
+        indexes = [idx for idx, value in enumerate(awp) if value == 'Operator']
+
+        if len(indexes) == 0:
+            awp_info.append('none')
+            continue
+
+        if len(indexes) == 1:
+            if indexes[0] < 11:
+                awp_info.append('team')
+                continue
+            else:
+                awp_info.append('opponent')
+                continue
+
+        if len(indexes) == 2:
+            if indexes[0] < 11 & indexes[1] > 10:
+                awp_info.append('both')
+            elif indexes[0] < 11 & indexes[1] < 11:
+                awp_info.append('team')
+            elif indexes[0] > 10 & indexes[1] > 10:
+                awp_info.append('opponent')
+            continue
+
+        if len(indexes) > 2:
+            awp_info.append('both')
+
+    return awp_info
 
 
 def df_to_json():
