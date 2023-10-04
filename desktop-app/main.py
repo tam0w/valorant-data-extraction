@@ -30,19 +30,11 @@ def analyze(creds):
     df = pd.DataFrame(columns=col_names)
     global jwt
 
-    (first_action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, players_agents, awp_info, fscore,
+    (action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, players_agents, awp_info, fscore,
      buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds, bombsites
      ) = rounds_ss()
 
-    first_kill_times = []
-
-    for i, round_instance in enumerate(first_action_times):
-
-        if first_is_plant[i] is False:
-            first_kill_times.append(round_instance[0])
-
-        else:
-            first_kill_times.append(round_instance[1])
+    first_kill_times, second_kill_times = first_and_second_kills(action_times)
 
     df['time'] = first_kill_times
     df.index += 1
@@ -155,6 +147,23 @@ def rounds_ss():
 
     return (timestamps, plants, defuses, fk_player, fk_death, outcomes, who_fb, players_agents, awp_info, fscore,
             buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds, site_list)
+
+def first_and_second_kills(action_times):
+
+    first_kill_times = []
+    second_kill_times = []
+
+    for i, round_instance in enumerate(action_times):
+
+        if first_is_plant[i] is False:
+            first_kill_times.append(round_instance[0])
+            second_kill_times.append(round_instance[1])
+
+        else:
+            first_kill_times.append(round_instance[1])
+            second_kill_times.append(round_instance[2])
+
+    return  first_kill_times, second_kill_times
 
 
 def df_to_json():
