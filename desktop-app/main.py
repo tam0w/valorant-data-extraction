@@ -105,6 +105,8 @@ def rounds_ss():
     site_list = bombsites_plants(tl_ss, map_info)
     awp_info(awps)
 
+    no_of_timeline = events_team+events_opp
+
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
     first_is_plant = [round_instance[0].__contains__('Planted') for round_instance in plants_or_not]
