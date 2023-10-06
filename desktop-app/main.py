@@ -268,20 +268,19 @@ def all_agents(image):
 
 
 def match_agent(agent_images, images, agents_names):
-    """This function matches all the agents first kills and death sprites to their actual agent names and returns
-    what agent got the first kill and died first."""
 
-    indexes_fk = []
-    indexes_dt = []
+    """This function matches all the agents kills and death sprites to their actual agent names and returns
+    what agent got the kill and died for the first n engagements, usually 3."""
 
     round_agents = []
 
     for image in images:
 
+        indexes_fk = []
+        indexes_dt = []
+
         agent_img = []
         agent_img_dt = []
-        values_dt = []
-        values = []
 
         st_l = 945
         st_u = 500
@@ -290,6 +289,9 @@ def match_agent(agent_images, images, agents_names):
         st_l_dt = 1231
 
         for i in range(3):
+
+            values_dt = []
+            values = []
 
             b, g, r = image[st_u, gr_check]
             u = st_u
@@ -304,10 +306,7 @@ def match_agent(agent_images, images, agents_names):
             agent_img.append(cur_img)
             agent_img_dt.append(cur_img_dt)
 
-            # have gotten the list of left and right agent images in this, now i gotta match it and get the names of each of agents corresponding to agent image?
-
             st_u = u + 36
-
             for agent in agent_images:
                 result = cv.matchTemplate(cur_img, agent, cv.TM_CCOEFF_NORMED)
                 min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
@@ -320,14 +319,27 @@ def match_agent(agent_images, images, agents_names):
             indexes_dt.append(values_dt.index(max(values_dt)))
             indexes_fk.append(values.index(max(values)))
 
-            fk_player = [agents_names[index] for index in indexes_fk]
-            fk_dt = [agents_names[index] for index in indexes_dt]
+        fk_player = [agents_names[index] for index in indexes_fk]
+        fk_dt = [agents_names[index] for index in indexes_dt]
 
-            round_agents.append(list(zip(fk_player,fk_dt)))
+        round_agents.append(list(zip(fk_player, fk_dt)))
 
-        print(round_agents)
+    first_eng_left = []
+    sec_eng_left = []
+    third_eng_left = []
+    first_eng_right = []
+    sec_eng_right = []
+    third_eng_right = []
 
-    return fk_player, fk_dt
+    for round_no, round_engagements in enumerate(round_agents):
+        first_eng_left.append(round_engagements[0][0])
+        sec_eng_left.append(round_engagements[1][0])
+        third_eng_left.append(round_engagements[2][0])
+        first_eng_right.append(round_engagements[0][1])
+        sec_eng_right.append(round_engagements[1][1])
+        third_eng_right.append(round_engagements[2][1])
+
+    return first_eng_left, sec_eng_left, third_eng_left, first_eng_right, sec_eng_right, third_eng_right
 
 
 def ocr_round_win(images):
