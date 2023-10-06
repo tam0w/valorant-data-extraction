@@ -274,19 +274,22 @@ def match_agent(agent_images, images, agents_names):
     indexes_fk = []
     indexes_dt = []
 
+    round_agents = []
+
     for image in images:
 
-        agent_dt = []
-        agent_l = []
+        agent_img = []
+        agent_img_dt = []
+        values_dt = []
+        values = []
 
         st_l = 945
         st_u = 500
         gr_check = 985
 
         st_l_dt = 1231
-        st_u_dt = 500
 
-        for i in range(5):
+        for i in range(3):
 
             b, g, r = image[st_u, gr_check]
             u = st_u
@@ -298,27 +301,31 @@ def match_agent(agent_images, images, agents_names):
             cur_img = image[u:u + 36, st_l:st_l + 36]
             cur_img_dt = image[u:u + 36, st_l_dt:st_l_dt + 36]
 
-            agent_l.append(cur_img)
-            agent_dt.append(cur_img_dt)
+            agent_img.append(cur_img)
+            agent_img_dt.append(cur_img_dt)
+
             # have gotten the list of left and right agent images in this, now i gotta match it and get the names of each of agents corresponding to agent image?
+
             st_u = u + 36
-            st_u_dt = u + 36
 
+            for agent in agent_images:
+                result = cv.matchTemplate(cur_img, agent, cv.TM_CCOEFF_NORMED)
+                min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
+                values.append(max_val)
 
-        for agent in agent_images:
-            result = cv.matchTemplate(tl, agent, cv.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
-            values.append(max_val)
+                result_dt = cv.matchTemplate(cur_img_dt, agent, cv.TM_CCOEFF_NORMED)
+                min_val_dt, max_val_dt, min_loc_dt, max_loc_dt = cv.minMaxLoc(result_dt)
+                values_dt.append(max_val_dt)
 
-            result_dt = cv.matchTemplate(tl_dt, agent, cv.TM_CCOEFF_NORMED)
-            min_val_dt, max_val_dt, min_loc_dt, max_loc_dt = cv.minMaxLoc(result_dt)
-            values_dt.append(max_val_dt)
+            indexes_dt.append(values_dt.index(max(values_dt)))
+            indexes_fk.append(values.index(max(values)))
 
-        indexes_dt.append(values_dt.index(max(values_dt)))
-        indexes_fk.append(values.index(max(values)))
+            fk_player = [agents_names[index] for index in indexes_fk]
+            fk_dt = [agents_names[index] for index in indexes_dt]
 
-    fk_player = [agents_names[index] for index in indexes_fk]
-    fk_dt = [agents_names[index] for index in indexes_dt]
+            round_agents.append(list(zip(fk_player,fk_dt)))
+
+        print(round_agents)
 
     return fk_player, fk_dt
 
