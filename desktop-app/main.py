@@ -1,4 +1,3 @@
-import pprint
 import traceback
 from datetime import datetime
 import cv2 as cv
@@ -39,6 +38,8 @@ def analyze(creds):
     dt_string = date.strftime("%d/%m/%Y")
 
     data = {}
+
+    print(len(awp_info))
 
     lists = [action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
              buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
@@ -96,6 +97,7 @@ def rounds_ss():
     events_team, events_opp = total_events(tl_ss)
     site_list = bombsites_plants(tl_ss, map_info)
     awp_information = awp_info(awps)
+    print(len(awp_information))
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
@@ -172,8 +174,8 @@ def rounds_ss():
 
         elif fk_player[i] == tk_death[i]:
 
-            first = timestamps[i][0].replace("0:", "")
-            second = timestamps[i][2].replace("0:", "")
+            first = timestamps[i][0].replace("0:", "").replace("0.", "")
+            second = timestamps[i][2].replace("0:", "").replace("0.", "")
 
             if int(second) - int(first) <= 15:
                 true_fb.append(False)
@@ -209,33 +211,39 @@ def first_and_second_kills(action_times, first_is_plant):
 def awp_info(awps):
 
     awp_info = []
+    print(len(awps))
+    for i, awp in enumerate(awps):
 
-    for awp in awps:
         indexes = [idx for idx, value in enumerate(awp) if value == 'Operator']
+        print(indexes)
 
         if len(indexes) == 0:
             awp_info.append('none')
-            continue
 
-        if len(indexes) == 1:
+        elif len(indexes) == 1:
             if indexes[0] < 11:
                 awp_info.append('team')
-                continue
             else:
                 awp_info.append('opponent')
-                continue
 
-        if len(indexes) == 2:
-            if indexes[0] < 11 & indexes[1] > 10:
-                awp_info.append('both')
-            elif indexes[0] < 11 & indexes[1] < 11:
+        elif len(indexes) == 2:
+            print("testest", indexes[0], "\n index 1 ", indexes[1])
+            if indexes[0] < 11 & indexes[1] < 11:
                 awp_info.append('team')
             elif indexes[0] > 10 & indexes[1] > 10:
                 awp_info.append('opponent')
-            continue
+            else:
+                awp_info.append('both')
 
-        if len(indexes) > 2:
+        elif len(indexes) > 2:
             awp_info.append('both')
+
+        else:
+            awp_info.append('none')
+
+        print(i, awp_info)
+
+    print("TEST",awp_info)
 
     return awp_info
 
@@ -273,9 +281,11 @@ def rounds_ocr(all_round_images):
 
     all_round_images_cropped_plants = [images[505:970, 1150:1230] for images in all_round_images]
     plants = [reader.readtext(image, detail=0) for image in all_round_images_cropped_plants]
-
+    print(len(all_round_images))
     awp_or_no = [images[450:950, 650:785] for images in all_round_images]
+    print(len(awp_or_no))
     awps = [reader.readtext(image, detail=0) for image in awp_or_no]
+    print(len(awps))
 
     return timestamps, plants, buy_info_team, buy_info_oppo, awps
 
