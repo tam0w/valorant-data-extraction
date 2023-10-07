@@ -1,21 +1,20 @@
+import pprint
+import traceback
 from datetime import datetime
 import cv2 as cv
 import easyocr
-import matplotlib.pyplot
 import numpy as np
 import pandas as pd
 import pyautogui as py
 import time
 import os
 import keyboard
-import json
 import requests
 
 # Load resources
 
 reader = easyocr.Reader(['en'])
-col_names = ['first_kill', 'time', 'first_death', 'spike_plant', 'defuse', 'fb_team', 'fb_players', 'dt_players',
-             'team_buy', 'oppo_buy', 'total_kills', 'total_deaths', 'awps_info', 'side', 'round_win']
+
 username = os.getlogin()
 
 
@@ -27,21 +26,14 @@ def analyze(creds):
     final dataframe into the API endpoint? Or maybe this function will just give the final dataframe from the TL round
     analysis, into a json converting function which will then be posted into the website, perhaps."""
 
-    df = pd.DataFrame(columns=col_names)
     global jwt
 
-    (action_times, plants, defuses, fk_player, fk_death, true_fb,  outcomes, fb_team, players_agents,
+    (action_times, plants, defuses, fk_player, fk_death, true_fb, outcomes, fb_team, players_agents,
      awp_info, fscore, buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds,
      bombsites) = rounds_ss()
 
     first_kill_times, second_kill_times = first_and_second_kills(action_times, first_is_plant)
-
-    df['time'] = first_kill_times
-    df.index += 1
-
     fbs_players, dt_players = map_player_agents(fb_team, fk_player, fk_death, players_agents)
-    df['fb_players'] = fbs_players
-    df['dt_players'] = dt_players
 
     date = datetime.now()
     dt_string = date.strftime("%d/%m/%Y")
@@ -54,7 +46,8 @@ def analyze(creds):
 
     names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "awp_info",
              "buy_info_team", "buy_info_oppo", "kills_team", "kills_opp", "first_is_plant", "sides", "fbs_players",
-             "dt_players", "first_kill_times", "rounds", "bombsites", "true_fb", "fscore", "map_name", "dt_string", "players_agents"]
+             "dt_players", "first_kill_times", "rounds", "bombsites", "true_fb", "fscore", "map_name", "dt_string",
+             "players_agents"]
 
     for name, lst in zip(names, lists):
         data[name] = lst
@@ -102,13 +95,12 @@ def rounds_ss():
     map_info = get_metadata(tl_ss)
     events_team, events_opp = total_events(tl_ss)
     site_list = bombsites_plants(tl_ss, map_info)
-    awp_info(awps)
+    awp_information = awp_info(awps)
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
     first_is_plant = [round_instance[0].__contains__('Planted') for round_instance in plants_or_not]
     sec_is_plant = [round_instance[1].__contains__('Planted') for round_instance in plants_or_not]
-    third_is_plant = [round_instance[2].__contains__('Planted') for round_instance in plants_or_not]
 
     for green in greens:
         flag = 'team' if green > 100 else 'opponent'
@@ -129,8 +121,8 @@ def rounds_ss():
             else:
                 events_opp[i] -= 1
 
-    (first_eng_left, sec_eng_left, third_eng_left, fourth_eng_left, first_eng_right,
-     sec_eng_right, third_eng_right, fourth_eng_right) = match_agent(agent_list, tl_ss, agents_names)
+    (first_eng_left, sec_eng_left, third_eng_left, fourth_eng_left, first_eng_right, sec_eng_right,
+     third_eng_right, fourth_eng_right) = match_agent(agent_list, tl_ss, agents_names)
 
     fk_player = []
     fk_death = []
@@ -138,42 +130,65 @@ def rounds_ss():
     sk_player = []
     sk_death = []
 
+    tk_player = []
+    tk_death = []
+
     for i, first_plant in enumerate(first_is_plant):
 
         if not first_plant:
             fk_player.append(first_eng_left[i])
-            fk_death.append(first_eng_left[i])
+            fk_death.append(first_eng_right[i])
 
             if not sec_is_plant[i]:
                 sk_player.append(sec_eng_left[i])
                 sk_death.append(sec_eng_right[i])
 
+                tk_player.append(third_eng_left[i])
+                tk_death.append(third_eng_right[i])
+
             else:
                 sk_player.append(third_eng_left[i])
                 sk_death.append(third_eng_right[i])
+
+                tk_player.append(fourth_eng_left[i])
+                tk_death.append(fourth_eng_right[i])
 
         if first_plant:
             fk_player.append(sec_eng_left[i])
             fk_death.append(sec_eng_right[i])
 
-            if not third_is_plant[i]:
-                sk_player.append(third_eng_left[i])
-                sk_death.append(third_eng_right[i])
+            sk_player.append(third_eng_left[i])
+            sk_death.append(third_eng_right[i])
 
-            else:
-                sk_player.append(fourth_eng_left[i])
-                sk_death.append(fourth_eng_right[i])
+            tk_player.append(fourth_eng_left[i])
+            tk_death.append(fourth_eng_right[i])
 
     true_fb = []
 
-    for i in range(len(events_team)):
-        if fk_player[i] != sk_death[i]:
-            true_fb.append(True)
-        else:
-            true_fb.append(False)
+    for i in range(len(timestamps)):
 
-    return (timestamps, plants, defuses, fk_player, true_fb, outcomes, who_fb, players_agents, awp_info, fscore,
-            buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds, site_list)
+        if (fk_player[i] != sk_death[i]) and (fk_player[i] != tk_death[i]):
+            true_fb.append(True)
+
+        elif fk_player[i] == tk_death[i]:
+
+            # timestamps[i][0].replace("0:0", "")
+            # timestamps[i][2].replace("0:0", "")
+            first = timestamps[i][0].replace("0:", "")
+            second = timestamps[i][2].replace("0:", "")
+
+            if int(second) - int(first) <= 15:
+                true_fb.append(False)
+            else:
+                true_fb.append(True)
+
+        else:
+            true_fb.append(True)
+    print(fk_player,fk_death)
+
+    return (timestamps, plants, defuses, fk_player, fk_death, true_fb, outcomes, who_fb, players_agents, awp_information,
+            fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
+            site_list)
 
 
 def first_and_second_kills(action_times, first_is_plant):
@@ -372,11 +387,13 @@ def match_agent(agent_images, images, agents_names):
     sec_eng_left = []
     third_eng_left = []
     fourth_eng_left = []
+    fifth_eng_left = []
 
     first_eng_right = []
     sec_eng_right = []
     third_eng_right = []
     fourth_eng_right = []
+    fifth_eng_right = []
 
     for round_no, round_engagements in enumerate(round_agents):
         first_eng_left.append(round_engagements[0][0])
@@ -640,7 +657,11 @@ while True:
 
     ans = input('Please type \'start\' when you would like to begin or \'exit\' if you are finished.\n')
     if ans == 'start':
-        analyze(jwt)
+        try:
+            analyze(jwt)
+        except Exception:
+            traceback.print_exc()
+            continue
 
     if ans == 'exit':
         break
