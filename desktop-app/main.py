@@ -30,9 +30,9 @@ def analyze(creds):
     df = pd.DataFrame(columns=col_names)
     global jwt
 
-    (action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, players_agents, awp_info, fscore,
-     buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds, bombsites
-     ) = rounds_ss()
+    (action_times, plants, defuses, fk_player, fk_death, sk_player, sk_death,  outcomes, fb_team, players_agents,
+     awp_info, fscore, buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds,
+     bombsites) = rounds_ss()
 
     first_kill_times, second_kill_times = first_and_second_kills(action_times, first_is_plant)
 
@@ -98,7 +98,6 @@ def rounds_ss():
     players_agents, agents_names = zip_player_agents(tl_ss[0])
     agent_list = all_agents(tl_ss[0])
     timestamps, plants_or_not, buy_info_team, buy_info_oppo, awps = rounds_ocr(tl_ss)
-    fk_player, fk_death = match_agent(agent_list, tl_ss, agents_names)
     outcomes = ocr_round_win(tl_ss)
     map_info = get_metadata(tl_ss)
     events_team, events_opp = total_events(tl_ss)
@@ -108,6 +107,8 @@ def rounds_ss():
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
     first_is_plant = [round_instance[0].__contains__('Planted') for round_instance in plants_or_not]
+    sec_is_plant = [round_instance[1].__contains__('Planted') for round_instance in plants_or_not]
+    third_is_plant = [round_instance[2].__contains__('Planted') for round_instance in plants_or_not]
 
     for green in greens:
         flag = 'team' if green > 100 else 'opponent'
@@ -128,7 +129,42 @@ def rounds_ss():
             else:
                 events_opp[i] -= 1
 
-    return (timestamps, plants, defuses, fk_player, fk_death, outcomes, who_fb, players_agents, awp_info, fscore,
+    (first_eng_left, sec_eng_left, third_eng_left, fourth_eng_left, first_eng_right,
+     sec_eng_right, third_eng_right, fourth_eng_right) = match_agent(agent_list, tl_ss, agents_names)
+
+    fk_player = []
+    fk_death = []
+
+    sk_player = []
+    sk_death = []
+
+    for i, first_plant in enumerate(first_is_plant):
+
+        if not first_plant:
+            fk_player.append(first_eng_left[i])
+            fk_death.append(first_eng_left[i])
+
+            if not sec_is_plant[i]:
+                sk_player.append(sec_eng_left[i])
+                sk_death.append(sec_eng_right[i])
+
+            else:
+                sk_player.append(third_eng_left[i])
+                sk_death.append(third_eng_right[i])
+
+        if first_plant:
+            fk_player.append(sec_eng_left[i])
+            fk_death.append(sec_eng_right[i])
+
+            if not third_is_plant[i]:
+                sk_player.append(third_eng_left[i])
+                sk_death.append(third_eng_right[i])
+
+            else:
+                sk_player.append(fourth_eng_left[i])
+                sk_death.append(fourth_eng_right[i])
+
+    return (timestamps, plants, defuses, fk_player, fk_death, sk_player, sk_death, outcomes, who_fb, players_agents, awp_info, fscore,
             buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds, site_list)
 
 
@@ -288,7 +324,7 @@ def match_agent(agent_images, images, agents_names):
 
         st_l_dt = 1231
 
-        for i in range(3):
+        for i in range(4):
 
             values_dt = []
             values = []
@@ -327,19 +363,25 @@ def match_agent(agent_images, images, agents_names):
     first_eng_left = []
     sec_eng_left = []
     third_eng_left = []
+    fourth_eng_left = []
+
     first_eng_right = []
     sec_eng_right = []
     third_eng_right = []
+    fourth_eng_right = []
 
     for round_no, round_engagements in enumerate(round_agents):
         first_eng_left.append(round_engagements[0][0])
         sec_eng_left.append(round_engagements[1][0])
         third_eng_left.append(round_engagements[2][0])
+        fourth_eng_left.append(round_engagements[3][0])
         first_eng_right.append(round_engagements[0][1])
         sec_eng_right.append(round_engagements[1][1])
         third_eng_right.append(round_engagements[2][1])
+        fourth_eng_right.append(round_engagements[3][1])
 
-    return first_eng_left, sec_eng_left, third_eng_left, first_eng_right, sec_eng_right, third_eng_right
+    return (first_eng_left, sec_eng_left, third_eng_left, fourth_eng_left, first_eng_right,
+            sec_eng_right, third_eng_right, fourth_eng_right)
 
 
 def ocr_round_win(images):
