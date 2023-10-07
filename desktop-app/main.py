@@ -172,8 +172,6 @@ def rounds_ss():
 
         elif fk_player[i] == tk_death[i]:
 
-            # timestamps[i][0].replace("0:0", "")
-            # timestamps[i][2].replace("0:0", "")
             first = timestamps[i][0].replace("0:", "")
             second = timestamps[i][2].replace("0:", "")
 
@@ -184,7 +182,6 @@ def rounds_ss():
 
         else:
             true_fb.append(True)
-    print(fk_player,fk_death)
 
     return (timestamps, plants, defuses, fk_player, fk_death, true_fb, outcomes, who_fb, players_agents, awp_information,
             fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
