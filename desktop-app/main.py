@@ -92,7 +92,7 @@ def rounds_ss():
     timestamps, plants_or_not, buy_info_team, buy_info_oppo, awps = rounds_ocr(tl_ss)
     outcomes = ocr_round_win(tl_ss)
     map_info = get_metadata(tl_ss)
-    events_team, events_opp = total_events(tl_ss)
+    events_team, events_opp, event_sides = total_events(tl_ss)
     site_list = bombsites_plants(tl_ss, map_info)
     awp_information = awp_info(awps)
 
@@ -167,7 +167,11 @@ def rounds_ss():
     for i in range(len(timestamps)):
 
         if fk_player[i] == sk_death[i]:
-            true_fb.append(True)
+
+            if event_sides[i][0] != event_sides[i][1]:
+                true_fb.append(False)
+            else:
+                true_fb.append(True)
 
         elif fk_player[i] == tk_death[i]:
 
@@ -180,7 +184,7 @@ def rounds_ss():
                 true_fb.append(True)
 
         else:
-            true_fb.append(False)
+            true_fb.append(True)
 
     return (timestamps, plants, defuses, fk_player, fk_death, true_fb, outcomes, who_fb, players_agents, awp_information,
             fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
@@ -212,7 +216,6 @@ def awp_info(awps):
     for i, awp in enumerate(awps):
 
         indexes = [idx for idx, value in enumerate(awp) if value == 'Operator']
-        print(indexes)
 
         if len(indexes) == 0:
             awp_info.append('none')
@@ -224,7 +227,7 @@ def awp_info(awps):
                 awp_info.append('opponent')
 
         elif len(indexes) == 2:
-            print("testest", indexes[0], "\n index 1 ", indexes[1])
+
             if indexes[0] < 11 & indexes[1] < 11:
                 awp_info.append('team')
             elif indexes[0] > 10 & indexes[1] > 10:
@@ -569,9 +572,8 @@ def total_events(tl_ss):
                 break
             start += 38
 
-    print(rounds_events_sides)
 
-    return events_team, events_opp
+    return events_team, events_opp, rounds_events_sides
 
 
 def bombsites_plants(tl_ss, map_name):
