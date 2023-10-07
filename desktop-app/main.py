@@ -30,7 +30,7 @@ def analyze(creds):
     df = pd.DataFrame(columns=col_names)
     global jwt
 
-    (action_times, plants, defuses, fk_player, fk_death, sk_player, sk_death,  outcomes, fb_team, players_agents,
+    (action_times, plants, defuses, fk_player, fk_death, true_fb,  outcomes, fb_team, players_agents,
      awp_info, fscore, buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds,
      bombsites) = rounds_ss()
 
@@ -50,11 +50,11 @@ def analyze(creds):
 
     lists = [action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
              buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
-             rounds, bombsites, fscore, map_name, dt_string, players_agents]
+             rounds, bombsites, true_fb, fscore, map_name, dt_string, players_agents]
 
     names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "awp_info",
              "buy_info_team", "buy_info_oppo", "kills_team", "kills_opp", "first_is_plant", "sides", "fbs_players",
-             "dt_players", "first_kill_times", "rounds", "bombsites", "fscore", "map_name", "dt_string", "players_agents"]
+             "dt_players", "first_kill_times", "rounds", "bombsites", "true_fb", "fscore", "map_name", "dt_string", "players_agents"]
 
     for name, lst in zip(names, lists):
         data[name] = lst
@@ -164,7 +164,15 @@ def rounds_ss():
                 sk_player.append(fourth_eng_left[i])
                 sk_death.append(fourth_eng_right[i])
 
-    return (timestamps, plants, defuses, fk_player, fk_death, sk_player, sk_death, outcomes, who_fb, players_agents, awp_info, fscore,
+    true_fb = []
+
+    for i in range(len(events_team)):
+        if fk_player[i] != sk_death[i]:
+            true_fb.append(True)
+        else:
+            true_fb.append(False)
+
+    return (timestamps, plants, defuses, fk_player, true_fb, outcomes, who_fb, players_agents, awp_info, fscore,
             buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds, site_list)
 
 
