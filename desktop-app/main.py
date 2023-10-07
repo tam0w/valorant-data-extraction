@@ -166,7 +166,7 @@ def rounds_ss():
 
     for i in range(len(timestamps)):
 
-        if (fk_player[i] != sk_death[i]) and (fk_player[i] != tk_death[i]):
+        if fk_player[i] == sk_death[i]:
             true_fb.append(True)
 
         elif fk_player[i] == tk_death[i]:
@@ -513,6 +513,7 @@ def side_first_half():
 
 
 def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
+
     players_agents_team = dict(list(players_agents.items())[:5])
     players_agents_oppo = dict(list(players_agents.items())[5:])
     players_agents_team = {value: key for key, value in players_agents_team.items()}
@@ -524,7 +525,7 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
 
     for i, agent in enumerate(fk_player):
 
-        if who_fb[i] == 'you':
+        if who_fb[i] == 'team':
             final_player_fk_list.append(players_agents_team.get(agent))
         else:
             final_player_fk_list.append(players_agents_oppo.get(agent))
@@ -544,22 +545,31 @@ def total_events(tl_ss):
 
     events_team = []
     events_opp = []
+    rounds_events_sides = []
 
     for pic in tl_ss:
+
         start = 510
         counter_opp = 0
         counter_team = 0
+        specific_round_events = []
+
         while True:
             b1, g1, r1 = pic[start, 940]
             if g1 > 190 and b1 > 100:
                 counter_team += 1
+                specific_round_events.append('team')
             if g1 < 100 and r1 > 200 and b1 < 100:
                 counter_opp += 1
+                specific_round_events.append('opponent')
             if b1 < 100 and g1 < 100 and r1 < 100:
                 events_team.append(counter_team)
                 events_opp.append(counter_opp)
+                rounds_events_sides.append(specific_round_events)
                 break
             start += 38
+
+    print(rounds_events_sides)
 
     return events_team, events_opp
 
