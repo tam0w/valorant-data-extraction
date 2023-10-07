@@ -180,7 +180,7 @@ def rounds_ss():
                 true_fb.append(True)
 
         else:
-            true_fb.append(True)
+            true_fb.append(False)
 
     return (timestamps, plants, defuses, fk_player, fk_death, true_fb, outcomes, who_fb, players_agents, awp_information,
             fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
@@ -208,7 +208,7 @@ def first_and_second_kills(action_times, first_is_plant):
 def awp_info(awps):
 
     awp_info = []
-    print(len(awps))
+
     for i, awp in enumerate(awps):
 
         indexes = [idx for idx, value in enumerate(awp) if value == 'Operator']
