@@ -39,8 +39,6 @@ def analyze(creds):
 
     data = {}
 
-    print(len(awp_info))
-
     lists = [action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
              buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
              rounds, bombsites, true_fb, fscore, map_name, dt_string, players_agents]
@@ -97,7 +95,6 @@ def rounds_ss():
     events_team, events_opp = total_events(tl_ss)
     site_list = bombsites_plants(tl_ss, map_info)
     awp_information = awp_info(awps)
-    print(len(awp_information))
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
@@ -241,10 +238,6 @@ def awp_info(awps):
         else:
             awp_info.append('none')
 
-        print(i, awp_info)
-
-    print("TEST",awp_info)
-
     return awp_info
 
 
@@ -281,11 +274,10 @@ def rounds_ocr(all_round_images):
 
     all_round_images_cropped_plants = [images[505:970, 1150:1230] for images in all_round_images]
     plants = [reader.readtext(image, detail=0) for image in all_round_images_cropped_plants]
-    print(len(all_round_images))
+
     awp_or_no = [images[450:950, 650:785] for images in all_round_images]
-    print(len(awp_or_no))
+
     awps = [reader.readtext(image, detail=0) for image in awp_or_no]
-    print(len(awps))
 
     return timestamps, plants, buy_info_team, buy_info_oppo, awps
 
