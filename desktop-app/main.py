@@ -125,7 +125,6 @@ def rounds_ss():
      fourth_eng_right, round_agents) = match_agent(agent_list, tl_ss, agents_names, timestamps)
 
     all_round_data = generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps)
-    pprint.pprint(all_round_data)
 
     fk_player = []
     fk_death = []
@@ -204,7 +203,7 @@ def generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps
 
             round_instance[i].append(timestamp)
             round_instance[i].append(event_sides[r][i])
-            print(plants_or_not[r][i])
+
             if plants_or_not[r][i] == "Planted" or plants_or_not[r][i] == "Defused":
                 round_instance[i].append('Spike')
 
