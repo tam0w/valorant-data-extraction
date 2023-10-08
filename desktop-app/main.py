@@ -1,3 +1,4 @@
+import pprint
 import traceback
 from datetime import datetime
 import cv2 as cv
@@ -29,7 +30,7 @@ def analyze(creds):
 
     (action_times, plants, defuses, fk_player, fk_death, true_fb, outcomes, fb_team, players_agents,
      awp_info, fscore, buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds,
-     bombsites) = rounds_ss()
+     bombsites, all_round_data) = rounds_ss()
 
     first_kill_times, second_kill_times = first_and_second_kills(action_times, first_is_plant)
     fbs_players, dt_players = map_player_agents(fb_team, fk_player, fk_death, players_agents)
@@ -41,12 +42,12 @@ def analyze(creds):
 
     lists = [action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
              buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
-             rounds, bombsites, true_fb, fscore, map_name, dt_string, players_agents]
+             rounds, bombsites, true_fb, fscore, map_name, dt_string, players_agents, all_round_data]
 
     names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "awp_info",
              "buy_info_team", "buy_info_oppo", "kills_team", "kills_opp", "first_is_plant", "sides", "fbs_players",
              "dt_players", "first_kill_times", "rounds", "bombsites", "true_fb", "fscore", "map_name", "dt_string",
-             "players_agents"]
+             "players_agents", "all_round_data"]
 
     for name, lst in zip(names, lists):
         data[name] = lst
@@ -121,10 +122,10 @@ def rounds_ss():
                 events_opp[i] -= 1
 
     (first_eng_left, sec_eng_left, third_eng_left, fourth_eng_left, first_eng_right, sec_eng_right, third_eng_right,
-     fourth_eng_right, round_agents) = match_agent(agent_list, tl_ss, agents_names, rounds)
+     fourth_eng_right, round_agents) = match_agent(agent_list, tl_ss, agents_names, timestamps)
 
     all_round_data = generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps)
-    print(all_round_data)
+    pprint.pprint(all_round_data)
 
     fk_player = []
     fk_death = []
@@ -189,9 +190,8 @@ def rounds_ss():
         else:
             true_fb.append(True)
 
-    return (
-    timestamps, plants, defuses, fk_player, fk_death, true_fb, outcomes, who_fb, players_agents, awp_information,
-    fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
+    return (timestamps, plants, defuses, fk_player, fk_death, true_fb, outcomes, who_fb, players_agents, awp_information
+    , fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
     site_list, all_round_data)
 
 
@@ -201,9 +201,15 @@ def generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps
     for r, round_instance in enumerate(all_round_data):
 
         for i, timestamp in enumerate(timestamps[r]):
+
             round_instance[i].append(timestamp)
-            round_instance[i].append("Spike" if plants_or_not[r][i] else "Kill")
             round_instance[i].append(event_sides[r][i])
+
+            if plants_or_not[i] == "Planted" or plants_or_not[i] == "Defused":
+                round_instance[i].append('Spike')
+
+            else:
+                round_instance[i].append('Kill')
 
     return all_round_data
 
@@ -342,13 +348,13 @@ def all_agents(image):
     return agent_list
 
 
-def match_agent(agent_images, images, agents_names, rounds):
+def match_agent(agent_images, images, agents_names, timestamps):
     """This function matches all the agents kills and death sprites to their actual agent names and returns
     what agent got the kill and died for the first n engagements, usually 3."""
 
     round_agents = []
 
-    for image in images:
+    for r, image in enumerate(images):
 
         indexes_fk = []
         indexes_dt = []
@@ -362,7 +368,7 @@ def match_agent(agent_images, images, agents_names, rounds):
 
         st_l_dt = 1231
 
-        for i in range(rounds):
+        for i in timestamps[r]:
 
             values_dt = []
             values = []
