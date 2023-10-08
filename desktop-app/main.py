@@ -120,8 +120,11 @@ def rounds_ss():
             else:
                 events_opp[i] -= 1
 
-    (first_eng_left, sec_eng_left, third_eng_left, fourth_eng_left, first_eng_right, sec_eng_right,
-     third_eng_right, fourth_eng_right) = match_agent(agent_list, tl_ss, agents_names)
+    (first_eng_left, sec_eng_left, third_eng_left, fourth_eng_left, first_eng_right, sec_eng_right, third_eng_right,
+     fourth_eng_right, round_agents) = match_agent(agent_list, tl_ss, agents_names, rounds)
+
+    all_round_data = generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps)
+    print(all_round_data)
 
     fk_player = []
     fk_death = []
@@ -186,13 +189,26 @@ def rounds_ss():
         else:
             true_fb.append(True)
 
-    return (timestamps, plants, defuses, fk_player, fk_death, true_fb, outcomes, who_fb, players_agents, awp_information,
-            fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
-            site_list)
+    return (
+    timestamps, plants, defuses, fk_player, fk_death, true_fb, outcomes, who_fb, players_agents, awp_information,
+    fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
+    site_list, all_round_data)
+
+
+def generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps):
+    all_round_data = round_agents
+
+    for r, round_instance in enumerate(all_round_data):
+
+        for i, timestamp in enumerate(timestamps[r]):
+            round_instance[i].append(timestamp)
+            round_instance[i].append("Spike" if plants_or_not[r][i] else "Kill")
+            round_instance[i].append(event_sides[r][i])
+
+    return all_round_data
 
 
 def first_and_second_kills(action_times, first_is_plant):
-
     first_kill_times = []
     second_kill_times = []
 
@@ -210,7 +226,6 @@ def first_and_second_kills(action_times, first_is_plant):
 
 
 def awp_info(awps):
-
     awp_info = []
 
     for i, awp in enumerate(awps):
@@ -286,7 +301,6 @@ def rounds_ocr(all_round_images):
 
 
 def all_agents(image):
-
     agent_list = []
 
     st_u = 503
@@ -328,8 +342,7 @@ def all_agents(image):
     return agent_list
 
 
-def match_agent(agent_images, images, agents_names):
-
+def match_agent(agent_images, images, agents_names, rounds):
     """This function matches all the agents kills and death sprites to their actual agent names and returns
     what agent got the kill and died for the first n engagements, usually 3."""
 
@@ -349,7 +362,7 @@ def match_agent(agent_images, images, agents_names):
 
         st_l_dt = 1231
 
-        for i in range(4):
+        for i in range(rounds):
 
             values_dt = []
             values = []
@@ -383,7 +396,7 @@ def match_agent(agent_images, images, agents_names):
         fk_player = [agents_names[index] for index in indexes_fk]
         fk_dt = [agents_names[index] for index in indexes_dt]
 
-        round_agents.append(list(zip(fk_player, fk_dt)))
+        round_agents.append(list(map(list, zip(fk_player, fk_dt))))
 
     first_eng_left = []
     sec_eng_left = []
@@ -405,8 +418,7 @@ def match_agent(agent_images, images, agents_names):
         third_eng_right.append(round_engagements[2][1])
         fourth_eng_right.append(round_engagements[3][1])
 
-    return (first_eng_left, sec_eng_left, third_eng_left, fourth_eng_left, first_eng_right,
-            sec_eng_right, third_eng_right, fourth_eng_right)
+    return first_eng_left, sec_eng_left, third_eng_left, fourth_eng_left, first_eng_right, sec_eng_right, third_eng_right, fourth_eng_right, round_agents
 
 
 def ocr_round_win(images):
@@ -442,7 +454,6 @@ def get_metadata(tl_ss):
 
 
 def zip_player_agents(image):
-
     file = image[495:940, 200:340]
 
     agent_list = []
@@ -514,7 +525,6 @@ def side_first_half():
 
 
 def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
-
     players_agents_team = dict(list(players_agents.items())[:5])
     players_agents_oppo = dict(list(players_agents.items())[5:])
     players_agents_team = {value: key for key, value in players_agents_team.items()}
@@ -569,7 +579,6 @@ def total_events(tl_ss):
                 rounds_events_sides.append(specific_round_events)
                 break
             start += 38
-
 
     return events_team, events_opp, rounds_events_sides
 
@@ -643,8 +652,8 @@ def bombsites_plants(tl_ss, map_name):
 
     return sites
 
-def auth():
 
+def auth():
     key = input('Insert your authentication key:')
     header = {'Authorization': f'Bearer {key}'}
     test = requests.post('https://practistics.live/app/api/verify', headers=header)
@@ -655,6 +664,7 @@ def auth():
     else:
         print('Token expired / invalid.')
         return 0
+
 
 jwt = 0
 
