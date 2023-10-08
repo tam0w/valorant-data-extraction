@@ -389,13 +389,11 @@ def match_agent(agent_images, images, agents_names):
     sec_eng_left = []
     third_eng_left = []
     fourth_eng_left = []
-    fifth_eng_left = []
 
     first_eng_right = []
     sec_eng_right = []
     third_eng_right = []
     fourth_eng_right = []
-    fifth_eng_right = []
 
     for round_no, round_engagements in enumerate(round_agents):
         first_eng_left.append(round_engagements[0][0])
