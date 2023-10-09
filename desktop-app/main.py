@@ -30,7 +30,7 @@ def analyze(creds):
 
     (action_times, plants, defuses, fk_player, fk_death, true_fb, outcomes, fb_team, players_agents,
      awp_info, fscore, buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds,
-     bombsites, all_round_data) = rounds_ss()
+     bombsites, all_round_data, anchor_times) = rounds_ss()
 
     first_kill_times, second_kill_times = first_and_second_kills(action_times, first_is_plant)
     fbs_players, dt_players = map_player_agents(fb_team, fk_player, fk_death, players_agents)
@@ -42,12 +42,12 @@ def analyze(creds):
 
     lists = [action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
              buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
-             rounds, bombsites, true_fb, fscore, map_name, dt_string, players_agents, all_round_data]
+             rounds, bombsites, true_fb, fscore, map_name, dt_string, players_agents, anchor_times, all_round_data]
 
     names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "awp_info",
              "buy_info_team", "buy_info_oppo", "kills_team", "kills_opp", "first_is_plant", "sides", "fbs_players",
              "dt_players", "first_kill_times", "rounds", "bombsites", "true_fb", "fscore", "map_name", "dt_string",
-             "players_agents", "all_round_data"]
+             "players_agents", "anchor_times", "all_round_data"]
 
     for name, lst in zip(names, lists):
         data[name] = lst
@@ -128,19 +128,24 @@ def rounds_ss():
 
     anchor_times = []
 
-    print(all_round_data)
 
     for r, round_instance in enumerate(all_round_data):
 
         for event in round_instance:
 
-            if event[-1] == "Spike":
+            if event == round_instance[-1]:
+                if event[-1] == "Kill":
+                    anchor_times.append("NA")
+                    break
 
+            if event[-1] == "Spike":
                 anchor_times.append(event[2])
                 break
 
             if event[-1] == "Kill":
-                anchor_times.append(0)
+                continue
+
+        print(anchor_times)
 
     fk_player = []
     fk_death = []
@@ -207,7 +212,7 @@ def rounds_ss():
 
     return (timestamps, plants, defuses, fk_player, fk_death, true_fb, outcomes, who_fb, players_agents, awp_information
             , fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
-            site_list, all_round_data)
+            site_list, all_round_data, anchor_times)
 
 
 def generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps):
