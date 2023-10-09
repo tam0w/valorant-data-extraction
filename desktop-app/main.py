@@ -126,6 +126,22 @@ def rounds_ss():
 
     all_round_data = generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps)
 
+    anchor_times = []
+
+    print(all_round_data)
+
+    for r, round_instance in enumerate(all_round_data):
+
+        for event in round_instance:
+
+            if event[-1] == "Spike":
+
+                anchor_times.append(event[2])
+                break
+
+            if event[-1] == "Kill":
+                anchor_times.append(0)
+
     fk_player = []
     fk_death = []
 
@@ -190,8 +206,8 @@ def rounds_ss():
             true_fb.append(True)
 
     return (timestamps, plants, defuses, fk_player, fk_death, true_fb, outcomes, who_fb, players_agents, awp_information
-    , fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
-    site_list, all_round_data)
+            , fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
+            site_list, all_round_data)
 
 
 def generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps):
