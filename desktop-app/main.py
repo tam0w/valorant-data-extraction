@@ -40,6 +40,8 @@ def analyze(creds):
 
     data = {}
 
+    buy_info_team, buy_info_oppo, first_kill_times, anchor_times = preprocessing(buy_info_team, buy_info_oppo, first_kill_times, anchor_times)
+
     lists = [action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
              buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
              rounds, bombsites, true_fb, fscore, map_name, dt_string, players_agents, anchor_times, all_round_data]
@@ -56,6 +58,23 @@ def analyze(creds):
     test = requests.post('https://practistics.live/app/api', json=data, headers=header)
 
     print("Data extraction complete, create new csv on web dashboard.")
+
+
+def preprocessing(team_buy, oppo_buy, time, anchor_times):
+
+    team_buy = team_buy.str.replace(',', '')
+    oppo_buy = oppo_buy.str.replace(',', '')
+    time = time.str.replace('0:0', '')
+    time = time.str.replace('0:', '')
+    time = time.str.replace('.', '')
+    time = time.str.replace(':', '')
+    anchor_times = anchor_times.replace("0:", "").replace("0.", "").replace(".", "")
+
+    team_buy = team_buy.astype(int)
+    time = time.astype(int)
+    oppo_buy = oppo_buy.astype(int)
+
+    return team_buy, oppo_buy, time, anchor_times
 
 
 def rounds_ss():
@@ -145,8 +164,6 @@ def rounds_ss():
             if event[-1] == "Kill":
                 continue
 
-        print(anchor_times)
-
     fk_player = []
     fk_death = []
 
@@ -209,9 +226,6 @@ def rounds_ss():
 
         else:
             true_fb.append(True)
-
-    anchor_times.replace("0:", "").replace("0.", "").replace(".", "")
-    timestamps.replace("0:", "").replace("0.", "").replace(".", "")
 
     return (timestamps, plants, defuses, fk_player, fk_death, true_fb, outcomes, who_fb, players_agents, awp_information
             , fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
