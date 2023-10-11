@@ -210,6 +210,9 @@ def rounds_ss():
         else:
             true_fb.append(True)
 
+    anchor_times.replace("0:", "").replace("0.", "").replace(".", "")
+    timestamps.replace("0:", "").replace("0.", "").replace(".", "")
+
     return (timestamps, plants, defuses, fk_player, fk_death, true_fb, outcomes, who_fb, players_agents, awp_information
             , fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
             site_list, all_round_data, anchor_times)
