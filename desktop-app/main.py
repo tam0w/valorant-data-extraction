@@ -62,8 +62,8 @@ def analyze(creds):
 
 def preprocessing(team_buy, oppo_buy, time, anchor_times):
 
-    team_buy = team_buy.str.replace(',', '')
-    oppo_buy = oppo_buy.str.replace(',', '')
+    team_buy = [item.replace(',', '') for item in team_buy]
+    oppo_buy = [item.replace(',', '') for item in oppo_buy]
 
     for timestamp in time:
 
@@ -76,10 +76,6 @@ def preprocessing(team_buy, oppo_buy, time, anchor_times):
         elif timestamp.startswith('0'):
             timestamp = int(timestamp.replace('0:0', '').replace('0:', '').replace('.', '').replace(':', ''))
             anchor_times.append(timestamp)
-
-    team_buy = team_buy.astype(int)
-    time = time.astype(int)
-    oppo_buy = oppo_buy.astype(int)
 
     return team_buy, oppo_buy, time, anchor_times
 
