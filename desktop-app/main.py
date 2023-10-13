@@ -64,18 +64,29 @@ def preprocessing(team_buy, oppo_buy, time, anchor_times):
 
     team_buy = [item.replace(',', '') for item in team_buy]
     oppo_buy = [item.replace(',', '') for item in oppo_buy]
+    print(anchor_times)
+
+    anchor_time = []
 
     for timestamp in time:
 
         if timestamp.startswith('1'):
+            print("1")
             min = 60
             timestamp = timestamp.replace('1.', '').replace('1:', '')
             timestamp = int(timestamp) + min
-            anchor_times.append(timestamp)
+            anchor_time.append(timestamp)
 
         elif timestamp.startswith('0'):
-            timestamp = int(timestamp.replace('0:0', '').replace('0:', '').replace('.', '').replace(':', ''))
-            anchor_times.append(timestamp)
+            print("0")
+            timestamp = int(timestamp.replace('0:0', '').replace('0:', '').replace('0.', ''))
+            anchor_time.append(timestamp)
+
+        else:
+            print("NA se start")
+            anchor_time.append(False)
+
+    print(anchor_time)
 
     return team_buy, oppo_buy, time, anchor_times
 
