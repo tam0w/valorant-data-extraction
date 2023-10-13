@@ -77,8 +77,6 @@ def preprocessing(team_buy, oppo_buy, time, anchor_times):
             timestamp = int(timestamp.replace('0:0', '').replace('0:', '').replace('.', '').replace(':', ''))
             anchor_times.append(timestamp)
 
-
-
     team_buy = team_buy.astype(int)
     time = time.astype(int)
     oppo_buy = oppo_buy.astype(int)
