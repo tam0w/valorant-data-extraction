@@ -3,6 +3,7 @@ import traceback
 from datetime import datetime
 import cv2 as cv
 import easyocr
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyautogui as py
@@ -39,8 +40,7 @@ def analyze(creds):
     dt_string = date.strftime("%d/%m/%Y")
 
     data = {}
-
-    buy_info_team, buy_info_oppo, first_kill_times, anchor_times = preprocessing(buy_info_team, buy_info_oppo, first_kill_times, anchor_times)
+    print(anchor_times)
 
     lists = [action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
              buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
@@ -58,37 +58,6 @@ def analyze(creds):
     test = requests.post('https://practistics.live/app/api', json=data, headers=header)
 
     print("Data extraction complete, create new csv on web dashboard.")
-
-
-def preprocessing(team_buy, oppo_buy, time, anchor_times):
-
-    team_buy = [item.replace(',', '') for item in team_buy]
-    oppo_buy = [item.replace(',', '') for item in oppo_buy]
-    print(anchor_times)
-
-    anchor_time = []
-
-    for timestamp in time:
-
-        if timestamp.startswith('1'):
-            print("1")
-            min = 60
-            timestamp = timestamp.replace('1.', '').replace('1:', '')
-            timestamp = int(timestamp) + min
-            anchor_time.append(timestamp)
-
-        elif timestamp.startswith('0'):
-            print("0")
-            timestamp = int(timestamp.replace('0:0', '').replace('0:', '').replace('0.', ''))
-            anchor_time.append(timestamp)
-
-        else:
-            print("NA se start")
-            anchor_time.append(False)
-
-    print(anchor_time)
-
-    return team_buy, oppo_buy, time, anchor_times
 
 
 def rounds_ss():
@@ -345,7 +314,11 @@ def rounds_ocr(all_round_images):
     buy_info_oppo = [buy[1] for buy in buy_info]
 
     all_round_images_cropped = [images[505:970, 980:1040] for images in all_round_images]
+    for image in all_round_images_cropped:
+        plt.imshow(image)
+        plt.show()
     timestamps = [reader.readtext(image, detail=0) for image in all_round_images_cropped]
+    print(timestamps)
 
     all_round_images_cropped_plants = [images[505:970, 1150:1230] for images in all_round_images]
     plants = [reader.readtext(image, detail=0) for image in all_round_images_cropped_plants]
