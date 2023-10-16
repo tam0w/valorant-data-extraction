@@ -40,7 +40,6 @@ def analyze(creds):
     dt_string = date.strftime("%d/%m/%Y")
 
     data = {}
-    print(anchor_times)
 
     lists = [action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
              buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
@@ -314,11 +313,7 @@ def rounds_ocr(all_round_images):
     buy_info_oppo = [buy[1] for buy in buy_info]
 
     all_round_images_cropped = [images[505:970, 980:1040] for images in all_round_images]
-    for image in all_round_images_cropped:
-        plt.imshow(image)
-        plt.show()
     timestamps = [reader.readtext(image, detail=0) for image in all_round_images_cropped]
-    print(timestamps)
 
     all_round_images_cropped_plants = [images[505:970, 1150:1230] for images in all_round_images]
     plants = [reader.readtext(image, detail=0) for image in all_round_images_cropped_plants]
