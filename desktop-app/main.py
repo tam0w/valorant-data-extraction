@@ -107,10 +107,8 @@ def rounds_ss():
         flag = 'team' if green > 100 else 'opponent'
         who_fb.append(flag)
 
-    print(sides)
 
     for i in range(len(events_team)):
-        print(i)
         if plants[i] is True:
 
             if sides[i] == 'Attack':
@@ -232,19 +230,14 @@ def generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps
     all_round_data = round_agents
 
     for r, round_instance in enumerate(all_round_data):
-        print('r is fine',r)
         for i, timestamp in enumerate(timestamps[r]):
-            print(timestamp)
-            print(plants_or_not[r][i])
             round_instance[i].append(timestamp)
             round_instance[i].append(event_sides[r][i])
 
             if plants_or_not[r][i] == "Planted" or plants_or_not[r][i] == "Defused":
-                print('i is fine',i)
                 round_instance[i].append('Spike')
 
             else:
-                print('i is fine',i)
                 round_instance[i].append('Kill')
 
 
