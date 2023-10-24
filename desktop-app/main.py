@@ -503,21 +503,25 @@ def zip_player_agents(image):
         b, g, r = image[st_u, gr_check]
         u = st_u
 
-        while g < 100:
+        while g < 90:
             u = u + 1
             b, g, r = image[u, gr_check]
 
         st_l = gr_check + 3
         _, new_g, _ = image[u, st_l]
-        cur_img = image[u:u + 40, st_l:st_l + 140]
+        cur_img = image[u:u + 40, st_l:st_l + 180]
         st_u = u + 42
 
-        res = reader.readtext(cur_img, detail=0, mag_ratio=1.5, height_ths=0)
-        if len(res) < 1:
-            agent_list.append(res[1])
-        else:
-            res.append("Enter Name here")
+        res = reader.readtext(cur_img, detail=0, width_ths=25)
+        # if len(res) < 1:
+        #     agent_list.append(res[1])
+        # else:
+        #     res.append("Enter Name here")
 
+        plt.imshow(cur_img)
+        plt.show()
+
+        agent_list.append(res[1])
         player_list.append(res[0])
 
     st_u = 726
@@ -536,12 +540,16 @@ def zip_player_agents(image):
         cur_img = image[u:u + 40, st_l:st_l + 180]
         st_u = u + 42
 
-        res = reader.readtext(cur_img, detail=0, mag_ratio=1.5, height_ths=0)
-        if len(res) < 1:
-            agent_list.append(res[1])
-        else:
-            res.append("Enter Name here")
+        res = reader.readtext(cur_img, detail=0, width_ths=25)
+        # if len(res) < 1:
+        #     agent_list.append(res[1])
+        # else:
+        #     res.append("Enter Name here")
 
+        plt.imshow(cur_img)
+        plt.show()
+
+        agent_list.append(res[1])
         player_list.append(res[0])
 
     player_agents_zipped = dict(zip(player_list, agent_list))
