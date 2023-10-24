@@ -513,13 +513,6 @@ def zip_player_agents(image):
         st_u = u + 42
 
         res = reader.readtext(cur_img, detail=0, width_ths=25)
-        # if len(res) < 1:
-        #     agent_list.append(res[1])
-        # else:
-        #     res.append("Enter Name here")
-
-        plt.imshow(cur_img)
-        plt.show()
 
         agent_list.append(res[1])
         player_list.append(res[0])
@@ -541,20 +534,11 @@ def zip_player_agents(image):
         st_u = u + 42
 
         res = reader.readtext(cur_img, detail=0, width_ths=25)
-        # if len(res) < 1:
-        #     agent_list.append(res[1])
-        # else:
-        #     res.append("Enter Name here")
-
-        plt.imshow(cur_img)
-        plt.show()
 
         agent_list.append(res[1])
         player_list.append(res[0])
 
     player_agents_zipped = dict(zip(player_list, agent_list))
-
-    print(player_list, agent_list)
 
     return player_agents_zipped, agent_list
 
