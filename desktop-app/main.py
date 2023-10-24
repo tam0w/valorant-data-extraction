@@ -651,7 +651,7 @@ def bombsites_plants(tl_ss, map_name):
             elif map_name == 'lotus':
                 if x < 150:
                     site = 'C'
-                elif 150 < x < 3000:
+                elif 150 < x < 300:
                     site = 'B'
                 else:
                     site = 'A'
