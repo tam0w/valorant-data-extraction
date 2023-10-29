@@ -136,7 +136,7 @@ def rounds_ss():
 
             if event == round_instance[-1]:
                 if event[-1] == "Kill":
-                    anchor_times.append("NA")
+                    anchor_times.append(0)
                     break
 
             if event[-1] == "Spike":
@@ -198,20 +198,8 @@ def rounds_ss():
 
         elif fk_player[i] == tk_death[i]:
 
-            first = timestamps[i][0].replace("0:", "").replace("0.", "")
-            second = timestamps[i][2].replace("0:", "").replace("0.", "")
-
-            min = 60
-
-            if timestamps[i][0].startswith(':'):
-
-                timestamps[i][0] = timestamps[i][0].replace('1.', '').replace('1:', '').replace('.', '').replace(':', '')
-                first = int(timestamps[i][0]) + min
-
-            if timestamps[i][2].startswith(':'):
-
-                timestamps[i][2] = timestamps[i][2].replace('1.', '').replace('1:', '').replace('.', '').replace(':', '')
-                second = int(timestamps[i][2]) + min
+            first = timestamps[i][0]
+            second = timestamps[i][2]
 
             if int(second) - int(first) <= 15:
                 true_fb.append(False)
@@ -324,7 +312,7 @@ def rounds_ocr(all_round_images):
     buy_info_oppo = [buy[1] for buy in buy_info]
 
     all_round_images_cropped = [images[505:970, 980:1040] for images in all_round_images]
-    timestamps = [reader.readtext(image, detail=0) for image in all_round_images_cropped]
+    timestamps_old = [reader.readtext(image, detail=0) for image in all_round_images_cropped]
 
     all_round_images_cropped_plants = [images[505:970, 1150:1230] for images in all_round_images]
     plants = [reader.readtext(image, detail=0) for image in all_round_images_cropped_plants]
@@ -333,7 +321,42 @@ def rounds_ocr(all_round_images):
 
     awps = [reader.readtext(image, detail=0) for image in awp_or_no]
 
+    timestamps = fix_times(timestamps_old)
+
     return timestamps, plants, buy_info_team, buy_info_oppo, awps
+
+def fix_times(timestamps):
+
+    new_timestamps = []
+
+    for i, round in enumerate(timestamps):
+
+        new_round = []
+
+        for timestamp in round:
+
+            if timestamp.startswith('0'):
+
+                timestamp = int(timestamp.replace('0:0', '').replace('0:', '').replace('.', '').replace(':', ''))
+                new_round.append(timestamp)
+
+            elif timestamp.startswith('N'):
+
+                timestamp = 0
+                new_round.append(timestamp)
+
+            else:
+
+                min = 60
+                timestamp = timestamp.replace('1.', '').replace('1:', '').replace('.', '').replace(':', '').replace('T','').replace('l','')
+                timestamp = int(timestamp) + min
+                new_round.append(timestamp)
+
+        new_timestamps.append(new_round)
+
+    print(new_timestamps)
+
+    return new_timestamps
 
 
 def all_agents(image):
