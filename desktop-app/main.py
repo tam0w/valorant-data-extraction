@@ -354,7 +354,6 @@ def fix_times(timestamps):
 
         new_timestamps.append(new_round)
 
-    print(new_timestamps)
 
     return new_timestamps
 
