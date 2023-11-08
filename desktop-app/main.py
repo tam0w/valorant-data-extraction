@@ -31,7 +31,7 @@ def analyze(creds):
 
     (action_times, plants, defuses, fk_player, fk_death, true_fb, outcomes, fb_team, players_agents,
      awp_info, fscore, buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds,
-     bombsites, all_round_data, anchor_times) = rounds_ss()
+     bombsites, all_round_data, anchor_times, kills, assists) = rounds_ss()
 
     first_kill_times, second_kill_times = first_and_second_kills(action_times, first_is_plant)
     fbs_players, dt_players = map_player_agents(fb_team, fk_player, fk_death, players_agents)
@@ -43,12 +43,13 @@ def analyze(creds):
 
     lists = [action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
              buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
-             rounds, bombsites, true_fb, fscore, map_name, dt_string, players_agents, anchor_times, all_round_data]
+             rounds, bombsites, true_fb, fscore, map_name, dt_string, players_agents, anchor_times, all_round_data,
+             kills, assists]
 
     names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "awp_info",
              "buy_info_team", "buy_info_oppo", "kills_team", "kills_opp", "first_is_plant", "sides", "fbs_players",
              "dt_players", "first_kill_times", "rounds", "bombsites", "true_fb", "fscore", "map_name", "dt_string",
-             "players_agents", "anchor_times", "all_round_data"]
+             "players_agents", "anchor_times", "all_round_data", "kills", "assists"]
 
     for name, lst in zip(names, lists):
         data[name] = lst
@@ -97,6 +98,7 @@ def rounds_ss():
     events_team, events_opp, event_sides = total_events(tl_ss)
     site_list = bombsites_plants(tl_ss, map_info)
     awp_information = awp_info(awps)
+    kills, assists = kill_ass_kast(tl_ss)
 
     plants = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
     defuses = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
@@ -211,7 +213,7 @@ def rounds_ss():
 
     return (timestamps, plants, defuses, fk_player, fk_death, true_fb, outcomes, who_fb, players_agents, awp_information
             , fscore, buy_info_team, buy_info_oppo, map_info, events_team, events_opp, first_is_plant, sides, rounds,
-            site_list, all_round_data, anchor_times)
+            site_list, all_round_data, anchor_times, kills, assists)
 
 
 def generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps):
@@ -321,33 +323,51 @@ def rounds_ocr(all_round_images):
 
     awps = [reader.readtext(image, detail=0) for image in awp_or_no]
 
-    kills, assists = [kill_ass_kast(image) for image in all_round_images]
-
     timestamps = fix_times(timestamps_old)
 
     return timestamps, plants, buy_info_team, buy_info_oppo, awps
 
 
-def kill_ass_kast(img):
+def kill_ass_kast(images):
 
-    start = 504
-    for i in range(5):
-        img1 = img[start:start + 38, 450:590]
-        res = reader.readtext(img1, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
-                              allowlist='0123456')
-        print(res)
-        ax[i, 0].imshow(img1)
-        start = start + 42
+    kills = []
+    assists = []
 
-    start = 725
-    for i in range(5):
-        img1 = img[start:start + 38, 450:590]
-        res = reader.readtext(img1, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
-                              allowlist='0123456')
-        print(res)
-        ax[i, 1].imshow(img1)
-        start = start + 42
-    plt.show()
+    for img in images:
+
+        start = 504
+        rounds_kills = []
+        rounds_assists = []
+        start_oppo = 725
+
+        for i in range(10):
+
+            if i < 5:
+
+                img1 = img[start:start + 38, 450:590]
+                res = reader.readtext(img1, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
+                                      allowlist='0123456')
+                start = start + 42
+
+                score = res[0]
+                rounds_kills.append(score[0])
+                rounds_assists.append(score[1])
+
+            else:
+
+                img2 = img[start_oppo:start_oppo + 38, 450:590]
+                res = reader.readtext(img2, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
+                                      allowlist='0123456')
+                start_oppo = start_oppo + 42
+                score = res[0]
+                rounds_kills.append(score[0])
+                rounds_assists.append(score[1])
+
+        kills.append(rounds_kills)
+        assists.append(rounds_assists)
+
+    return kills, assists
+
 
 def fix_times(timestamps):
 
