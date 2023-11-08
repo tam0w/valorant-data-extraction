@@ -321,9 +321,33 @@ def rounds_ocr(all_round_images):
 
     awps = [reader.readtext(image, detail=0) for image in awp_or_no]
 
+    kills, assists = [kill_ass_kast(image) for image in all_round_images]
+
     timestamps = fix_times(timestamps_old)
 
     return timestamps, plants, buy_info_team, buy_info_oppo, awps
+
+
+def kill_ass_kast(img):
+
+    start = 504
+    for i in range(5):
+        img1 = img[start:start + 38, 450:590]
+        res = reader.readtext(img1, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
+                              allowlist='0123456')
+        print(res)
+        ax[i, 0].imshow(img1)
+        start = start + 42
+
+    start = 725
+    for i in range(5):
+        img1 = img[start:start + 38, 450:590]
+        res = reader.readtext(img1, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
+                              allowlist='0123456')
+        print(res)
+        ax[i, 1].imshow(img1)
+        start = start + 42
+    plt.show()
 
 def fix_times(timestamps):
 
