@@ -83,7 +83,6 @@ def rounds_ss():
             scoreboard = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
             print("Scoreboard read.")
             time.sleep(0.15)
-            break
 
         if keyboard.is_pressed('p'):
             image = py.screenshot()
@@ -99,6 +98,8 @@ def rounds_ss():
             print('Timeline screenshotting complete.')
             break
 
+    scoreboard_val = scoreboard_ocr(scoreboard)
+    print(scoreboard_val)
     players_agents, agents_names = zip_player_agents(tl_ss[0])
     agent_list = all_agents(tl_ss[0])
     timestamps, plants_or_not, buy_info_team, buy_info_oppo, awps = rounds_ocr(tl_ss)
@@ -314,7 +315,6 @@ def scores_ocr():
 def scoreboard_ocr(img):
 
     start = 340
-    reader = easyocr.Reader(['en'])
 
     scoreboard = []
 
