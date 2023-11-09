@@ -77,6 +77,14 @@ def rounds_ss():
     who_fb = []
 
     while True:
+
+        if keyboard.is_pressed('b'):
+            image = py.screenshot()
+            scoreboard = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+            print("Scoreboard read.")
+            time.sleep(0.15)
+            break
+
         if keyboard.is_pressed('p'):
             image = py.screenshot()
             cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
@@ -85,6 +93,7 @@ def rounds_ss():
             tl_ss.append(cv_image)
             print("Round screenshotted: ", len(tl_ss))
             time.sleep(0.3)
+
 
         if keyboard.is_pressed('q'):
             print('Timeline screenshotting complete.')
@@ -301,6 +310,36 @@ def scores_ocr():
     total_rounds = int(my_rounds) + int(opp_rounds)
 
     return total_rounds, sides, fscore
+
+def scoreboard_ocr(img):
+
+    start = 340
+    reader = easyocr.Reader(['en'])
+
+    scoreboard = []
+
+    for i in range(10):
+
+        img1 = img[start:start + 50, 330:700]
+        res_name = reader.readtext(img1, detail=0, link_threshold=0)
+
+        img1 = img[start:start + 50, 830:870]
+        res_kills = reader.readtext(img1, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], mag_ratio=2.5,
+                                    link_threshold=0, detail=0)
+
+        img1 = img[start:start + 50, 880:930]
+        res_deaths = reader.readtext(img1, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], mag_ratio=2.5,
+                                     link_threshold=0, detail=0)
+
+        img1 = img[start:start + 50, 930:980]
+        res_assists = reader.readtext(img1, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], mag_ratio=2.5,
+                                      link_threshold=0, detail=0)
+
+        scoreboard.append([res_name, res_kills, res_deaths, res_assists])
+
+        start = start + 52
+
+    return scoreboard
 
 
 def rounds_ocr(all_round_images):
