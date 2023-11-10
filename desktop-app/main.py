@@ -324,15 +324,16 @@ def scoreboard_ocr(img):
 
         img1 = img[start:start + 50, 830:870]
         res_kills = reader.readtext(img1, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], mag_ratio=2.5,
-                                    link_threshold=0, detail=0)
+                                     link_threshold=0, text_threshold=0, threshold=0, detail=0)
 
         img1 = img[start:start + 50, 880:930]
         res_deaths = reader.readtext(img1, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], mag_ratio=2.5,
-                                     link_threshold=0, detail=0)
+                                     link_threshold=0, text_threshold=0, threshold=0, detail=0)
 
         img1 = img[start:start + 50, 930:980]
         res_assists = reader.readtext(img1, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], mag_ratio=2.5,
-                                      link_threshold=0, detail=0)
+                                      link_threshold=0, text_threshold=0, threshold=0, detail=0)
+
 
         scoreboard.append([res_name, res_kills, res_deaths, res_assists])
 
