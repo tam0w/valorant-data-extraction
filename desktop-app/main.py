@@ -230,8 +230,7 @@ def generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps
 
     for r, round_instance in enumerate(all_round_data):
         for i, timestamp in enumerate(timestamps[r]):
-            print(r,plants_or_not[r])
-            print(i)
+
             round_instance[i].append(timestamp)
             round_instance[i].append(event_sides[r][i])
             try:
