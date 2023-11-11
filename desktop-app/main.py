@@ -234,13 +234,13 @@ def generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps
             print(i)
             round_instance[i].append(timestamp)
             round_instance[i].append(event_sides[r][i])
+            try:
+                if plants_or_not[r][i] == "Planted" or plants_or_not[r][i] == "Defused":
+                    round_instance[i].append('Spike')
 
-            if len(plants_or_not[r]) > len(timestamps[r])
-
-            if plants_or_not[r][i] == "Planted" or plants_or_not[r][i] == "Defused":
-                round_instance[i].append('Spike')
-
-            else:
+                else:
+                    round_instance[i].append('Kill')
+            except IndexError:
                 round_instance[i].append('Kill')
 
     return all_round_data
