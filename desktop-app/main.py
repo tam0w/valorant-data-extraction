@@ -334,8 +334,15 @@ def scoreboard_ocr(img):
         res_assists = reader.readtext(img1, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], mag_ratio=2.5,
                                       link_threshold=0, text_threshold=0, threshold=0, detail=0)
 
+        b1, g1, r1 = img[start+25,278]
 
-        scoreboard.append([res_name, res_kills, res_deaths, res_assists])
+        if g1 < 100 and r1 > 200 and b1 < 100:
+            side = 'opponent'
+
+        else:
+            side = 'team'
+
+        scoreboard.append([res_name, res_kills, res_deaths, res_assists, side])
 
         start = start + 52
 
