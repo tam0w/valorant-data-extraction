@@ -82,7 +82,7 @@ def rounds_ss():
             image = py.screenshot()
             scoreboard = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
             print("Scoreboard read.")
-            time.sleep(0.15)
+            time.sleep(0.3)
 
         if keyboard.is_pressed('p'):
             image = py.screenshot()
@@ -324,7 +324,7 @@ def scoreboard_ocr(img):
         img1 = img[start:start + 50, 330:700]
         res_name = reader.readtext(img1, detail=0, link_threshold=0)
 
-        img1 = img[start:start + 50, 830:870]
+        img1 = img[start:start + 50, 823:873]
         res_kills = reader.readtext(img1, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], mag_ratio=2.5,
                                      link_threshold=0, text_threshold=0, threshold=0, detail=0)
 
@@ -343,8 +343,7 @@ def scoreboard_ocr(img):
 
         else:
             side = 'team'
-
-        scoreboard.append([res_name, res_kills, res_deaths, res_assists, side])
+        scoreboard.append([res_name[0], res_kills[0], res_deaths[0], res_assists[0], side])
 
         start = start + 52
 
