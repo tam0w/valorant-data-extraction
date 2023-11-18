@@ -652,10 +652,8 @@ def zip_player_agents(image):
         _, _, new_r = image[u, st_l]
         cur_img = image[u:u + 40, st_l:st_l + 180]
         st_u = u + 42
-        plt.imshow(cur_img)
-        plt.show()
         res = reader.readtext(cur_img, detail=0, width_ths=25)
-        print(res)
+
         if len(res) < 2:
             res.append(input(f'Please confirm the agent {res[0]} is playing:'))
 
