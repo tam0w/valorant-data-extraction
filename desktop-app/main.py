@@ -337,11 +337,11 @@ def scoreboard_ocr(img):
                                       link_threshold=0, text_threshold=0, threshold=0, detail=0)
 
         if not res_assists:
-            res_assists = input(f'Please confirm the assists for player {res_name}:')
+            res_assists = [input(f'Please confirm the assists for player {res_name}:')]
         elif not res_kills:
-            res_assists = input(f'Please confirm the kills for player {res_name}:')
+            res_kills = [input(f'Please confirm the kills for player {res_name}:')]
         elif not res_deaths:
-            res_assists = input(f'Please confirm the deaths for player {res_name}:')
+            res_deaths = [input(f'Please confirm the deaths for player {res_name}:')]
 
         b1, g1, r1 = img[start+25,278]
 
@@ -350,6 +350,7 @@ def scoreboard_ocr(img):
 
         else:
             side = 'team'
+
         scoreboard.append([res_name[0], res_kills[0], res_deaths[0], res_assists[0], side])
 
         start = start + 52
