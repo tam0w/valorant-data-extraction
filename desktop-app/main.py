@@ -1,6 +1,8 @@
 import pprint
 import traceback
 from datetime import datetime
+from typing import List, Any
+
 import cv2 as cv
 import easyocr
 import matplotlib.pyplot as plt
@@ -81,7 +83,7 @@ def rounds_ss():
         if keyboard.is_pressed('b'):
             image = py.screenshot()
             scoreboard = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-            print("Scoreboard read.")
+            print("Scoreboard data read.")
             time.sleep(0.3)
 
         if keyboard.is_pressed('p'):
@@ -90,12 +92,11 @@ def rounds_ss():
             b, g, r = cv_image[520, 1150]
             greens.append(g)
             tl_ss.append(cv_image)
-            print("Round screenshotted: ", len(tl_ss))
+            print("Round", len(tl_ss), "data read. ")
             time.sleep(0.3)
 
-
         if keyboard.is_pressed('q'):
-            print('Timeline screenshotting complete.')
+            print('Timeline data reading complete.')
             break
 
     scoreboard_val = scoreboard_ocr(scoreboard)
@@ -118,7 +119,6 @@ def rounds_ss():
         flag = 'team' if green > 100 else 'opponent'
         who_fb.append(flag)
 
-
     for i in range(len(events_team)):
         if plants[i] is True:
 
@@ -139,7 +139,6 @@ def rounds_ss():
     all_round_data = generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps)
 
     anchor_times = []
-
 
     for r, round_instance in enumerate(all_round_data):
 
@@ -313,8 +312,8 @@ def scores_ocr():
 
     return total_rounds, sides, fscore
 
-def scoreboard_ocr(img):
 
+def scoreboard_ocr(img):
     start = 340
 
     scoreboard = []
@@ -326,7 +325,7 @@ def scoreboard_ocr(img):
 
         img1 = img[start:start + 50, 823:873]
         res_kills = reader.readtext(img1, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], mag_ratio=2.5,
-                                     link_threshold=0, text_threshold=0, threshold=0, detail=0)
+                                    link_threshold=0, text_threshold=0, threshold=0, detail=0)
 
         img1 = img[start:start + 50, 880:930]
         res_deaths = reader.readtext(img1, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], mag_ratio=2.5,
@@ -343,7 +342,7 @@ def scoreboard_ocr(img):
         elif not res_deaths:
             res_deaths = [input(f'Please confirm the deaths for player {res_name}:')]
 
-        b1, g1, r1 = img[start+25,278]
+        b1, g1, r1 = img[start + 25, 278]
 
         if g1 < 100 and r1 > 200 and b1 < 100:
             side = 'opponent'
@@ -384,7 +383,6 @@ def rounds_ocr(all_round_images):
 
 
 def kill_ass_kast(images):
-
     kills = []
     assists = []
 
@@ -425,7 +423,6 @@ def kill_ass_kast(images):
 
 
 def fix_times(timestamps):
-
     new_timestamps = []
 
     for i, round in enumerate(timestamps):
@@ -447,12 +444,13 @@ def fix_times(timestamps):
             else:
 
                 min = 60
-                timestamp = timestamp.replace('1.', '').replace('1:', '').replace('.', '').replace(':', '').replace('T','').replace('l','')
+                timestamp = timestamp.replace('1.', '').replace('1:', '').replace('.', '').replace(':', '').replace('T',
+                                                                                                                    '').replace(
+                    'l', '')
                 timestamp = int(timestamp) + min
                 new_round.append(timestamp)
 
         new_timestamps.append(new_round)
-
 
     return new_timestamps
 
@@ -611,6 +609,10 @@ def get_metadata(tl_ss):
 
 
 def zip_player_agents(image):
+    list_of_agents = ["Phoenix", "Raze", "Jett", "Yoru", "Neon", "Reyna", "Iso", "Sova", "Skye", "KAY/O", "Fade",
+                      "Breach", "Harbor", "Gekko""Cypher", "Killjoy", "Chamber", "Sage", "Brimstone", "Omen", "Viper",
+                      "Astra", "Deadlock"]
+
     file = image[495:940, 200:340]
 
     agent_list = []
@@ -655,7 +657,7 @@ def zip_player_agents(image):
         st_u = u + 42
         res = reader.readtext(cur_img, detail=0, width_ths=25)
 
-        if len(res) < 2:
+        if len(res) < 2 or res[1] not in list_of_agents:
             res.append(input(f'Please confirm the agent {res[0]} is playing:'))
 
         agent_list.append(res[1])
