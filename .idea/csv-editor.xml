@@ -73,6 +73,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="C:\Users\TAMIM\Downloads\30_11_2023_Split_13-2.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\res\agentinfo.csv">
           <value>
             <Attribute>

@@ -1,8 +1,6 @@
 import pprint
 import traceback
 from datetime import datetime
-from typing import List, Any
-
 import cv2 as cv
 import easyocr
 import matplotlib.pyplot as plt
