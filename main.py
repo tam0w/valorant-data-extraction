@@ -11,6 +11,11 @@ import time
 import os
 import keyboard
 import requests
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning, message="Failed to load image Python extension:")
+warnings.filterwarnings("ignore", category=UserWarning,
+                        message="Unable to retrieve source for @torch.jit._overload function:")
 
 # Load resources
 
