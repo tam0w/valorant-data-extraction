@@ -1,4 +1,5 @@
 import pprint
+import sys
 import traceback
 from datetime import datetime
 import cv2 as cv
@@ -13,21 +14,18 @@ import keyboard
 import requests
 import warnings
 
-warnings.filterwarnings("ignore", category=UserWarning, message="Failed to load image Python extension:")
-warnings.filterwarnings("ignore", category=UserWarning,
-                        message="Unable to retrieve source for @torch.jit._overload function:")
-
-# Load resources
-
-reader = easyocr.Reader(['en'])
 
 username = os.getlogin()
 
-
+warnings.filterwarnings("ignore")
 # Functions
+def init_function():
 
+    reader = easyocr.Reader(['en'])
 
-def analyze(creds):
+    return reader
+
+def analyze(creds, reader):
     """ This function will analyze the returned information from each individual round OCR and POST the
     final dataframe into the API endpoint? Or maybe this function will just give the final dataframe from the TL round
     analysis, into a json converting function which will then be posted into the website, perhaps."""
@@ -819,34 +817,22 @@ def bombsites_plants(tl_ss, map_name):
     return sites
 
 
-def auth():
-    key = input('Insert your authentication key:')
-    header = {'Authorization': f'Bearer {key}'}
-    test = requests.post('https://practistics.live/app/api/verify', headers=header)
+if __name__ == "__main__":
+    # Check if a command-line argument is provided to determine the mode
+    if len(sys.argv) > 1 and sys.argv[1] == "init":
+        reader = init_function()
+    elif len(sys.argv) > 1 and sys.argv[1] == "main":
+        while True:
 
-    if test.status_code == 200:
-        return key
+            ans = input('Please type \'start\' when you would like to begin or \'exit\' if you are finished.\n')
+            if ans == 'start':
+                try:
+                    analyze(jwt, reader)
+                except Exception:
+                    traceback.print_exc()
+                    continue
 
-    else:
-        print('Token expired / invalid.')
-        return 0
+            if ans == 'exit':
+                break
 
 
-jwt = 0
-
-while True:
-
-    if jwt == 0:
-        jwt = auth()
-        continue
-
-    ans = input('Please type \'start\' when you would like to begin or \'exit\' if you are finished.\n')
-    if ans == 'start':
-        try:
-            analyze(jwt)
-        except Exception:
-            traceback.print_exc()
-            continue
-
-    if ans == 'exit':
-        break
