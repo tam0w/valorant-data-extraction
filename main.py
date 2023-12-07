@@ -22,6 +22,7 @@ warnings.filterwarnings("ignore")
 def init_function():
 
     reader = easyocr.Reader(['en'])
+    print(1.3)
 
     return reader
 
@@ -834,5 +835,4 @@ if __name__ == "__main__":
 
             if ans == 'exit':
                 break
-
 
