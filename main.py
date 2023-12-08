@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore")
 
 def init_function():
 
-    print("V:", 1.3)
+    print(1.3)
 
 def analyze(creds):
     """ This function will analyze the returned information from each individual round OCR and POST the
