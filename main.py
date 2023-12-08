@@ -14,19 +14,14 @@ import keyboard
 import requests
 import warnings
 
-
-username = os.getlogin()
-
 warnings.filterwarnings("ignore")
-# Functions
+
+
 def init_function():
 
-    reader = easyocr.Reader(['en'])
-    print(1.3)
+    print("V:", 1.3)
 
-    return reader
-
-def analyze(creds, reader):
+def analyze(creds):
     """ This function will analyze the returned information from each individual round OCR and POST the
     final dataframe into the API endpoint? Or maybe this function will just give the final dataframe from the TL round
     analysis, into a json converting function which will then be posted into the website, perhaps."""
@@ -817,22 +812,45 @@ def bombsites_plants(tl_ss, map_name):
 
     return sites
 
+def auth():
+    key = input('Insert your authentication key:')
+    header = {'Authorization': f'Bearer {key}'}
+    test = requests.post('https://practistics.live/app/api/verify', headers=header)
 
-if __name__ == "__main__":
-    # Check if a command-line argument is provided to determine the mode
-    if len(sys.argv) > 1 and sys.argv[1] == "init":
-        reader = init_function()
-    elif len(sys.argv) > 1 and sys.argv[1] == "main":
-        while True:
+    if test.status_code == 200:
+        return key
 
-            ans = input('Please type \'start\' when you would like to begin or \'exit\' if you are finished.\n')
-            if ans == 'start':
-                try:
-                    analyze(jwt, reader)
-                except Exception:
-                    traceback.print_exc()
-                    continue
+    else:
+        print('Token expired / invalid.')
+        return 0
 
-            if ans == 'exit':
-                break
+
+
+if len(sys.argv) > 1 and sys.argv[1] == "init":
+    init_function()
+    quit()
+
+
+reader = easyocr.Reader(['en'])
+
+if len(sys.argv) > 1 and sys.argv[1] == "main":
+
+    jwt = 0
+
+    while True:
+
+        if jwt == 0:
+            jwt = auth()
+            continue
+
+        ans = input('Please type \'start\' when you would like to begin or \'exit\' if you are finished.\n')
+        if ans == 'start':
+            try:
+                analyze(jwt)
+            except Exception:
+                traceback.print_exc()
+                continue
+
+        if ans == 'exit':
+            break
 

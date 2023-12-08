@@ -33,6 +33,7 @@ def run_updater(resp):
     print("Running updater...")
     assets = resp["assets"][0]
     download_url = assets.get("browser_download_url")
+
     os.remove(folder_path)
 
     response = requests.get(download_url)
@@ -40,9 +41,8 @@ def run_updater(resp):
     if response.status_code == 200:
         with open(folder_path, "wb") as f:
             f.write(response.content)
+            unzip_file(zip_path, folder_path)
         print(f"Download successful.")
-    subprocess.run([script_path, 'main'])
-
 
 def download_app(resp):
     print("Downloading app...")
@@ -65,59 +65,21 @@ def unzip_file(zip_path, extract_path):
         zip_ref.extractall(extract_path)
     os.remove(zip_path)
 
-
-def auth():
-    key = input('Insert your authentication key:')
-    header = {'Authorization': f'Bearer {key}'}
-    test = requests.post('https://practistics.live/app/api/verify', headers=header)
-
-    if test.status_code == 200:
-        return key
-
-    else:
-        print('Token expired / invalid.')
-        return 0
-
-jwt = 0
-
 while True:
-    subprocess.run([script_path, 'init'])
-    if jwt == 0:
-        jwt = auth()
-        continue
 
-    ans = input('Please type \'start\' when you would like to begin or \'exit\' if you are finished.\n')
-    if ans == 'start':
-        try:
-            # if not os.path.exists(script_path):
-            #     download_app(requests.get("https://api.github.com/repos/tam0w/demo_analysis_TL/releases/latest").json())
-            #
-            # update, resp = check_for_update(version_number)
-            #
-            # if update:
-            #     run_updater(resp)
-            # else:
-            #     subprocess.run([script_path, 'main'])
-            subprocess.run([script_path, 'main'])
-        except Exception:
-            traceback.print_exc()
-            continue
+    if not os.path.exists(script_path):
+        download_app(requests.get("https://api.github.com/repos/tam0w/demo_analysis_TL/releases/latest").json())
 
-    if ans == 'exit':
-        break
+    version_number = float(subprocess.check_output([script_path, 'init'], text=True))
+    update, resp = check_for_update(version_number)
+
+    if update:
+        run_updater(resp)
+        subprocess.run([script_path, 'main'])
+    else:
+        subprocess.run([script_path, 'main'])
 
 
 
 
 
-if not os.path.exists(script_path):
-    download_app(requests.get("https://api.github.com/repos/tam0w/demo_analysis_TL/releases/latest").json())
-
-version_number = float(subprocess.check_output([script_path, 'init'], text=True))
-
-update, resp = check_for_update(version_number)
-
-if update:
-    run_updater(resp)
-# else:
-    subprocess.run([script_path, 'main'])
