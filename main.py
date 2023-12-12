@@ -824,12 +824,13 @@ def auth():
         print('Token expired / invalid.')
         return 0
 
-
+sys.argv = ["someth","init"]
 
 if len(sys.argv) > 1 and sys.argv[1] == "init":
     init_function()
-    quit()
 
+
+sys.argv = ["someth","main"]
 
 reader = easyocr.Reader(['en'])
 

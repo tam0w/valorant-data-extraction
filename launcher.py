@@ -6,16 +6,16 @@ import traceback
 import zipfile
 import requests
 
-folder_path = os.path.join(os.getenv("LOCALAPPDATA"), "ApplicationVizIns")
+folder_path = os.path.join(os.getenv("LOCALAPPDATA"), "practistics")
 script_path = os.path.join(folder_path, "practistics.exe")
 zip_path = os.path.join(folder_path, "output.zip")
 # script_path = os.path.join(os.path.dirname(__file__), "main.py")
 # version_number = float(subprocess.check_output(['python', script_path, 'init'], text=True))
-version_number = float(subprocess.check_output([script_path, 'init'], text=True))
+# version_number = float(subprocess.check_output([script_path, 'init'], text=True))
 
 def check_for_update(this_version):
 
-    url = "https://api.github.com/repos/tam0w/demo_analysis_TL/releases/latest"
+    url = "https://api.github.com/repos/tam0w/empty-repo/releases/latest"
     response = requests.get(url)
     latest_version = float(response.json()["tag_name"])
     print("Update Checker:")
@@ -54,9 +54,10 @@ def download_app(resp):
     response = requests.get(download_url)
 
     if response.status_code == 200:
-        with open(folder_path, "wb") as f:
+        with open(zip_path, "wb") as f:
             f.write(response.content)
-            unzip_file(zip_path, folder_path)
+            print("Download huva abhi unzip")
+        unzip_file(zip_path, folder_path)
         print(f"Download successful.")
 
 
@@ -68,10 +69,15 @@ def unzip_file(zip_path, extract_path):
 while True:
 
     if not os.path.exists(script_path):
-        download_app(requests.get("https://api.github.com/repos/tam0w/demo_analysis_TL/releases/latest").json())
+        print("scipt not real")
+        if not os.path.exists(folder_path):
+            print("test")
+            os.mkdir(folder_path)
+        download_app(requests.get("https://api.github.com/repos/tam0w/empty-repo/releases/latest").json())
 
     version_number = float(subprocess.check_output([script_path, 'init'], text=True))
     update, resp = check_for_update(version_number)
+    print(update, version_number)
 
     if update:
         run_updater(resp)
