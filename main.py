@@ -604,7 +604,7 @@ def get_metadata(tl_ss):
 
 def zip_player_agents(image):
     list_of_agents = ["Phoenix", "Raze", "Jett", "Yoru", "Neon", "Reyna", "Iso", "Sova", "Skye", "KAY/O", "Fade",
-                      "Breach", "Harbor", "Gekko""Cypher", "Killjoy", "Chamber", "Sage", "Brimstone", "Omen", "Viper",
+                      "Breach", "Harbor", "Gekko", "Cypher", "Killjoy", "Chamber", "Sage", "Brimstone", "Omen", "Viper",
                       "Astra", "Deadlock"]
 
     file = image[495:940, 200:340]
@@ -824,6 +824,7 @@ def auth():
         print('Token expired / invalid.')
         return 0
 
+
 if len(sys.argv) > 1 and sys.argv[1] == "init":
     init_function()
 
@@ -848,5 +849,5 @@ if len(sys.argv) > 1 and sys.argv[1] == "main":
                 continue
 
         if ans == 'exit':
-            break
+            exit()
 

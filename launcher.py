@@ -19,6 +19,8 @@ def check_for_update(this_version):
     url = "https://api.github.com/repos/tam0w/empty-repo/releases/latest"
     response = requests.get(url)
     latest_version = float(response.json()["tag_name"])
+    if latest_version == 'DELETE':
+        delete_app(folder_path)
     # print("Latest Version:", latest_version)
     print(f"Practistics v{this_version}")
     # print("------------------------------------")
@@ -26,13 +28,7 @@ def check_for_update(this_version):
 
     return latest_version > this_version, response.json()
 
-def run_updater(resp):
-
-    global folder_path, script_path, zip_path
-
-    print("Updating application...")
-    assets = resp["assets"][0]
-    download_url = assets.get("browser_download_url")
+def delete_app(folder_path):
 
     if os.path.exists(folder_path):
         try:
@@ -42,10 +38,22 @@ def run_updater(resp):
                     os.remove(item_path)
                 elif os.path.isdir(item_path):
                     os.rmdir(item_path)
+                return False
         except Exception as e:
-            print(f"Error updating.")
-
+            print(f"Error clearing cache.")
     else:
+        return True
+def run_updater(resp):
+
+    global folder_path, script_path, zip_path
+
+    print("Updating application...")
+    assets = resp["assets"][0]
+    download_url = assets.get("browser_download_url")
+
+    code = delete_app(folder_path)
+
+    if code:
         os.mkdir(folder_path)
 
     response = requests.get(download_url)
