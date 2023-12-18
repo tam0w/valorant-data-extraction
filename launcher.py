@@ -7,7 +7,7 @@ import zipfile
 import requests
 
 folder_path = os.path.join(os.getenv("LOCALAPPDATA"), "Viz app")
-script_path = os.path.join(folder_path, "practistics.exe")
+script_path = os.path.join(folder_path, "viz.exe")
 zip_path = os.path.join(folder_path, "output.zip")
 # script_path = os.path.join(os.path.dirname(__file__), "main.py")
 # version_number = float(subprocess.check_output(['python', script_path, 'init'], text=True))
