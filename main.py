@@ -14,9 +14,6 @@ import keyboard
 import requests
 import warnings
 
-warnings.filterwarnings("ignore")
-
-
 def init_function():
 
     print(1.3)
@@ -801,6 +798,9 @@ def bombsites_plants(tl_ss, map_name):
             elif map_name == 'breeze':
                 site = 'A' if x > 250 else 'B'
 
+            elif map_name == 'icebox':
+                site = 'A' if y > 200 else 'B'
+
             else:
                 site = 'unclear'
 
@@ -824,17 +824,12 @@ def auth():
         print('Token expired / invalid.')
         return 0
 
-sys.argv = ["someth","init"]
-
 if len(sys.argv) > 1 and sys.argv[1] == "init":
     init_function()
 
-
-sys.argv = ["someth","main"]
-
-reader = easyocr.Reader(['en'])
-
 if len(sys.argv) > 1 and sys.argv[1] == "main":
+
+    reader = easyocr.Reader(['en'])
 
     jwt = 0
 
