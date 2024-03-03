@@ -16,7 +16,7 @@ import warnings
 
 def init_function():
 
-    print(1.3)
+    print(1.4)
 
 def analyze(creds):
     """ This function will analyze the returned information from each individual round OCR and POST the
@@ -739,9 +739,11 @@ def total_events(tl_ss):
 
     return events_team, events_opp, rounds_events_sides
 
+folder_path = os.path.join(os.getenv("LOCALAPPDATA"), "Viz app")
 
 def bombsites_plants(tl_ss, map_name):
-    spike_p = r'D:\PROJECTS\demo-analysis-timeline\res\spike.png'
+
+    spike_p = os.path.join(folder_path, "spike.png")
     spike = cv.imread(spike_p)
 
     sites = []
@@ -823,7 +825,6 @@ def auth():
     else:
         print('Token expired / invalid.')
         return 0
-
 
 if len(sys.argv) > 1 and sys.argv[1] == "init":
     init_function()
