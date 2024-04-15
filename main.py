@@ -335,6 +335,8 @@ def scoreboard_ocr(img):
             res_kills = [input(f'Please confirm the kills for player {res_name}:')]
         elif not res_deaths:
             res_deaths = [input(f'Please confirm the deaths for player {res_name}:')]
+        elif not res_name:
+            res_deaths = [input(f'Please confirm the IGN for player number {i+1} (according to scoreboard):')]
 
         b1, g1, r1 = img[start + 25, 278]
 
@@ -392,23 +394,43 @@ def kill_ass_kast(images):
             if i < 5:
 
                 img1 = img[start:start + 38, 450:590]
-                res = reader.readtext(img1, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
-                                      allowlist='0123456')
-                start = start + 42
 
-                score = res[0]
-                rounds_kills.append(score[0])
-                rounds_assists.append(score[1])
+                try:
+                    res = reader.readtext(img1, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
+                                          allowlist='0123456')
+                    start = start + 42
+
+                    score = res[0]
+                    rounds_kills.append(score[0])
+                    rounds_assists.append(score[1])
+                except:
+                    res = reader.readtext(img1, detail=0, text_threshold=0, threshold=0,
+                                          link_threshold=0,
+                                          allowlist='0123456')
+                    start = start + 42
+
+                    score = res[0]
+                    rounds_kills.append(score[0])
+                    rounds_assists.append(score[1])
 
             else:
 
                 img2 = img[start_oppo:start_oppo + 38, 450:590]
-                res = reader.readtext(img2, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
-                                      allowlist='0123456')
-                start_oppo = start_oppo + 42
-                score = res[0]
-                rounds_kills.append(score[0])
-                rounds_assists.append(score[1])
+
+                try:
+                    res = reader.readtext(img2, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
+                                          allowlist='0123456')
+                    start_oppo = start_oppo + 42
+                    score = res[0]
+                    rounds_kills.append(score[0])
+                    rounds_assists.append(score[1])
+                except:
+                    res = reader.readtext(img2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
+                                          allowlist='0123456')
+                    start_oppo = start_oppo + 42
+                    score = res[0]
+                    rounds_kills.append(score[0])
+                    rounds_assists.append(score[1])
 
         kills.append(rounds_kills)
         assists.append(rounds_assists)
@@ -605,7 +627,7 @@ def get_metadata(tl_ss):
 def zip_player_agents(image):
     list_of_agents = ["Phoenix", "Raze", "Jett", "Yoru", "Neon", "Reyna", "Iso", "Sova", "Skye", "KAY/O", "Fade",
                       "Breach", "Harbor", "Gekko", "Cypher", "Killjoy", "Chamber", "Sage", "Brimstone", "Omen", "Viper",
-                      "Astra", "Deadlock"]
+                      "Astra", "Deadlock", "Clove"]
 
     file = image[495:940, 200:340]
 
@@ -630,6 +652,9 @@ def zip_player_agents(image):
         st_u = u + 42
 
         res = reader.readtext(cur_img, detail=0, width_ths=25)
+
+        if len(res) < 2 or res[1] not in list_of_agents:
+            res.append(input(f'Please confirm the agent {res[0]} is playing:'))
 
         agent_list.append(res[1])
         player_list.append(res[0])
@@ -826,11 +851,9 @@ def auth():
         print('Token expired / invalid.')
         return 0
 
-if len(sys.argv) > 1 and sys.argv[1] == "init":
-    init_function()
 
-if len(sys.argv) > 1 and sys.argv[1] == "main":
-
+def run_app_main():
+    global reader
     reader = easyocr.Reader(['en'])
 
     jwt = 0
@@ -851,4 +874,16 @@ if len(sys.argv) > 1 and sys.argv[1] == "main":
 
         if ans == 'exit':
             exit()
+
+if len(sys.argv) == 1:
+    print("Please use the launcher.")
+    if input("") == "dev": run_app_main()
+
+if len(sys.argv) > 1 and sys.argv[1] == "init":
+    init_function()
+
+if len(sys.argv) > 1 and sys.argv[1] == "main":
+    run_app_main()
+
+
 
