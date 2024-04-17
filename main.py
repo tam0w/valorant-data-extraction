@@ -1,4 +1,5 @@
 import pprint
+import random
 import sys
 import traceback
 from datetime import datetime
@@ -14,6 +15,9 @@ import keyboard
 import requests
 import warnings
 
+error_data = {}
+file_id = 0
+
 def init_function():
 
     print(1.4)
@@ -24,6 +28,9 @@ def analyze(creds):
     analysis, into a json converting function which will then be posted into the website, perhaps."""
 
     global jwt
+    global file_id
+
+    file_id = "F" + str(random.randint(0, 1000000))
 
     (action_times, plants, defuses, fk_player, fk_death, true_fb, outcomes, fb_team, players_agents,
      awp_info, fscore, buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds,
@@ -51,13 +58,23 @@ def analyze(creds):
         data[name] = lst
 
     header = {'Authorization': f'Bearer {creds}'}
-    test = requests.post('https://practistics.live/app/api', json=data, headers=header)
+    # test = requests.post('https://practistics.live/app/api', json=data, headers=header)
 
-    print("Data extraction complete, create new csv on web dashboard.")
+    test = requests.post('http://127.0.0.1:5000/app/api', json=data, headers=header)
+
+    if test.status_code == 200:
+        print("Data extraction complete, and loaded onto web-server.")
+    else:
+        print("Error in sending the data. \n")
+        data = {
+            'error_data': error_data,
+            'file_id': file_id
+        }
+        requests.post('https://practistics.live/api/error_log', json=data, headers=header)
 
 
 def rounds_ss():
-    """ This function will go to the timeline page of the match in question and screenshot every page of the timeline.
+    """ This function will go to the all the post-match pages of the match in question and screenshot every page of the timeline.
     It will then run the OCR function for all the rounds in the match as specified and append them  to a list. This
     list will be returned to the 'analyze' function. """
 
@@ -77,6 +94,7 @@ def rounds_ss():
         if keyboard.is_pressed('b'):
             image = py.screenshot()
             scoreboard = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+            error_data['scoreboard'] = scoreboard
             print("Scoreboard data read.")
             time.sleep(0.3)
 
@@ -91,6 +109,7 @@ def rounds_ss():
 
         if keyboard.is_pressed('q'):
             print('Timeline data reading complete.')
+            error_data['timeline'] = tl_ss
             break
 
     scoreboard_val = scoreboard_ocr(scoreboard)
@@ -205,7 +224,7 @@ def rounds_ss():
             first = timestamps[i][0]
             second = timestamps[i][2]
 
-            if int(second) - int(first) <= 15:
+            if int(second) - int(first) <= 10:
                 true_fb.append(False)
             else:
                 true_fb.append(True)
@@ -609,6 +628,7 @@ def ocr_round_win(images):
 def final_score_ocr():
     image = py.screenshot()
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+    error_data['summary'] = cv_image
     score = cv_image[70:170, 700:1150]
     score = reader.readtext(score, detail=0)
 
@@ -869,7 +889,14 @@ def run_app_main():
             try:
                 analyze(jwt)
             except Exception:
-                traceback.print_exc()
+                print(f"Error! Try again or report on discord. \nFile ID: {file_id}")
+                header = {'Authorization': f'Bearer {jwt}'}
+                error_data['traceback'] = traceback.format_exc()
+                data = {
+                    'error_data': error_data,
+                    'file_id': file_id
+                }
+                requests.post('https://practistics.live/api/error_log', json=data, headers=header)
                 continue
 
         if ans == 'exit':
