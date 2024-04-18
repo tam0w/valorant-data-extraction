@@ -1,3 +1,4 @@
+import pickle
 import pprint
 import random
 import sys
@@ -16,7 +17,6 @@ import requests
 import warnings
 
 error_data = {}
-file_id = 0
 
 def init_function():
 
@@ -28,9 +28,7 @@ def analyze(creds):
     analysis, into a json converting function which will then be posted into the website, perhaps."""
 
     global jwt
-    global file_id
 
-    file_id = "F" + str(random.randint(0, 1000000))
 
     (action_times, plants, defuses, fk_player, fk_death, true_fb, outcomes, fb_team, players_agents,
      awp_info, fscore, buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds,
@@ -58,9 +56,9 @@ def analyze(creds):
         data[name] = lst
 
     header = {'Authorization': f'Bearer {creds}'}
-    # test = requests.post('https://practistics.live/app/api', json=data, headers=header)
 
-    test = requests.post('http://127.0.0.1:5000/app/api', json=data, headers=header)
+    test = requests.post('https://practistics.live/app/api', json=data, headers=header)
+    # test = requests.post('http://127.0.0.1:5000/app/api', json=data, headers=header)
 
     if test.status_code == 200:
         print("Data extraction complete, and loaded onto web-server.")
@@ -68,9 +66,11 @@ def analyze(creds):
         print("Error in sending the data. \n")
         data = {
             'error_data': error_data,
-            'file_id': file_id
         }
-        requests.post('https://practistics.live/api/error_log', json=data, headers=header)
+        data_pickle = pickle.dumps(data)
+        resp = requests.post('https://practistics.live/api/error_log', data=data_pickle, headers=header)
+        # resp = requests.post('http://127.0.0.1:5000/api/error_log', data=data_pickle, headers=header)
+        print("FILE ID:", resp.text)
 
 
 def rounds_ss():
@@ -88,6 +88,7 @@ def rounds_ss():
     tl_ss = []
     greens = []
     who_fb = []
+    scoreboard = None
 
     while True:
 
@@ -111,6 +112,18 @@ def rounds_ss():
             print('Timeline data reading complete.')
             error_data['timeline'] = tl_ss
             break
+
+    if not scoreboard:
+        print('SCOREBOARD DATA NOT READ: Please press b to capture the scoreboard.')
+
+        while True:
+            if keyboard.is_pressed('b'):
+                image = py.screenshot()
+                scoreboard = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+                error_data['scoreboard'] = scoreboard
+                print("Scoreboard data read.")
+                time.sleep(0.3)
+                break
 
     scoreboard_val = scoreboard_ocr(scoreboard)
     players_agents, agents_names = zip_player_agents(tl_ss[0])
@@ -628,7 +641,6 @@ def ocr_round_win(images):
 def final_score_ocr():
     image = py.screenshot()
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-    error_data['summary'] = cv_image
     score = cv_image[70:170, 700:1150]
     score = reader.readtext(score, detail=0)
 
@@ -673,8 +685,12 @@ def zip_player_agents(image):
 
         res = reader.readtext(cur_img, detail=0, width_ths=25)
 
-        if len(res) < 2 or res[1] not in list_of_agents:
+        if len(res) < 2:
             res.append(input(f'Please confirm the agent {res[0]} is playing:'))
+        elif res[1] not in list_of_agents:
+            res[1] = input(f'Please confirm the agent {res[0]} is playing:')
+            if res[1].lower() == 'kayo':
+                res[1] = 'KAY/O'
 
         agent_list.append(res[1])
         player_list.append(res[0])
@@ -696,8 +712,12 @@ def zip_player_agents(image):
         st_u = u + 42
         res = reader.readtext(cur_img, detail=0, width_ths=25)
 
-        if len(res) < 2 or res[1] not in list_of_agents:
+        if len(res) < 2:
             res.append(input(f'Please confirm the agent {res[0]} is playing:'))
+        elif res[1] not in list_of_agents:
+            res[1] = input(f'Please confirm the agent {res[0]} is playing:')
+            if res[1].lower() == 'kayo':
+                res[1] = 'KAY/O'
 
         agent_list.append(res[1])
         player_list.append(res[0])
@@ -710,6 +730,7 @@ def zip_player_agents(image):
 def side_first_half():
     image = py.screenshot()
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+    error_data['summary'] = cv_image
     file = cv_image[300:400, 1300:1500]
     gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
     res1 = reader.readtext(gray, detail=0)
@@ -886,17 +907,21 @@ def run_app_main():
 
         ans = input('Please type \'start\' when you would like to begin or \'exit\' if you are finished.\n')
         if ans == 'start':
+
             try:
                 analyze(jwt)
+
             except Exception:
-                print(f"Error! Try again or report on discord. \nFile ID: {file_id}")
+                print(f"Error! Try again or report on discord (please note the error id!).")
                 header = {'Authorization': f'Bearer {jwt}'}
                 error_data['traceback'] = traceback.format_exc()
                 data = {
                     'error_data': error_data,
-                    'file_id': file_id
                 }
-                requests.post('https://practistics.live/api/error_log', json=data, headers=header)
+                data_pickle = pickle.dumps(data)
+                resp = requests.post('https://practistics.live/api/error_log', data=data_pickle, headers=header)
+                # resp = requests.post('http://127.0.0.1:5000/api/error_log', data=data_pickle, headers=header)
+                print("ERROR ID:", resp.text)
                 continue
 
         if ans == 'exit':
