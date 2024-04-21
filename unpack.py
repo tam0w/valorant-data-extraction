@@ -1,7 +1,7 @@
 import zipfile
 import os
 
-appdata_path = os.path.join(os.getenv("LOCALAPPDATA"), "practistics")
+appdata_path = os.path.join(os.getenv("LOCALAPPDATA"), "Viz app")
 
 
 def unzip_file(zip_path, extract_path):

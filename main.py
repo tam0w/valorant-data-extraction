@@ -4,6 +4,8 @@ import random
 import sys
 import traceback
 from datetime import datetime
+from difflib import get_close_matches
+
 import cv2 as cv
 import easyocr
 import matplotlib.pyplot as plt
@@ -17,10 +19,36 @@ import requests
 import warnings
 
 error_data = {}
+list_of_agents = ["Phoenix", "Raze", "Jett", "Yoru", "Neon", "Reyna", "Iso", "Sova", "Skye", "KAY/O", "Fade",
+                  "Breach", "Harbor", "Gekko", "Cypher", "Killjoy", "Chamber", "Sage", "Brimstone", "Omen", "Viper",
+                  "Astra", "Deadlock", "Clove"]
+
+class Logger:
+    def __init__(self):
+        self.terminal = sys.stdout
+        self.log = []
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.append(message)
+
+    def flush(self):
+        # this flush method is needed for python 3 compatibility.
+        # this handles the flush command by doing nothing.
+        # you might want to specify some extra behavior here.
+        pass
+
+def start_logging():
+    sys.stdout = Logger()
+
+def stop_logging():
+    logs = sys.stdout.log
+    sys.stdout = sys.stdout.terminal
+    return logs
 
 def init_function():
 
-    print(1.4)
+    print(1.5)
 
 def analyze(creds):
     """ This function will analyze the returned information from each individual round OCR and POST the
@@ -28,15 +56,15 @@ def analyze(creds):
     analysis, into a json converting function which will then be posted into the website, perhaps."""
 
     global jwt
-
-
+    start_logging()
+    error_data['local_vars'] = locals()
     (action_times, plants, defuses, fk_player, fk_death, true_fb, outcomes, fb_team, players_agents,
      awp_info, fscore, buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds,
      bombsites, all_round_data, anchor_times, kills, assists, scoreboard_values) = rounds_ss()
-
+    error_data['local_vars'] = locals()
     first_kill_times, second_kill_times = first_and_second_kills(action_times, first_is_plant)
     fbs_players, dt_players = map_player_agents(fb_team, fk_player, fk_death, players_agents)
-
+    error_data['local_vars'] = locals()
     date = datetime.now()
     dt_string = date.strftime("%d/%m/%Y")
 
@@ -46,7 +74,7 @@ def analyze(creds):
              buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
              rounds, bombsites, true_fb, fscore, map_name, dt_string, players_agents, anchor_times, all_round_data,
              kills, assists, scoreboard_values]
-
+    error_data['local_vars'] = locals()
     names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "awp_info",
              "buy_info_team", "buy_info_oppo", "kills_team", "kills_opp", "first_is_plant", "sides", "fbs_players",
              "dt_players", "first_kill_times", "rounds", "bombsites", "true_fb", "fscore", "map_name", "dt_string",
@@ -64,13 +92,10 @@ def analyze(creds):
         print("Data extraction complete, and loaded onto web-server.")
     else:
         print("Error in sending the data. \n")
-        data = {
-            'error_data': error_data,
-        }
-        data_pickle = pickle.dumps(data)
-        resp = requests.post('https://practistics.live/api/error_log', data=data_pickle, headers=header)
-        # resp = requests.post('http://127.0.0.1:5000/api/error_log', data=data_pickle, headers=header)
-        print("FILE ID:", resp.text)
+        confirmation = True if input('Would you like to send an error log? (y/n):').lower() == 'y' else False
+        error_data['traceback'] = traceback.format_exc()
+        if confirmation:
+            store_error_data()
 
 
 def rounds_ss():
@@ -113,7 +138,7 @@ def rounds_ss():
             error_data['timeline'] = tl_ss
             break
 
-    if not scoreboard:
+    if scoreboard is None:
         print('SCOREBOARD DATA NOT READ: Please press b to capture the scoreboard.')
 
         while True:
@@ -121,9 +146,11 @@ def rounds_ss():
                 image = py.screenshot()
                 scoreboard = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
                 error_data['scoreboard'] = scoreboard
-                print("Scoreboard data read.")
+                print("Scoreboard read. Processing data..")
                 time.sleep(0.3)
                 break
+    else:
+        print('Processing data..')
 
     scoreboard_val = scoreboard_ocr(scoreboard)
     players_agents, agents_names = zip_player_agents(tl_ss[0])
@@ -332,6 +359,13 @@ def scores_ocr():
     sides = side_first_half()
 
     my_rounds, match_result, opp_rounds = final_score_ocr()
+
+    if my_rounds.isalpha():
+        my_rounds = input("Please confirm the your teams rounds won:")
+
+    if opp_rounds.isalpha():
+        opp_rounds = input("Please confirm the opponents rounds won:")
+
     fscore = my_rounds + " - " + opp_rounds
     print("Score:", fscore, "\nResult: ", match_result)
     total_rounds = int(my_rounds) + int(opp_rounds)
@@ -657,9 +691,6 @@ def get_metadata(tl_ss):
 
 
 def zip_player_agents(image):
-    list_of_agents = ["Phoenix", "Raze", "Jett", "Yoru", "Neon", "Reyna", "Iso", "Sova", "Skye", "KAY/O", "Fade",
-                      "Breach", "Harbor", "Gekko", "Cypher", "Killjoy", "Chamber", "Sage", "Brimstone", "Omen", "Viper",
-                      "Astra", "Deadlock", "Clove"]
 
     file = image[495:940, 200:340]
 
@@ -685,12 +716,19 @@ def zip_player_agents(image):
 
         res = reader.readtext(cur_img, detail=0, width_ths=25)
 
+
         if len(res) < 2:
-            res.append(input(f'Please confirm the agent {res[0]} is playing:'))
-        elif res[1] not in list_of_agents:
-            res[1] = input(f'Please confirm the agent {res[0]} is playing:')
+            res.append(input(f'Please confirm the agent {res[0]} is playing:').title())
             if res[1].lower() == 'kayo':
                 res[1] = 'KAY/O'
+
+        if res[1] not in list_of_agents:
+
+            res[1] = correct_agent_name(res[1])
+            if res[1] == 0:
+                res[1] = input(f'Please confirm the agent {res[0]} is playing:').title()
+                if res[1].lower() == 'kayo':
+                    res[1] = 'KAY/O'
 
         agent_list.append(res[1])
         player_list.append(res[0])
@@ -713,11 +751,17 @@ def zip_player_agents(image):
         res = reader.readtext(cur_img, detail=0, width_ths=25)
 
         if len(res) < 2:
-            res.append(input(f'Please confirm the agent {res[0]} is playing:'))
-        elif res[1] not in list_of_agents:
-            res[1] = input(f'Please confirm the agent {res[0]} is playing:')
+            res.append(input(f'Please confirm the agent {res[0]} is playing:').title())
             if res[1].lower() == 'kayo':
                 res[1] = 'KAY/O'
+
+        if res[1] not in list_of_agents:
+
+            res[1] = correct_agent_name(res[1])
+            if res[1] == 0:
+                res[1] = input(f'Please confirm the agent {res[0]} is playing:').title()
+                if res[1].lower() == 'kayo':
+                    res[1] = 'KAY/O'
 
         agent_list.append(res[1])
         player_list.append(res[0])
@@ -880,6 +924,53 @@ def bombsites_plants(tl_ss, map_name):
 
     return sites
 
+def correct_agent_name(agent_name):
+    closest_match = get_close_matches(agent_name, list_of_agents, n=1)
+    if closest_match:
+        return closest_match[0]
+    else:
+        return 0
+
+def store_error_data():
+    # Generate a unique ID for this error
+    error_id = "E"+str(random.randint(0,99999))
+
+    documents_path = os.path.expanduser('~/Documents')
+
+    # Create a new directory for this error
+    error_dir = os.path.join(documents_path, "practistics_error_logs", error_id)
+    os.makedirs(error_dir, exist_ok=True)
+
+    cv.imwrite(os.path.join(error_dir, 'summary.png'), error_data['summary'])
+
+    if 'timeline' not in error_data:
+        pass
+    else:
+        for i, img in enumerate(error_data['timeline']):
+            cv.imwrite(os.path.join(error_dir, f'timeline_{i}.png'), img)
+
+    # Save the 'summary' and 'scoreboard' images
+    if 'scoreboard' not in error_data:
+        pass
+    else:
+        cv.imwrite(os.path.join(error_dir, 'scoreboard.png'), error_data['scoreboard'])
+
+    logs = stop_logging()
+    error_data['console_logs'] = logs
+
+    # Save the traceback information into a text file
+    with open(os.path.join(error_dir, 'traceback.txt'), 'w') as f:
+        # Write console logs to the file
+        for log in error_data['console_logs']:
+            f.write(log)
+        # Write traceback to the file
+        f.write('\n' + error_data['traceback'])
+
+        for var in error_data['local_vars'].items():
+            f.write(f"\n\n{var}")
+
+    print(f"Error data has been saved in the directory: {error_dir}")
+
 def auth():
     key = input('Insert your authentication key:')
     header = {'Authorization': f'Bearer {key}'}
@@ -913,15 +1004,10 @@ def run_app_main():
 
             except Exception:
                 print(f"Error! Try again or report on discord (please note the error id!).")
-                header = {'Authorization': f'Bearer {jwt}'}
+                confirmation = True if input('Would you like to send an error log? (y/n):').lower() == 'y' else False
                 error_data['traceback'] = traceback.format_exc()
-                data = {
-                    'error_data': error_data,
-                }
-                data_pickle = pickle.dumps(data)
-                resp = requests.post('https://practistics.live/api/error_log', data=data_pickle, headers=header)
-                # resp = requests.post('http://127.0.0.1:5000/api/error_log', data=data_pickle, headers=header)
-                print("ERROR ID:", resp.text)
+                if confirmation:
+                    store_error_data()
                 continue
 
         if ans == 'exit':
