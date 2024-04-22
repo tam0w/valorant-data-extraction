@@ -48,7 +48,7 @@ def stop_logging():
 
 def init_function():
 
-    print(1.5)
+    print(1.6)
 
 def analyze(creds):
     """ This function will analyze the returned information from each individual round OCR and POST the
@@ -1015,7 +1015,7 @@ def run_app_main():
 
 if len(sys.argv) == 1:
     print("Please use the launcher.")
-    if input("") == "dev": run_app_main()
+    # if input("") == "dev": run_app_main()
 
 if len(sys.argv) > 1 and sys.argv[1] == "init":
     init_function()

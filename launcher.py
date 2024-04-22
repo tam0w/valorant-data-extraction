@@ -27,8 +27,8 @@ def time_it(func):
 
 def check_for_update(this_version):
 
-    # url = "https://api.github.com/repos/tam0w/empty-repo/releases/latest"
-    url = "https://api.github.com/repos/tam0w/practistics-template/releases/latest"
+    url = "https://api.github.com/repos/tam0w/empty-repo/releases/latest"
+    # url = "https://api.github.com/repos/tam0w/practistics-template/releases/latest"
     response = requests.get(url)
     latest_version = float(response.json()["tag_name"])
     if latest_version == 'DELETE':
