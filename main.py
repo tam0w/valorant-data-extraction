@@ -36,7 +36,7 @@ class Logger:
         # this flush method is needed for python 3 compatibility.
         # this handles the flush command by doing nothing.
         # you might want to specify some extra behavior here.
-        pass
+        self.terminal.flush()
 
 def start_logging():
     sys.stdout = Logger()
@@ -402,7 +402,7 @@ def scoreboard_ocr(img):
         elif not res_deaths:
             res_deaths = [input(f'Please confirm the deaths for player {res_name}:')]
         elif not res_name:
-            res_deaths = [input(f'Please confirm the IGN for player number {i+1} (according to scoreboard):')]
+            res_deaths = [input(f'Please confirm the IGN for player number {i + 1} (according to scoreboard):')]
 
         b1, g1, r1 = img[start + 25, 278]
 

@@ -19,9 +19,8 @@ zip_path = os.path.join(folder_path, "output.zip")
 def time_it(func):
     def inner_function(*args, **kwargs):
         start = time.time()
-        print('Timing the function...')
         result = func(*args, **kwargs)
-        print(time.time() - start, 'seconds')
+        print("Completed in", round(time.time() - start, 2), 'seconds.')
         return result
     return inner_function
 
