@@ -1,62 +1,92 @@
-import pickle
-import pprint
 import random
 import sys
 import traceback
 from datetime import datetime
 from difflib import get_close_matches
-
+from core import logger
 import cv2 as cv
 import easyocr
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import pyautogui as py
 import time
 import os
 import keyboard
 import requests
-import warnings
+import matplotlib.pyplot as plt
 
-error_data = {}
+# from core.logger.logger import Logger
+
 list_of_agents = ["Phoenix", "Raze", "Jett", "Yoru", "Neon", "Reyna", "Iso", "Sova", "Skye", "KAY/O", "Fade",
                   "Breach", "Harbor", "Gekko", "Cypher", "Killjoy", "Chamber", "Sage", "Brimstone", "Omen", "Viper",
                   "Astra", "Deadlock", "Clove"]
 
-class Logger:
-    def __init__(self):
-        self.terminal = sys.stdout
-        self.log = []
+logger = logger.Logger()
 
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.append(message)
 
-    def flush(self):
-        # this flush method is needed for python 3 compatibility.
-        # this handles the flush command by doing nothing.
-        # you might want to specify some extra behavior here.
-        self.terminal.flush()
+def auth():
+    key = input('Insert your authentication key:')
+    header = {'Authorization': f'Bearer {key}'}
+    test = requests.post('https://practistics.live/app/api/verify', headers=header)
 
-def start_logging():
-    sys.stdout = Logger()
+    if test.status_code == 200:
+        return key
 
-def stop_logging():
-    logs = sys.stdout.log
-    sys.stdout = sys.stdout.terminal
-    return logs
+    else:
+        print('Token expired / invalid.')
+        return 0
+
+
+def run_app_main():
+    global reader
+    reader = easyocr.Reader(['en'])
+
+    # jwt = 0
+    jwt = "dev"  # for dev environments
+
+    while True:
+
+        # if jwt == 0:
+        #     jwt = auth()
+        #     continue
+
+        ans = input('Please type \'start\' when you would like to begin or \'exit\' if you are finished.\n')
+        if ans == 'start':
+
+            try:
+                analyze(jwt)
+
+            except Exception:
+                print(f"Error! Try again or report on discord (please note the error id!).")
+                confirmation = True if input('Would you like to send an error log? (y/n):').lower() == 'y' else False
+                error_data['traceback'] = traceback.format_exc()
+                if confirmation:
+                    store_error_data()
+                continue
+
+        if ans == 'exit':
+            exit()
+
 
 def init_function():
-
     print(1.6)
+
+
+if len(sys.argv) == 1:
+    print("Please use the launcher.")
+    if input("") == "dev": run_app_main()
+
+if len(sys.argv) > 1 and sys.argv[1] == "init":
+    init_function()
+
+if len(sys.argv) > 1 and sys.argv[1] == "main":
+    run_app_main()
+
 
 def analyze(creds):
     """ This function will analyze the returned information from each individual round OCR and POST the
     final dataframe into the API endpoint? Or maybe this function will just give the final dataframe from the TL round
     analysis, into a json converting function which will then be posted into the website, perhaps."""
 
-    global jwt
-    start_logging()
     error_data['local_vars'] = locals()
     (action_times, plants, defuses, fk_player, fk_death, true_fb, outcomes, fb_team, players_agents,
      awp_info, fscore, buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds,
@@ -82,6 +112,10 @@ def analyze(creds):
 
     for name, lst in zip(names, lists):
         data[name] = lst
+
+    if creds == "dev":
+        store_error_data()
+        return True
 
     header = {'Authorization': f'Bearer {creds}'}
 
@@ -462,7 +496,8 @@ def kill_ass_kast(images):
                 img1 = img[start:start + 38, 450:590]
 
                 try:
-                    res = reader.readtext(img1, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
+                    res = reader.readtext(img1, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0,
+                                          link_threshold=0,
                                           allowlist='0123456')
                     start = start + 42
 
@@ -484,7 +519,8 @@ def kill_ass_kast(images):
                 img2 = img[start_oppo:start_oppo + 38, 450:590]
 
                 try:
-                    res = reader.readtext(img2, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
+                    res = reader.readtext(img2, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0,
+                                          link_threshold=0,
                                           allowlist='0123456')
                     start_oppo = start_oppo + 42
                     score = res[0]
@@ -676,7 +712,10 @@ def final_score_ocr():
     image = py.screenshot()
     cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
     score = cv_image[70:170, 700:1150]
+    # score1 = plt.imread(score)
+    # plt.imshow(score1)
     score = reader.readtext(score, detail=0)
+    print(score)
 
     return score[0].__str__(), score[1].__str__(), score[2].__str__()
 
@@ -691,32 +730,32 @@ def get_metadata(tl_ss):
 
 
 def zip_player_agents(image):
-
+    # TODO: Check if this variable is useful
     file = image[495:940, 200:340]
 
     agent_list = []
     player_list = []
 
-    st_u = 495
-    gr_check = 200
+    starting_upper = 495
+    green_check = 200
 
     for i in range(5):
 
-        b, g, r = image[st_u, gr_check]
-        u = st_u
+        blue, green, red = image[starting_upper, green_check]
+        current_upper = starting_upper
 
-        while g < 90:
-            u = u + 1
-            b, g, r = image[u, gr_check]
+        while green < 90:
+            current_upper = current_upper + 1
+            blue, green, red = image[current_upper, green_check]
 
-        st_l = gr_check + 3
-        _, new_g, _ = image[u, st_l]
-        cur_img = image[u:u + 40, st_l:st_l + 180]
-        st_u = u + 42
+        starting_lower = green_check + 3
+        _, new_green, _ = image[current_upper, starting_lower]
+        cur_img = image[current_upper:current_upper + 40, starting_lower:starting_lower + 180]
+        starting_upper = current_upper + 42
 
         res = reader.readtext(cur_img, detail=0, width_ths=25)
 
-
+        # TODO: Move all this text processing to their own helpers
         if len(res) < 2:
             res.append(input(f'Please confirm the agent {res[0]} is playing:').title())
             if res[1].lower() == 'kayo':
@@ -733,21 +772,21 @@ def zip_player_agents(image):
         agent_list.append(res[1])
         player_list.append(res[0])
 
-    st_u = 726
+    starting_upper = 726
 
     for i in range(5):
+        # TODO: Move repeated code to a different function and reuse
+        blue, green, red = image[starting_upper, green_check]
+        current_upper = starting_upper
 
-        b, g, r = image[st_u, gr_check]
-        u = st_u
+        while red < 100:
+            current_upper = current_upper + 1
+            blue, green, red = image[current_upper, green_check]
 
-        while r < 100:
-            u = u + 1
-            b, g, r = image[u, gr_check]
-
-        st_l = gr_check + 3
-        _, _, new_r = image[u, st_l]
-        cur_img = image[u:u + 40, st_l:st_l + 180]
-        st_u = u + 42
+        starting_lower = green_check + 3
+        _, _, new_r = image[current_upper, starting_lower]
+        cur_img = image[current_upper:current_upper + 40, starting_lower:starting_lower + 180]
+        starting_upper = current_upper + 42
         res = reader.readtext(cur_img, detail=0, width_ths=25)
 
         if len(res) < 2:
@@ -771,27 +810,8 @@ def zip_player_agents(image):
     return player_agents_zipped, agent_list
 
 
-def side_first_half():
-    image = py.screenshot()
-    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-    error_data['summary'] = cv_image
-    file = cv_image[300:400, 1300:1500]
-    gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
-    res1 = reader.readtext(gray, detail=0)
-    result = res1[0].__str__().lower()
-
-    if result.__contains__('def'):
-        first = "Defense"
-        second = "Attack"
-    else:
-        second = "Defense"
-        first = "Attack"
-    sides = ([first] * 12 + [second] * 12)
-
-    return sides
-
-
 def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
+
     players_agents_team = dict(list(players_agents.items())[:5])
     players_agents_oppo = dict(list(players_agents.items())[5:])
     players_agents_team = {value: key for key, value in players_agents_team.items()}
@@ -818,210 +838,7 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
     return final_player_fk_list, final_opponent_dt_list
 
 
-def total_events(tl_ss):
-    """Total kills including plants and defuses."""
-
-    events_team = []
-    events_opp = []
-    rounds_events_sides = []
-
-    for pic in tl_ss:
-
-        start = 510
-        counter_opp = 0
-        counter_team = 0
-        specific_round_events = []
-
-        while True:
-            b1, g1, r1 = pic[start, 940]
-            if g1 > 190 and b1 > 100:
-                counter_team += 1
-                specific_round_events.append('team')
-            if g1 < 100 and r1 > 200 and b1 < 100:
-                counter_opp += 1
-                specific_round_events.append('opponent')
-            if b1 < 100 and g1 < 100 and r1 < 100:
-                events_team.append(counter_team)
-                events_opp.append(counter_opp)
-                rounds_events_sides.append(specific_round_events)
-                break
-            start += 38
-
-    return events_team, events_opp, rounds_events_sides
-
 folder_path = os.path.join(os.getenv("LOCALAPPDATA"), "Viz app")
-
-def bombsites_plants(tl_ss, map_name):
-
-    spike_p = os.path.join(folder_path, "spike.png")
-    spike = cv.imread(spike_p)
-
-    sites = []
-
-    for image in tl_ss:
-
-        minimap = image[490:990, 1270:1770]
-        resu = cv.matchTemplate(minimap, spike, cv.TM_CCOEFF_NORMED)
-        min_val, max_val, min_loc, max_loc = cv.minMaxLoc(resu)
-        x, y = max_loc
-
-        if max_val > 0.70:
-
-            if map_name == 'bind':
-                site = 'B' if x < 250 else 'A'
-
-            elif map_name == 'ascent':
-                site = 'B' if y < 250 else 'A'
-
-            elif map_name == 'haven':
-                if y < 150:
-                    site = 'A'
-                elif 150 < y < 280:
-                    site = 'B'
-                else:
-                    site = 'C'
-
-            elif map_name == 'lotus':
-                if x < 150:
-                    site = 'C'
-                elif 150 < x < 300:
-                    site = 'B'
-                else:
-                    site = 'A'
-
-            elif map_name == 'pearl':
-                if x < 250 and 90 < y < 210:
-                    site = 'B'
-                if x > 250 and 90 < y < 210:
-                    site = 'A'
-
-            elif map_name == 'fracture':
-                if x > 250 and 190 < y < 290:
-                    site = 'A'
-                if x < 250 and 190 < y < 290:
-                    site = 'B'
-
-            elif map_name == 'split':
-                site = 'B' if y > 250 else 'A'
-
-            elif map_name == 'sunset':
-                site = 'A' if x > 250 else 'B'
-
-            elif map_name == 'breeze':
-                site = 'A' if x > 250 else 'B'
-
-            elif map_name == 'icebox':
-                site = 'A' if y > 200 else 'B'
-
-            else:
-                site = 'unclear'
-
-            sites.append(site)
-
-        else:
-
-            sites.append("False")
-
-    return sites
-
-def correct_agent_name(agent_name):
-    closest_match = get_close_matches(agent_name, list_of_agents, n=1)
-    if closest_match:
-        return closest_match[0]
-    else:
-        return 0
-
-def store_error_data():
-    # Generate a unique ID for this error
-    error_id = "E"+str(random.randint(0,99999))
-
-    documents_path = os.path.expanduser('~/Documents')
-
-    # Create a new directory for this error
-    error_dir = os.path.join(documents_path, "practistics_error_logs", error_id)
-    os.makedirs(error_dir, exist_ok=True)
-
-    cv.imwrite(os.path.join(error_dir, 'summary.png'), error_data['summary'])
-
-    if 'timeline' not in error_data:
-        pass
-    else:
-        for i, img in enumerate(error_data['timeline']):
-            cv.imwrite(os.path.join(error_dir, f'timeline_{i}.png'), img)
-
-    # Save the 'summary' and 'scoreboard' images
-    if 'scoreboard' not in error_data:
-        pass
-    else:
-        cv.imwrite(os.path.join(error_dir, 'scoreboard.png'), error_data['scoreboard'])
-
-    logs = stop_logging()
-    error_data['console_logs'] = logs
-
-    # Save the traceback information into a text file
-    with open(os.path.join(error_dir, 'traceback.txt'), 'w') as f:
-        # Write console logs to the file
-        for log in error_data['console_logs']:
-            f.write(log)
-        # Write traceback to the file
-        f.write('\n' + error_data['traceback'])
-
-        for var in error_data['local_vars'].items():
-            f.write(f"\n\n{var}")
-
-    print(f"Error data has been saved in the directory: {error_dir}")
-
-def auth():
-    key = input('Insert your authentication key:')
-    header = {'Authorization': f'Bearer {key}'}
-    test = requests.post('https://practistics.live/app/api/verify', headers=header)
-
-    if test.status_code == 200:
-        return key
-
-    else:
-        print('Token expired / invalid.')
-        return 0
-
-
-def run_app_main():
-    global reader
-    reader = easyocr.Reader(['en'])
-
-    jwt = 0
-
-    while True:
-
-        if jwt == 0:
-            jwt = auth()
-            continue
-
-        ans = input('Please type \'start\' when you would like to begin or \'exit\' if you are finished.\n')
-        if ans == 'start':
-
-            try:
-                analyze(jwt)
-
-            except Exception:
-                print(f"Error! Try again or report on discord (please note the error id!).")
-                confirmation = True if input('Would you like to send an error log? (y/n):').lower() == 'y' else False
-                error_data['traceback'] = traceback.format_exc()
-                if confirmation:
-                    store_error_data()
-                continue
-
-        if ans == 'exit':
-            exit()
-
-if len(sys.argv) == 1:
-    print("Please use the launcher.")
-    # if input("") == "dev": run_app_main()
-
-if len(sys.argv) > 1 and sys.argv[1] == "init":
-    init_function()
-
-if len(sys.argv) > 1 and sys.argv[1] == "main":
-    run_app_main()
 
 
 
