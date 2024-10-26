@@ -3,7 +3,7 @@ import sys
 import traceback
 from datetime import datetime
 from difflib import get_close_matches
-from core import logger
+from core import logger_module
 import cv2 as cv
 import easyocr
 import numpy as np
@@ -20,7 +20,7 @@ list_of_agents = ["Phoenix", "Raze", "Jett", "Yoru", "Neon", "Reyna", "Iso", "So
                   "Breach", "Harbor", "Gekko", "Cypher", "Killjoy", "Chamber", "Sage", "Brimstone", "Omen", "Viper",
                   "Astra", "Deadlock", "Clove"]
 
-logger = logger.Logger()
+logger = logger_module.Logger()
 
 
 def auth():
@@ -838,7 +838,7 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
     return final_player_fk_list, final_opponent_dt_list
 
 
-folder_path = os.path.join(os.getenv("LOCALAPPDATA"), "Viz app")
+FOLDER_PATH = os.path.join(os.getenv("LOCALAPPDATA"), "Viz app")
 
 
 
