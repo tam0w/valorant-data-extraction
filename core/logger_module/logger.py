@@ -17,7 +17,7 @@ class Logger:
     screenshots taken so far to the error directory.
     """
 
-    def __init__(self, name: str = "ImageLogger"):
+    def __init__(self, name: str = "PractisticsLogger"):
         # Initialize logger
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.DEBUG)  # Capture all logs
@@ -137,3 +137,5 @@ class Logger:
             self.file_handler = None
 
         return self.error_id
+
+Logger = Logger()
