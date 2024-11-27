@@ -14,43 +14,42 @@ from core.logger_module.logger import Logger
 documents_path = Path.home() / "Documents"
 base_log_dir = documents_path / "practistics_error_logs"
 FOLDER = base_log_dir / "E4052"
-def read_images_from_folder():
 
+
+def read_images_from_folder():
     global FOLDER
 
     image_files = sorted(glob.glob(os.path.join(FOLDER, "*.png")))
-    tl_ss = []
-    greens = []
-    who_fb = []
-    scoreboard = None
-    summary = None
+    timeline_images = []
+    scoreboard_image = None
+    summary_image = None
 
     for image_file in image_files:
+
         image = cv.imread(image_file)
+
         if "scoreboard" in image_file:
-            scoreboard = cv.cvtColor(image, cv.COLOR_RGB2BGR)
-            Logger.store_scoreboard(scoreboard)
+            scoreboard_image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
+            Logger.store_scoreboard(scoreboard_image)
             print("Scoreboard data read.")
 
         elif "summary" in image_file:
-            summary = cv.cvtColor(image, cv.COLOR_RGB2BGR)
+            summary_image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
             Logger.store_summary(image)
             print("Summary data read.")
 
         else:
-            cv_image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
-            b, g, r = cv_image[520, 1150]
-            greens.append(g)
-            Logger.store_timeline(image)
-            tl_ss.append(cv_image)
-            print("Round", len(tl_ss), "data read.")
+            timeline = cv.cvtColor(image, cv.COLOR_RGB2BGR)
+            Logger.store_timeline(timeline)
+            timeline_images.append(timeline)
+            print("Round", len(timeline_images), "data read.")
 
-    if scoreboard is None:
+    if scoreboard_image is None:
         print('SCOREBOARD DATA NOT READ: Please ensure a scoreboard image is present in the folder.')
-    if summary is None:
+    if summary_image is None:
         print('SUMMARY DATA NOT READ: Please ensure a summary image is present in the folder.')
 
-    return tl_ss, greens, who_fb, scoreboard, summary
+    return timeline_images, scoreboard_image, summary_image
 
 # def screenshot_pages():
 #

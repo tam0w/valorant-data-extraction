@@ -139,7 +139,7 @@ def rounds_ss():
     list will be returned to the 'analyze' function. """
 
     tl_ss, greens, who_fb, scoreboard, summary = capture.read_images_from_folder()
-
+    # TODO: Move all this fucking logic to helper functions and into their own modules
     scoreboard_val = scoreboard_ocr(scoreboard)
     players_agents, agents_names = zip_player_agents(tl_ss[0])
     agent_list = all_agents(tl_ss[0])
@@ -362,6 +362,9 @@ def scores_ocr():
 
 
 def scoreboard_ocr(img):
+    """Gets the OCR value of the scoreboard and returns the values of the scoreboard in a list of lists. Each list contains
+    the player IGN, kills, deaths, assists and which side they are on. This function will also ask for user input if the
+    OCR fails to read the values."""
     start = 340
 
     scoreboard = []
@@ -406,10 +409,25 @@ def scoreboard_ocr(img):
 
     return scoreboard
 
-
+# TODO: The way I'm currently working is that I do everything for every round at once, should I break this down to round stuff?
 def rounds_ocr(all_round_images):
-    """Perform OCR And preprocessing of all the rounds to extract, which player got the first kill, when they get it
-    if the spike was planted or not. Possibly in a dataframe?"""
+    """
+    Perform OCR and preprocessing of all the rounds to extract information such as:
+    - Which player got the first kill
+    - When they got it
+    - If the spike was planted or not
+
+    Args:
+        all_round_images (list): List of images for all rounds.
+
+    Returns:
+        tuple: Contains the following elements:
+            - timestamps (list): List of timestamps for each round.
+            - plants (list): List indicating if the spike was planted for each round.
+            - buy_info_team (list): List of buy information for the team.
+            - buy_info_oppo (list): List of buy information for the opponent.
+            - awps (list): List indicating if an AWP was used in each round.
+    """
 
     buys = [images[425:480, 1020:1145] for images in all_round_images]
     buy_info = [reader.readtext(image, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ','], detail=0) for
