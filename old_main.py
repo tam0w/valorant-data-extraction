@@ -93,7 +93,7 @@ def analyze(creds):
      awp_info, fscore, buy_info_team, buy_info_oppo, map_name, kills_team, kills_opp, first_is_plant, sides, rounds,
      bombsites, all_round_data, anchor_times, kills, assists, scoreboard_values) = rounds_ss()
     error_data['local_vars'] = locals()
-    first_kill_times, second_kill_times = first_and_second_kills(action_times, first_is_plant)
+    # first_kill_times, second_kill_times = first_and_second_kills(action_times, first_is_plant)
     fbs_players, dt_players = map_player_agents(fb_team, fk_player, fk_death, players_agents)
     error_data['local_vars'] = locals()
     date = datetime.now()

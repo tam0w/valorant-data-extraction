@@ -120,3 +120,29 @@ def bombsites_plants(tl_ss, map_name):
             sites.append("False")
 
     return sites
+
+def get_first_bloods(images):
+
+    greens = []
+
+    for image in images:
+        b, g, r = image[520, 1150]
+        greens.append(g)
+
+    for green in greens:
+        flag = 'team' if green > 100 else 'opponent'
+        who_fb.append(flag)
+
+    for i in range(len(events_team)):
+        if plants[i] is True:
+
+            if sides[i] == 'Attack':
+                events_team[i] -= 1
+            else:
+                events_opp[i] -= 1
+
+        if defuses[i] is True:
+            if sides[i] == 'Defense':
+                events_team[i] -= 1
+            else:
+                events_opp[i] -= 1
