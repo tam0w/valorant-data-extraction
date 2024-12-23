@@ -19,11 +19,11 @@ def side_first_half():
 
 
 def total_events(tl_ss):
-    """Total kills including plants and defuses."""
+    """Total events including plants and defuses. Number of events per """
 
-    events_team = []
-    events_opp = []
-    rounds_events_sides = []
+    events_team_counter_each_round = []
+    events_opponent_counter_each_round = []
+    list_of_sides_of_each_event_all_rounds = []
 
     for pic in tl_ss:
 
@@ -41,13 +41,13 @@ def total_events(tl_ss):
                 counter_opp += 1
                 specific_round_events.append('opponent')
             if b1 < 100 and g1 < 100 and r1 < 100:
-                events_team.append(counter_team)
-                events_opp.append(counter_opp)
-                rounds_events_sides.append(specific_round_events)
+                events_team_counter_each_round.append(counter_team)
+                events_opponent_counter_each_round.append(counter_opp)
+                list_of_sides_of_each_event_all_rounds.append(specific_round_events)
                 break
             start += 38
 
-    return events_team, events_opp, rounds_events_sides
+    return events_team_counter_each_round, events_opponent_counter_each_round, list_of_sides_of_each_event_all_rounds
 
 def bombsites_plants(tl_ss, map_name):
     spike_p = os.path.join(folder_path, "spike.png")
