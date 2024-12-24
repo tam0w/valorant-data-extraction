@@ -45,3 +45,40 @@ true_fb_each_round = check_true_fb_all_rounds(timestamps, fk_player, fk_death) #
 
 first_kill_times, second_kill_times = first_and_second_kills(action_times, first_is_plant)
 fbs_players, dt_players = map_player_agents(fb_team, fk_player, fk_death, players_agents)
+
+error_data['local_vars'] = locals()
+date = datetime.now()
+dt_string = date.strftime("%d/%m/%Y")
+
+data = {}
+
+lists = [action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
+         buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
+         rounds, bombsites, true_fb, fscore, map_name, dt_string, players_agents, anchor_times, all_round_data,
+         kills, assists, scoreboard_values]
+error_data['local_vars'] = locals()
+names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "awp_info",
+         "buy_info_team", "buy_info_oppo", "kills_team", "kills_opp", "first_is_plant", "sides", "fbs_players",
+         "dt_players", "first_kill_times", "rounds", "bombsites", "true_fb", "fscore", "map_name", "dt_string",
+         "players_agents", "anchor_times", "all_round_data", "kills", "assists", "scoreboard"]
+
+for name, lst in zip(names, lists):
+    data[name] = lst
+
+if creds == "dev":
+    store_error_data()
+
+
+header = {'Authorization': f'Bearer {creds}'}
+
+test = requests.post('https://practistics.live/app/api', json=data, headers=header)
+# test = requests.post('http://127.0.0.1:5000/app/api', json=data, headers=header)
+
+if test.status_code == 200:
+    print("Data extraction complete, and loaded onto web-server.")
+else:
+    print("Error in sending the data. \n")
+    confirmation = True if input('Would you like to send an error log? (y/n):').lower() == 'y' else False
+    error_data['traceback'] = traceback.format_exc()
+    if confirmation:
+        store_error_data()
