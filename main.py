@@ -2,11 +2,16 @@
 
 # Internal Packages
 from core.data_capture_module import capture
+from core.ocr_module.ocr import scores_ocr
+from old_main import logger
+
+logger.info("Starting application")
 
 timeline_images, greens, who_fb, scoreboard_image, summary_image = capture.read_images_from_folder()
-
 first_timeline_image = timeline_images[0] # changed the tl_ss and first tl image name
 
+logger.save_logs(None)
+total_rounds_no, sides_each_round, final_score = scores_ocr(summary_image)
 scoreboard_val = scoreboard_ocr(scoreboard_image)
 players_agents, agents_names = zip_player_agents(first_timeline_image)
 agents_sprites = all_agents(first_timeline_image)
@@ -53,8 +58,8 @@ dt_string = date.strftime("%d/%m/%Y")
 data = {}
 
 lists = [action_times, plants, defuses, fk_player, fk_death, outcomes, fb_team, awp_info, buy_info_team,
-         buy_info_oppo, kills_team, kills_opp, first_is_plant, sides, fbs_players, dt_players, first_kill_times,
-         rounds, bombsites, true_fb, fscore, map_name, dt_string, players_agents, anchor_times, all_round_data,
+         buy_info_oppo, kills_team, kills_opp, first_is_plant, sides_each_round, fbs_players, dt_players, first_kill_times,
+         rounds, bombsites, true_fb, final_score, map_name, dt_string, players_agents, anchor_times, all_round_data,
          kills, assists, scoreboard_values]
 error_data['local_vars'] = locals()
 names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "awp_info",

@@ -340,13 +340,11 @@ def df_to_json():
     """Preferably take in the final dataframe and convert it into the JSON before POSTing into the API endpoint."""
 
 
-def scores_ocr():
-    """Any preprocessing or other shenanigans here. And then perform OCR and return match metadata, individual player
-        stats as well as match score / outcome. This can be a data frame. Also, distinctly return total no of rounds."""
+def scores_ocr(summary_image):
+    """This function will extract the final score of the match and the result of the match from the summary image."""
 
-    sides = side_first_half()
-
-    my_rounds, match_result, opp_rounds = final_score_ocr()
+    sides = side_first_half(summary_image)
+    my_rounds, match_result, opp_rounds = final_score_ocr(summary_image)
 
     if my_rounds.isalpha():
         my_rounds = input("Please confirm the your teams rounds won:")
@@ -681,8 +679,6 @@ def ocr_round_win(images):
 
 
 def final_score_ocr():
-    image = py.screenshot()
-    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
     score = cv_image[70:170, 700:1150]
     # score1 = plt.imread(score)
     # plt.imshow(score1)

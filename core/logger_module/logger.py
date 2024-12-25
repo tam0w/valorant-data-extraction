@@ -58,6 +58,10 @@ class Logger:
         self.timeline_images.append(image.copy())
         self.logger.debug(f"Stored timeline image #{len(self.timeline_images)}")
 
+    def trace(self, message: str):
+        """Log a debug message (file only)."""
+        self.logger.trace(message)
+
     def debug(self, message: str):
         """Log a debug message (file only)."""
         self.logger.debug(message)

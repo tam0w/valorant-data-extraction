@@ -1,7 +1,6 @@
-def side_first_half():
-    image = py.screenshot()
-    cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-    error_data['summary'] = cv_image
+def side_first_half(cv_image):
+    """Determines the side of the team in the first half of the game"""
+
     file = cv_image[300:400, 1300:1500]
     gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
     res1 = reader.readtext(gray, detail=0)

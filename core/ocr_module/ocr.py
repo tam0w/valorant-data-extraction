@@ -1,4 +1,20 @@
+def scores_ocr(summary_image):
+    """This function will extract the final score of the match and the result of the match from the summary image."""
 
+    sides = side_first_half(summary_image)
+    my_rounds, match_result, opp_rounds = final_score_ocr(summary_image)
+
+    if my_rounds.isalpha():
+        my_rounds = input("Please confirm the your teams rounds won:")
+
+    if opp_rounds.isalpha():
+        opp_rounds = input("Please confirm the opponents rounds won:")
+
+    fscore = my_rounds + " - " + opp_rounds
+    print("Score:", fscore, "\nResult: ", match_result)
+    total_rounds = int(my_rounds) + int(opp_rounds)
+
+    return total_rounds, sides, fscore
 
 def  scoreboard_ocr(img):
     """Gets the OCR value of the scoreboard and returns the values of the scoreboard in a list of lists. Each list contains
