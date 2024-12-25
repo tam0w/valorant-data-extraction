@@ -53,49 +53,50 @@ def read_images_from_folder():
 
 def screenshot_pages():
 
-    while True:
-        if keyboard.is_pressed('s'):
-            rounds, sides, fscore = scores_ocr()
-            print("Meta data obtained.")
-            time.sleep(0.15)
-            break
-
     timeline_images = []
     scoreboard_image = None
-    summary_image = None
+
+    while True:
+        if keyboard.is_pressed('s'):
+            image = py.screenshot()
+            summary_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+            print("Meta data obtained.")
+            Logger.store_summary(summary_image)
+            time.sleep(0.15)
+            break
 
     while True:
 
         if keyboard.is_pressed('b'):
             image = py.screenshot()
-            scoreboard = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-            Logger.store_scoreboard(scoreboard)
+            scoreboard_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+            Logger.store_scoreboard(scoreboard_image)
             print("Scoreboard data read.")
             time.sleep(0.3)
 
         if keyboard.is_pressed('p'):
             image = py.screenshot()
-            cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-
-            tl_ss.append(cv_image)
-            print("Round", len(tl_ss), "data read. ")
+            timeline_screen = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+            Logger.store_timeline(timeline_screen)
+            timeline_images.append(timeline_screen)
+            print("Round", len(timeline_images), "data read. ")
             time.sleep(0.3)
 
         if keyboard.is_pressed('q'):
             print('Timeline data reading complete.')
-            error_data['timeline'] = tl_ss
             break
 
-    if scoreboard is None:
+    if scoreboard_image is None:
         print('SCOREBOARD DATA NOT READ: Please press b to capture the scoreboard.')
 
         while True:
             if keyboard.is_pressed('b'):
                 image = py.screenshot()
-                scoreboard = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-                error_data['scoreboard'] = scoreboard
-                print("Scoreboard read. Processing data..")
+                scoreboard_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+                Logger.store_scoreboard(scoreboard_image)
+                print("Scoreboard data read.")
                 time.sleep(0.3)
-                break
     else:
         print('Processing data..')
+
+    return timeline_images, scoreboard_image, summary_image

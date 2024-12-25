@@ -2,15 +2,16 @@
 
 # Internal Packages
 from core.data_capture_module import capture
-from core.ocr_module.ocr import scores_ocr
-from old_main import logger
+from core.ocr_module.ocr import scores_ocr, scoreboard_ocr
+from core.logger_module.logger import Logger
 
-logger.info("Starting application")
+Logger.info("Starting application")
 
-timeline_images, greens, who_fb, scoreboard_image, summary_image = capture.read_images_from_folder()
+timeline_images, scoreboard_image, summary_image = capture.screenshot_pages()
 first_timeline_image = timeline_images[0] # changed the tl_ss and first tl image name
 
-logger.save_logs(None)
+Logger.save_logs(None)
+
 total_rounds_no, sides_each_round, final_score = scores_ocr(summary_image)
 scoreboard_val = scoreboard_ocr(scoreboard_image)
 players_agents, agents_names = zip_player_agents(first_timeline_image)

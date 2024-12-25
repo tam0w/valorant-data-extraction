@@ -104,6 +104,8 @@ class Logger:
         self.file_handler.setLevel(logging.DEBUG)  # Capture all logs in file
         self.logger.addHandler(self.file_handler)
 
+        self.debug(error_dir)
+
         return error_dir
 
     def save_logs(self, exception_info: Optional[str] = None) -> str:
