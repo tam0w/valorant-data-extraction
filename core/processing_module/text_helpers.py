@@ -61,8 +61,8 @@ def calculate_all_rounds_anchor_times(all_rounds_data_formatted):
     return anchor_times
 
 def get_first_three_rounds_kill_data(first_event_is_plant_boolean_all_rounds, first_event_left_player,
-                                     second_event_left_player, third_event_left_player,  first_event_right_player,
-                                     second_event_right_player, third_event_right_player):
+                                     second_event_left_player, third_event_left_player, fourth_event_left_player, first_event_right_player,
+                                     second_event_right_player, third_event_right_player, fourth_event_right_player):
 
     fk_player = []
     fk_death = []
@@ -132,3 +132,36 @@ def check_true_fb_all_rounds(timestamps, fk_player, sk_death):
           true_fb.append(True)
 
     return true_fb
+
+
+def fix_times(timestamps):
+    new_timestamps = []
+
+    for i, round in enumerate(timestamps):
+
+        new_round = []
+
+        for timestamp in round:
+
+            if timestamp.startswith('0'):
+
+                timestamp = int(timestamp.replace('0:0', '').replace('0:', '').replace('.', '').replace(':', ''))
+                new_round.append(timestamp)
+
+            elif timestamp.startswith('N'):
+
+                timestamp = 0
+                new_round.append(timestamp)
+
+            else:
+
+                min = 60
+                timestamp = timestamp.replace('1.', '').replace('1:', '').replace('.', '').replace(':', '').replace('T',
+                                                                                                                    '').replace(
+                    'l', '')
+                timestamp = int(timestamp) + min
+                new_round.append(timestamp)
+
+        new_timestamps.append(new_round)
+
+    return new_timestamps

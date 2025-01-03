@@ -14,12 +14,13 @@ from core.logger_module.logger import Logger
 documents_path = Path.home() / "Documents"
 base_log_dir = documents_path / "practistics_error_logs"
 FOLDER = base_log_dir / "E4052"
+linux_path = base_log_dir / "E0619900"
 
 
 def read_images_from_folder():
     global FOLDER
 
-    image_files = sorted(glob.glob(os.path.join(FOLDER, "*.png")))
+    image_files = sorted(glob.glob(os.path.join(linux_path, "*.png")))
     timeline_images = []
     scoreboard_image = None
     summary_image = None

@@ -2,23 +2,26 @@
 
 # Internal Packages
 from core.data_capture_module import capture
-from core.ocr_module.ocr import scores_ocr, scoreboard_ocr
 from core.logger_module.logger import Logger
+from core.processing_module import text_helpers as txt
+from core.processing_module import image_helpers as img
+
 
 Logger.info("Starting application")
 
-timeline_images, scoreboard_image, summary_image = capture.screenshot_pages()
+timeline_images, scoreboard_image, summary_image = capture.read_images_from_folder()
 first_timeline_image = timeline_images[0] # changed the tl_ss and first tl image name
 
-Logger.save_logs(None)
+# Logger.save_logs(None)
 
-total_rounds_no, sides_each_round, final_score = scores_ocr(summary_image)
-scoreboard_val = scoreboard_ocr(scoreboard_image)
-players_agents, agents_names = zip_player_agents(first_timeline_image)
-agents_sprites = all_agents(first_timeline_image)
+total_rounds_no, sides_each_round, final_score = img.scores_ocr(summary_image)
+scoreboard_val = img.scoreboard_ocr(scoreboard_image)
+player_list, agent_list = img.get_player_and_agents_names(first_timeline_image)
+player_agents_zipped = dict(zip(player_list, agent_list))
+agents_sprites = img.get_agent_sprites(first_timeline_image)
 timestamps, plants_or_not, buy_info_team, buy_info_oppo, awps = rounds_ocr(timeline_images)
-outcomes = ocr_round_win(timeline_images)
-map_info = get_metadata(first_timeline_image)  # first image only, changed
+outcomes = img.get_round_outcomes_all_rounds(timeline_images)
+map_info = img.get_metadata(first_timeline_image)  # first image only, changed
 events_team_counter_each_round, events_opponent_counter_each_round, list_of_sides_of_each_event_each_round = total_events(timeline_images)
 site_list = bombsites_plants(timeline_images, map_info)
 awp_information = awp_info(awps)

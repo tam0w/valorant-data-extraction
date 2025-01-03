@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.11 (demo-analysis-timeline)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (practistics-scrim-ocr)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 virtualenv at ~/.pyenv/versions/new_env" project-jdk-type="Python SDK" />
 </project>

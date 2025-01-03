@@ -17,10 +17,6 @@ import matplotlib.pyplot as plt
 from core.logger_module import logger
 from core.data_capture_module import capture
 
-list_of_agents = ["Phoenix", "Raze", "Jett", "Yoru", "Neon", "Reyna", "Iso", "Sova", "Skye", "KAY/O", "Fade",
-                  "Breach", "Harbor", "Gekko", "Cypher", "Killjoy", "Chamber", "Sage", "Brimstone", "Omen", "Viper",
-                  "Astra", "Deadlock", "Clove"]
-
 logger = logger.Logger()
 
 
@@ -407,46 +403,6 @@ def scoreboard_ocr(img):
 
     return scoreboard
 
-# TODO: The way I'm currently working is that I do everything for every round at once, should I break this down to round stuff?
-def rounds_ocr(all_round_images):
-    """
-    Perform OCR and preprocessing of all the rounds to extract information such as:
-    - Which player got the first kill
-    - When they got it
-    - If the spike was planted or not
-
-    Args:
-        all_round_images (list): List of images for all rounds.
-
-    Returns:
-        tuple: Contains the following elements:
-            - timestamps (list): List of timestamps for each round.
-            - plants (list): List indicating if the spike was planted for each round.
-            - buy_info_team (list): List of buy information for the team.
-            - buy_info_oppo (list): List of buy information for the opponent.
-            - awps (list): List indicating if an AWP was used in each round.
-    """
-
-    buys = [images[425:480, 1020:1145] for images in all_round_images]
-    buy_info = [reader.readtext(image, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ','], detail=0) for
-                image in buys]
-    buy_info_team = [buy[0] for buy in buy_info]
-    buy_info_oppo = [buy[1] for buy in buy_info]
-
-    all_round_images_cropped = [images[505:970, 980:1040] for images in all_round_images]
-    timestamps_old = [reader.readtext(image, detail=0) for image in all_round_images_cropped]
-
-    all_round_images_cropped_plants = [images[505:970, 1150:1230] for images in all_round_images]
-    plants = [reader.readtext(image, detail=0) for image in all_round_images_cropped_plants]
-
-    awp_or_no = [images[450:950, 650:785] for images in all_round_images]
-
-    awps = [reader.readtext(image, detail=0) for image in awp_or_no]
-
-    timestamps = fix_times(timestamps_old)
-
-    return timestamps, plants, buy_info_team, buy_info_oppo, awps
-
 
 def kill_ass_kast(images):
     kills = []
@@ -508,39 +464,6 @@ def kill_ass_kast(images):
         assists.append(rounds_assists)
 
     return kills, assists
-
-
-def fix_times(timestamps):
-    new_timestamps = []
-
-    for i, round in enumerate(timestamps):
-
-        new_round = []
-
-        for timestamp in round:
-
-            if timestamp.startswith('0'):
-
-                timestamp = int(timestamp.replace('0:0', '').replace('0:', '').replace('.', '').replace(':', ''))
-                new_round.append(timestamp)
-
-            elif timestamp.startswith('N'):
-
-                timestamp = 0
-                new_round.append(timestamp)
-
-            else:
-
-                min = 60
-                timestamp = timestamp.replace('1.', '').replace('1:', '').replace('.', '').replace(':', '').replace('T',
-                                                                                                                    '').replace(
-                    'l', '')
-                timestamp = int(timestamp) + min
-                new_round.append(timestamp)
-
-        new_timestamps.append(new_round)
-
-    return new_timestamps
 
 
 def all_agents(image):
@@ -662,120 +585,6 @@ def match_agent(agent_images, images, agents_names, timestamps):
         fourth_eng_right.append(round_engagements[3][1])
 
     return first_eng_left, sec_eng_left, third_eng_left, fourth_eng_left, first_eng_right, sec_eng_right, third_eng_right, fourth_eng_right, round_agents
-
-
-def ocr_round_win(images):
-    round_outcomes = []
-
-    for image in images:
-        file = image[430:470, 130:700]
-        gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
-        round_outcome = reader.readtext(gray, detail=0)
-        if round_outcome.__str__().upper().__contains__('LOSS'):
-            round_outcomes.append('loss')
-        else:
-            round_outcomes.append('win')
-    return round_outcomes
-
-
-def final_score_ocr():
-    score = cv_image[70:170, 700:1150]
-    # score1 = plt.imread(score)
-    # plt.imshow(score1)
-    score = reader.readtext(score, detail=0)
-    print(score)
-
-    return score[0].__str__(), score[1].__str__(), score[2].__str__()
-
-
-def get_metadata(tl_ss):
-    cv_image = tl_ss[0]
-    file = cv_image[125:145, 120:210]
-    gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
-    gray = cv.convertScaleAbs(gray, 1, 5)
-    result = reader.readtext(gray, detail=0)
-    return result[0].__str__().lower()
-
-
-def zip_player_agents(image):
-    # TODO: Check if this variable is useful
-    file = image[495:940, 200:340]
-
-    agent_list = []
-    player_list = []
-
-    starting_upper = 495
-    green_check = 200
-
-    for i in range(5):
-
-        blue, green, red = image[starting_upper, green_check]
-        current_upper = starting_upper
-
-        while green < 90:
-            current_upper = current_upper + 1
-            blue, green, red = image[current_upper, green_check]
-
-        starting_lower = green_check + 3
-        _, new_green, _ = image[current_upper, starting_lower]
-        cur_img = image[current_upper:current_upper + 40, starting_lower:starting_lower + 180]
-        starting_upper = current_upper + 42
-
-        res = reader.readtext(cur_img, detail=0, width_ths=25)
-
-        # TODO: Move all this text processing to their own helpers
-        if len(res) < 2:
-            res.append(input(f'Please confirm the agent {res[0]} is playing:').title())
-            if res[1].lower() == 'kayo':
-                res[1] = 'KAY/O'
-
-        if res[1] not in list_of_agents:
-
-            res[1] = correct_agent_name(res[1])
-            if res[1] == 0:
-                res[1] = input(f'Please confirm the agent {res[0]} is playing:').title()
-                if res[1].lower() == 'kayo':
-                    res[1] = 'KAY/O'
-
-        agent_list.append(res[1])
-        player_list.append(res[0])
-
-    starting_upper = 726
-
-    for i in range(5):
-        # TODO: Move repeated code to a different function and reuse
-        blue, green, red = image[starting_upper, green_check]
-        current_upper = starting_upper
-
-        while red < 100:
-            current_upper = current_upper + 1
-            blue, green, red = image[current_upper, green_check]
-
-        starting_lower = green_check + 3
-        _, _, new_r = image[current_upper, starting_lower]
-        cur_img = image[current_upper:current_upper + 40, starting_lower:starting_lower + 180]
-        starting_upper = current_upper + 42
-        res = reader.readtext(cur_img, detail=0, width_ths=25)
-
-        if len(res) < 2:
-            res.append(input(f'Please confirm the agent {res[0]} is playing:').title())
-            if res[1].lower() == 'kayo':
-                res[1] = 'KAY/O'
-
-        if res[1] not in list_of_agents:
-
-            res[1] = correct_agent_name(res[1])
-            if res[1] == 0:
-                res[1] = input(f'Please confirm the agent {res[0]} is playing:').title()
-                if res[1].lower() == 'kayo':
-                    res[1] = 'KAY/O'
-
-        agent_list.append(res[1])
-        player_list.append(res[0])
-
-    player_agents_zipped = dict(zip(player_list, agent_list))
-
-    return player_agents_zipped, agent_list
 
 
 def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
