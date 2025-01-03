@@ -1,4 +1,5 @@
 import cv2 as cv
+import matplotlib.pyplot as plt
 
 from core.constants import list_of_agents
 from core.ocr_module.ocr import reader
@@ -177,7 +178,6 @@ def get_player_and_agents_names(image):
 
         res = reader.readtext(cur_img, detail=0, width_ths=25)
 
-
         if len(res) < 2:
             res.append(input(f'Please confirm the agent {res[0]} is playing:').title())
             if res[1].lower() == 'kayo':
@@ -201,7 +201,7 @@ def get_player_and_agents_names(image):
         b, g, r = image[st_u, gr_check]
         u = st_u
 
-        while r < 10:
+        while r < 40:
             u = u + 1
             b, g, r = image[u, gr_check]
 
@@ -209,15 +209,14 @@ def get_player_and_agents_names(image):
         _, _, new_r = image[u, st_l]
         cur_img = image[u:u + 40, st_l:st_l + 180]
         st_u = u + 42
+
         res = reader.readtext(cur_img, detail=0, width_ths=25)
-        print(res)
-        try:
-            if len(res) < 2:
-                res.append(input(f'Please confirm the agent {res[0]} is playing:').title())
-                if res[1].lower() == 'kayo':
-                    res[1] = 'KAY/O'
-        except Exception as e:
-            print(res, e)
+
+        if len(res) < 2:
+            res.append(input(f'Please confirm the agent {res[0]} is playing:').title())
+            if res[1].lower() == 'kayo':
+                res[1] = 'KAY/O'
+
         if res[1] not in list_of_agents:
 
             res[1] = correct_agent_name(res[1])
@@ -308,7 +307,7 @@ def final_score_ocr(cv_image):
     return score[0].__str__(), score[1].__str__(), score[2].__str__()
 
 def get_agent_sprites(image):
-    agent_list = []
+    agent_sprites_list = []
 
     st_u = 503
     gr_check = 161
@@ -327,15 +326,15 @@ def get_agent_sprites(image):
         cur_img = image[u:u + 40, st_l:st_l + 40]
         st_u = u + 42
 
-        agent_list.append(cur_img)
+        agent_sprites_list.append(cur_img)
 
-    st_u = 726
+    st_u = 724
 
     for i in range(5):
 
         _, _, r = image[st_u, gr_check]
         u = st_u
-        while r < 180:
+        while r < 80:
             u = u + 1
             b, g, r = image[u, gr_check]
 
@@ -344,9 +343,9 @@ def get_agent_sprites(image):
         cur_img = image[u:u + 40, st_l:st_l + 40]
         st_u = u + 42
 
-        agent_list.append(cur_img)
+        agent_sprites_list.append(cur_img)
 
-    return agent_list
+    return agent_sprites_list
 
 # TODO: The way I'm currently working is that I do everything for every round at once, should I break this down to round stuff?
 def rounds_ocr(all_round_images):
