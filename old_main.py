@@ -1,21 +1,14 @@
-import random
 import sys
 import traceback
 from datetime import datetime
-from difflib import get_close_matches
-import cv2 as cv
 import easyocr
-import numpy as np
-import pyautogui as py
-import time
 import os
-import keyboard
 import requests
-import matplotlib.pyplot as plt
 
 # Internal packages
 from core.logger_module import logger
 from core.data_capture_module import capture
+from core.processing_module.image_helpers import match_agent
 
 logger = logger.Logger()
 
@@ -261,77 +254,6 @@ def rounds_ss():
             site_list, all_round_data, anchor_times, kills, assists, scoreboard_val)
 
 
-def generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps):
-    all_round_data = round_agents
-
-    for r, round_instance in enumerate(all_round_data):
-        for i, timestamp in enumerate(timestamps[r]):
-
-            round_instance[i].append(timestamp)
-            round_instance[i].append(event_sides[r][i])
-            try:
-                if plants_or_not[r][i] == "Planted" or plants_or_not[r][i] == "Defused":
-                    round_instance[i].append('Spike')
-
-                else:
-                    round_instance[i].append('Kill')
-            except IndexError:
-                round_instance[i].append('Kill')
-
-    return all_round_data
-
-
-def first_and_second_kills(action_times, first_is_plant):
-    first_kill_times = []
-    second_kill_times = []
-
-    for i, round_instance in enumerate(action_times):
-
-        if first_is_plant[i] is False:
-            first_kill_times.append(round_instance[0])
-            second_kill_times.append(round_instance[1])
-
-        else:
-            first_kill_times.append(round_instance[1])
-            second_kill_times.append(round_instance[2])
-
-    return first_kill_times, second_kill_times
-
-
-def awp_info(awps):
-    awp_info = []
-
-    for i, awp in enumerate(awps):
-
-        indexes = [idx for idx, value in enumerate(awp) if value == 'Operator']
-
-        if len(indexes) == 0:
-            awp_info.append('none')
-
-        elif len(indexes) == 1:
-            if indexes[0] < 11:
-                awp_info.append('team')
-            else:
-                awp_info.append('opponent')
-
-        elif len(indexes) == 2:
-
-            if indexes[0] < 11 & indexes[1] < 11:
-                awp_info.append('team')
-            elif indexes[0] > 10 & indexes[1] > 10:
-                awp_info.append('opponent')
-            else:
-                awp_info.append('both')
-
-        elif len(indexes) > 2:
-            awp_info.append('both')
-
-        else:
-            awp_info.append('none')
-
-    return awp_info
-
-
 def df_to_json():
     """Preferably take in the final dataframe and convert it into the JSON before POSTing into the API endpoint."""
 
@@ -404,68 +326,6 @@ def scoreboard_ocr(img):
     return scoreboard
 
 
-def kill_ass_kast(images):
-    kills = []
-    assists = []
-
-    for img in images:
-
-        start = 504
-        rounds_kills = []
-        rounds_assists = []
-        start_oppo = 725
-
-        for i in range(10):
-
-            if i < 5:
-
-                img1 = img[start:start + 38, 450:590]
-
-                try:
-                    res = reader.readtext(img1, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0,
-                                          link_threshold=0,
-                                          allowlist='0123456')
-                    start = start + 42
-
-                    score = res[0]
-                    rounds_kills.append(score[0])
-                    rounds_assists.append(score[1])
-                except:
-                    res = reader.readtext(img1, detail=0, text_threshold=0, threshold=0,
-                                          link_threshold=0,
-                                          allowlist='0123456')
-                    start = start + 42
-
-                    score = res[0]
-                    rounds_kills.append(score[0])
-                    rounds_assists.append(score[1])
-
-            else:
-
-                img2 = img[start_oppo:start_oppo + 38, 450:590]
-
-                try:
-                    res = reader.readtext(img2, mag_ratio=2.2, detail=0, text_threshold=0, threshold=0,
-                                          link_threshold=0,
-                                          allowlist='0123456')
-                    start_oppo = start_oppo + 42
-                    score = res[0]
-                    rounds_kills.append(score[0])
-                    rounds_assists.append(score[1])
-                except:
-                    res = reader.readtext(img2, detail=0, text_threshold=0, threshold=0, link_threshold=0,
-                                          allowlist='0123456')
-                    start_oppo = start_oppo + 42
-                    score = res[0]
-                    rounds_kills.append(score[0])
-                    rounds_assists.append(score[1])
-
-        kills.append(rounds_kills)
-        assists.append(rounds_assists)
-
-    return kills, assists
-
-
 def all_agents(image):
     agent_list = []
 
@@ -508,114 +368,4 @@ def all_agents(image):
     return agent_list
 
 
-def match_agent(agent_images, images, agents_names, timestamps):
-    """This function matches all the agents kills and death sprites to their actual agent names and returns
-    what agent got the kill and died for the first n engagements, usually 3."""
-
-    round_agents = []
-
-    for r, image in enumerate(images):
-
-        indexes_fk = []
-        indexes_dt = []
-
-        agent_img = []
-        agent_img_dt = []
-
-        st_l = 945
-        st_u = 500
-        gr_check = 985
-
-        st_l_dt = 1231
-
-        for i in timestamps[r]:
-
-            values_dt = []
-            values = []
-
-            b, g, r = image[st_u, gr_check]
-            u = st_u
-
-            while g < 100 and r < 100:
-                u = u + 1
-                b, g, r = image[u, gr_check]
-
-            cur_img = image[u:u + 36, st_l:st_l + 36]
-            cur_img_dt = image[u:u + 36, st_l_dt:st_l_dt + 36]
-
-            agent_img.append(cur_img)
-            agent_img_dt.append(cur_img_dt)
-
-            st_u = u + 36
-            for agent in agent_images:
-                result = cv.matchTemplate(cur_img, agent, cv.TM_CCOEFF_NORMED)
-                min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
-                values.append(max_val)
-
-                result_dt = cv.matchTemplate(cur_img_dt, agent, cv.TM_CCOEFF_NORMED)
-                min_val_dt, max_val_dt, min_loc_dt, max_loc_dt = cv.minMaxLoc(result_dt)
-                values_dt.append(max_val_dt)
-
-            indexes_dt.append(values_dt.index(max(values_dt)))
-            indexes_fk.append(values.index(max(values)))
-
-        fk_player = [agents_names[index] for index in indexes_fk]
-        fk_dt = [agents_names[index] for index in indexes_dt]
-
-        round_agents.append(list(map(list, zip(fk_player, fk_dt))))
-
-    first_eng_left = []
-    sec_eng_left = []
-    third_eng_left = []
-    fourth_eng_left = []
-
-    first_eng_right = []
-    sec_eng_right = []
-    third_eng_right = []
-    fourth_eng_right = []
-
-    for round_no, round_engagements in enumerate(round_agents):
-        first_eng_left.append(round_engagements[0][0])
-        sec_eng_left.append(round_engagements[1][0])
-        third_eng_left.append(round_engagements[2][0])
-        fourth_eng_left.append(round_engagements[3][0])
-        first_eng_right.append(round_engagements[0][1])
-        sec_eng_right.append(round_engagements[1][1])
-        third_eng_right.append(round_engagements[2][1])
-        fourth_eng_right.append(round_engagements[3][1])
-
-    return first_eng_left, sec_eng_left, third_eng_left, fourth_eng_left, first_eng_right, sec_eng_right, third_eng_right, fourth_eng_right, round_agents
-
-
-def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
-
-    players_agents_team = dict(list(players_agents.items())[:5])
-    players_agents_oppo = dict(list(players_agents.items())[5:])
-    players_agents_team = {value: key for key, value in players_agents_team.items()}
-    players_agents_oppo = {value: key for key, value in players_agents_oppo.items()}
-    print("Your team:", players_agents_team, "\n", "Opponent:", players_agents_oppo)
-
-    final_player_fk_list = []
-    final_opponent_dt_list = []
-
-    for i, agent in enumerate(fk_player):
-
-        if who_fb[i] == 'team':
-            final_player_fk_list.append(players_agents_team.get(agent))
-        else:
-            final_player_fk_list.append(players_agents_oppo.get(agent))
-
-    for i, agent in enumerate(fk_dt):
-
-        if who_fb[i] == 'opponent':
-            final_opponent_dt_list.append(players_agents_team.get(agent))
-        else:
-            final_opponent_dt_list.append(players_agents_oppo.get(agent))
-
-    return final_player_fk_list, final_opponent_dt_list
-
-
 FOLDER_PATH = os.path.join(os.getenv("LOCALAPPDATA"), "Viz app")
-
-
-

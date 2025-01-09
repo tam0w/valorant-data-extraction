@@ -1,3 +1,5 @@
+import os
+
 import cv2 as cv
 import matplotlib.pyplot as plt
 
@@ -57,7 +59,7 @@ def total_events(tl_ss):
     return events_team_counter_each_round, events_opponent_counter_each_round, list_of_sides_of_each_event_all_rounds
 
 def bombsites_plants(tl_ss, map_name):
-    spike_p = os.path.join(folder_path, "spike.png")
+    spike_p = os.path.join(os.getcwd(), "spike.png")
     spike = cv.imread(spike_p)
 
     sites = []
@@ -127,32 +129,6 @@ def bombsites_plants(tl_ss, map_name):
             sites.append("False")
 
     return sites
-
-def get_first_bloods(images):
-
-    greens = []
-
-    for image in images:
-        b, g, r = image[520, 1150]
-        greens.append(g)
-
-    for green in greens:
-        flag = 'team' if green > 100 else 'opponent'
-        who_fb.append(flag)
-
-    for i in range(len(events_team)):
-        if plants[i] is True:
-
-            if sides[i] == 'Attack':
-                events_team[i] -= 1
-            else:
-                events_opp[i] -= 1
-
-        if defuses[i] is True:
-            if sides[i] == 'Defense':
-                events_team[i] -= 1
-            else:
-                events_opp[i] -= 1
 
 def get_player_and_agents_names(image):
 
@@ -400,10 +376,88 @@ def get_round_outcomes_all_rounds(images):
             round_outcomes.append('win')
     return round_outcomes
 
-def get_metadata(tl_ss):
-    cv_image = tl_ss[0]
-    file = cv_image[125:145, 120:210]
+def get_metadata(first_timeline_image):
+    file = first_timeline_image[125:145, 120:210]
     gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
     gray = cv.convertScaleAbs(gray, 1, 5)
     result = reader.readtext(gray, detail=0)
     return result[0].__str__().lower()
+
+
+def match_agent(agent_images, images, agents_names, timestamps):
+    """This function matches all the agents kills and death sprites to their actual agent names and returns
+    what agent got the kill and died for the first n engagements, usually 3."""
+
+    round_agents = []
+
+    for r, image in enumerate(images):
+
+        indexes_fk = []
+        indexes_dt = []
+
+        agent_img = []
+        agent_img_dt = []
+
+        st_l = 945
+        st_u = 500
+        gr_check = 985
+
+        st_l_dt = 1231
+
+        for i in timestamps[r]:
+
+            values_dt = []
+            values = []
+
+            b, g, r = image[st_u, gr_check]
+            u = st_u
+
+            while g < 100 and r < 100:
+                u = u + 1
+                b, g, r = image[u, gr_check]
+
+            cur_img = image[u:u + 36, st_l:st_l + 36]
+            cur_img_dt = image[u:u + 36, st_l_dt:st_l_dt + 36]
+
+            agent_img.append(cur_img)
+            agent_img_dt.append(cur_img_dt)
+
+            st_u = u + 36
+            for agent in agent_images:
+                result = cv.matchTemplate(cur_img, agent, cv.TM_CCOEFF_NORMED)
+                min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
+                values.append(max_val)
+
+                result_dt = cv.matchTemplate(cur_img_dt, agent, cv.TM_CCOEFF_NORMED)
+                min_val_dt, max_val_dt, min_loc_dt, max_loc_dt = cv.minMaxLoc(result_dt)
+                values_dt.append(max_val_dt)
+
+            indexes_dt.append(values_dt.index(max(values_dt)))
+            indexes_fk.append(values.index(max(values)))
+
+        fk_player = [agents_names[index] for index in indexes_fk]
+        fk_dt = [agents_names[index] for index in indexes_dt]
+
+        round_agents.append(list(map(list, zip(fk_player, fk_dt))))
+
+    first_eng_left = []
+    sec_eng_left = []
+    third_eng_left = []
+    fourth_eng_left = []
+
+    first_eng_right = []
+    sec_eng_right = []
+    third_eng_right = []
+    fourth_eng_right = []
+
+    for round_no, round_engagements in enumerate(round_agents):
+        first_eng_left.append(round_engagements[0][0])
+        sec_eng_left.append(round_engagements[1][0])
+        third_eng_left.append(round_engagements[2][0])
+        fourth_eng_left.append(round_engagements[3][0])
+        first_eng_right.append(round_engagements[0][1])
+        sec_eng_right.append(round_engagements[1][1])
+        third_eng_right.append(round_engagements[2][1])
+        fourth_eng_right.append(round_engagements[3][1])
+
+    return first_eng_left, sec_eng_left, third_eng_left, fourth_eng_left, first_eng_right, sec_eng_right, third_eng_right, fourth_eng_right, round_agents
