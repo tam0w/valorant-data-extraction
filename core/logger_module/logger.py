@@ -20,7 +20,7 @@ class Logger:
     def __init__(self, name: str = "PractisticsLogger"):
         # Initialize logger
         self.logger = logging.getLogger(name)
-        self.logger.setLevel(logging.DEBUG)  # Capture all logs
+        self.logger.setLevel(logging.CRITICAL)  # Capture all logs
 
         # Create formatter for consistent log formatting
         self.formatter = logging.Formatter(

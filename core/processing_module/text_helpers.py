@@ -27,7 +27,7 @@ def update_kills_from_total_events_each_round(events_opponent_counter_each_round
                                               first_bloods_team_each_round, plants, defuses, sides):
     kills_opponent_counter_each_round = events_opponent_counter_each_round
     kills_team_counter_each_round = events_team_counter_each_round
-    Logger.warning(first_bloods_team_each_round)
+
     for i in range(len(first_bloods_team_each_round)):
         # loop over all the rounds and increment/decrement the number of events based on if there were plants and/or defuses to get the kills rather than events
         if plants[i] is True:

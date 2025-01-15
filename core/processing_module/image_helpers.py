@@ -4,6 +4,7 @@ import cv2 as cv
 import matplotlib.pyplot as plt
 
 from core.constants import list_of_agents
+from core.logger_module.logger import Logger
 from core.ocr_module.ocr import reader
 from core.processing_module.text_helpers import correct_agent_name, fix_times
 
@@ -283,6 +284,8 @@ def final_score_ocr(cv_image):
     return score[0].__str__(), score[1].__str__(), score[2].__str__()
 
 def get_agent_sprites(image):
+
+    """This function will extract the agent sprites from the image and return a list of the sprites for each agent."""
     agent_sprites_list = []
 
     st_u = 503
@@ -384,13 +387,16 @@ def get_metadata(first_timeline_image):
     return result[0].__str__().lower()
 
 
-def match_agent(agent_images, images, agents_names, timestamps):
+def match_agent(agent_sprites, timeline_images, agents_names_list, timestamps):
     """This function matches all the agents kills and death sprites to their actual agent names and returns
     what agent got the kill and died for the first n engagements, usually 3."""
 
     round_agents = []
 
-    for r, image in enumerate(images):
+    for r, image in enumerate(timeline_images):
+
+        plt.imshow(image)
+        plt.show()
 
         indexes_fk = []
         indexes_dt = []
@@ -413,17 +419,20 @@ def match_agent(agent_images, images, agents_names, timestamps):
             u = st_u
 
             while g < 100 and r < 100:
+                print(b, g, r)
+                # plt.imshow(image[st_u:st_u + 100, gr_check:gr_check + 100])
                 u = u + 1
                 b, g, r = image[u, gr_check]
 
             cur_img = image[u:u + 36, st_l:st_l + 36]
             cur_img_dt = image[u:u + 36, st_l_dt:st_l_dt + 36]
-
+            plt.imshow(cur_img, cur_img_dt)
+            plt.show()
             agent_img.append(cur_img)
             agent_img_dt.append(cur_img_dt)
 
             st_u = u + 36
-            for agent in agent_images:
+            for agent in agent_sprites:
                 result = cv.matchTemplate(cur_img, agent, cv.TM_CCOEFF_NORMED)
                 min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
                 values.append(max_val)
@@ -435,8 +444,8 @@ def match_agent(agent_images, images, agents_names, timestamps):
             indexes_dt.append(values_dt.index(max(values_dt)))
             indexes_fk.append(values.index(max(values)))
 
-        fk_player = [agents_names[index] for index in indexes_fk]
-        fk_dt = [agents_names[index] for index in indexes_dt]
+        fk_player = [agents_names_list[index] for index in indexes_fk]
+        fk_dt = [agents_names_list[index] for index in indexes_dt]
 
         round_agents.append(list(map(list, zip(fk_player, fk_dt))))
 
