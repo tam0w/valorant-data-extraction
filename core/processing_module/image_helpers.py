@@ -2,6 +2,7 @@ import os
 
 import cv2 as cv
 import matplotlib.pyplot as plt
+import numpy
 
 from core.constants import list_of_agents
 from core.logger_module.logger import Logger
@@ -395,6 +396,8 @@ def match_agent(agent_sprites, timeline_images, agents_names_list, timestamps):
 
     for r, image in enumerate(timeline_images):
 
+        print("round number:", r, "event list:", timestamps[r])
+
         plt.imshow(image)
         plt.show()
 
@@ -411,23 +414,33 @@ def match_agent(agent_sprites, timeline_images, agents_names_list, timestamps):
         st_l_dt = 1231
 
         for i in timestamps[r]:
+            # for some fucking reason this only captures team playes i ams so lostttttttttttttt
+            print("event:", i)
 
-            values_dt = []
-            values = []
+            similarity_scores_deaths = []
+            similarity_scores_kills = []
 
-            b, g, r = image[st_u, gr_check]
+            r, g, b = image[st_u, gr_check]
             u = st_u
 
             while g < 100 and r < 100:
-                print(b, g, r)
-                # plt.imshow(image[st_u:st_u + 100, gr_check:gr_check + 100])
+
                 u = u + 1
                 b, g, r = image[u, gr_check]
 
+                if u > 900:
+                    break
+            if u > 900:
+                break
+
             cur_img = image[u:u + 36, st_l:st_l + 36]
             cur_img_dt = image[u:u + 36, st_l_dt:st_l_dt + 36]
-            plt.imshow(cur_img, cur_img_dt)
+
+            plt.imshow(cur_img)
             plt.show()
+            # plt.imshow(cur_img_dt)
+            # plt.show()
+
             agent_img.append(cur_img)
             agent_img_dt.append(cur_img_dt)
 
@@ -435,19 +448,23 @@ def match_agent(agent_sprites, timeline_images, agents_names_list, timestamps):
             for agent in agent_sprites:
                 result = cv.matchTemplate(cur_img, agent, cv.TM_CCOEFF_NORMED)
                 min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
-                values.append(max_val)
+                similarity_scores_kills.append(max_val)
 
                 result_dt = cv.matchTemplate(cur_img_dt, agent, cv.TM_CCOEFF_NORMED)
                 min_val_dt, max_val_dt, min_loc_dt, max_loc_dt = cv.minMaxLoc(result_dt)
-                values_dt.append(max_val_dt)
+                similarity_scores_deaths.append(max_val_dt)
 
-            indexes_dt.append(values_dt.index(max(values_dt)))
-            indexes_fk.append(values.index(max(values)))
+            # the index of the agent that died or killed based on the highest similarity score
+            indexes_dt.append(similarity_scores_deaths.index(max(similarity_scores_deaths)))
+            indexes_fk.append(similarity_scores_kills.index(max(similarity_scores_kills)))
 
-        fk_player = [agents_names_list[index] for index in indexes_fk]
-        fk_dt = [agents_names_list[index] for index in indexes_dt]
+            print("fk:", agents_names_list[similarity_scores_kills.index(max(similarity_scores_kills))], "dt:", agents_names_list[similarity_scores_deaths.index(max(similarity_scores_deaths))])
 
-        round_agents.append(list(map(list, zip(fk_player, fk_dt))))
+        # all the agents killed and dead in a given round (by us, its only recording our kills rn)
+        kills_agents_names = [agents_names_list[index] for index in indexes_fk]
+        deaths_agents_names = [agents_names_list[index] for index in indexes_dt]
+
+        round_agents.append(list(map(list, zip(kills_agents_names, deaths_agents_names))))
 
     first_eng_left = []
     sec_eng_left = []

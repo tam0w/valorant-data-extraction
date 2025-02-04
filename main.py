@@ -11,7 +11,7 @@ from core.processing_module import image_helpers as img
 Logger.info("Starting application")
 
 timeline_images, scoreboard_image, summary_image = capture.read_images_from_folder()
-first_timeline_image = timeline_images[0] # changed the tl_ss and first tl image name
+first_timeline_image = timeline_images[0]
 
 # Logger.save_logs(None)
 
