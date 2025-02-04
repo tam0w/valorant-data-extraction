@@ -30,33 +30,58 @@ def side_first_half(cv_image):
 
 
 def total_events(tl_ss):
-    """Total events including plants and defuses. Number of events per """
+    """
+    Calculate the total events including plants and defuses for each round.
+
+    Args:
+        tl_ss (list): List of images representing each round.
+
+    Returns:
+        tuple: Contains three lists:
+            - events_team_counter_each_round (list): Number of events for the team in each round.
+            - events_opponent_counter_each_round (list): Number of events for the opponent in each round.
+            - list_of_sides_of_each_event_all_rounds (list): List of sides ('team' or 'opponent') for each event in all rounds.
+    """
 
     events_team_counter_each_round = []
     events_opponent_counter_each_round = []
     list_of_sides_of_each_event_all_rounds = []
 
-    for pic in tl_ss:
+    for round_index, pic in enumerate(tl_ss):
 
-        start = 510
+        start = 500
         counter_opp = 0
         counter_team = 0
         specific_round_events = []
 
+        print("Round", round_index + 1)
+        u = start
         while True:
-            b1, g1, r1 = pic[start, 940]
-            if g1 > 190 and b1 > 100:
+
+            print("Start:", u)
+            b1, g1, r1 = pic[u, 940]
+
+            while g1 < 100 and r1 < 100 and b1 < 100:
+                u += 1
+                b1, g1, r1 = pic[u, 940]
+
+                if u > 900:
+                    break
+            if u > 900:
+                break
+
+            if g1 > 100 and b1 > 100:
                 counter_team += 1
                 specific_round_events.append('team')
-            if g1 < 100 and r1 > 200 and b1 < 100:
+            else:
                 counter_opp += 1
                 specific_round_events.append('opponent')
-            if b1 < 100 and g1 < 100 and r1 < 100:
-                events_team_counter_each_round.append(counter_team)
-                events_opponent_counter_each_round.append(counter_opp)
-                list_of_sides_of_each_event_all_rounds.append(specific_round_events)
-                break
-            start += 38
+
+            u += 36
+
+        events_team_counter_each_round.append(counter_team)
+        events_opponent_counter_each_round.append(counter_opp)
+        list_of_sides_of_each_event_all_rounds.append(specific_round_events)
 
     return events_team_counter_each_round, events_opponent_counter_each_round, list_of_sides_of_each_event_all_rounds
 
@@ -396,11 +421,6 @@ def match_agent(agent_sprites, timeline_images, agents_names_list, timestamps):
 
     for r, image in enumerate(timeline_images):
 
-        print("round number:", r, "event list:", timestamps[r])
-
-        plt.imshow(image)
-        plt.show()
-
         indexes_fk = []
         indexes_dt = []
 
@@ -409,21 +429,24 @@ def match_agent(agent_sprites, timeline_images, agents_names_list, timestamps):
 
         st_l = 945
         st_u = 500
-        gr_check = 985
+        gr_check = 940
 
         st_l_dt = 1231
 
         for i in timestamps[r]:
-            # for some fucking reason this only captures team playes i ams so lostttttttttttttt
-            print("event:", i)
 
             similarity_scores_deaths = []
             similarity_scores_kills = []
 
+            # new attempt, change gr check to 940
+            # team is 34 255 198
+            # opp  is 255 70 85
+            # self is 240 203 116
+
             r, g, b = image[st_u, gr_check]
             u = st_u
 
-            while g < 100 and r < 100:
+            while g < 100 and r < 100 and b < 100:
 
                 u = u + 1
                 b, g, r = image[u, gr_check]
@@ -433,13 +456,11 @@ def match_agent(agent_sprites, timeline_images, agents_names_list, timestamps):
             if u > 900:
                 break
 
+            # plt.imshow(image[u:u+36, gr_check:gr_check+100])
+            # plt.show()
+
             cur_img = image[u:u + 36, st_l:st_l + 36]
             cur_img_dt = image[u:u + 36, st_l_dt:st_l_dt + 36]
-
-            plt.imshow(cur_img)
-            plt.show()
-            # plt.imshow(cur_img_dt)
-            # plt.show()
 
             agent_img.append(cur_img)
             agent_img_dt.append(cur_img_dt)
@@ -458,9 +479,6 @@ def match_agent(agent_sprites, timeline_images, agents_names_list, timestamps):
             indexes_dt.append(similarity_scores_deaths.index(max(similarity_scores_deaths)))
             indexes_fk.append(similarity_scores_kills.index(max(similarity_scores_kills)))
 
-            print("fk:", agents_names_list[similarity_scores_kills.index(max(similarity_scores_kills))], "dt:", agents_names_list[similarity_scores_deaths.index(max(similarity_scores_deaths))])
-
-        # all the agents killed and dead in a given round (by us, its only recording our kills rn)
         kills_agents_names = [agents_names_list[index] for index in indexes_fk]
         deaths_agents_names = [agents_names_list[index] for index in indexes_dt]
 
@@ -477,6 +495,7 @@ def match_agent(agent_sprites, timeline_images, agents_names_list, timestamps):
     fourth_eng_right = []
 
     for round_no, round_engagements in enumerate(round_agents):
+
         first_eng_left.append(round_engagements[0][0])
         sec_eng_left.append(round_engagements[1][0])
         third_eng_left.append(round_engagements[2][0])

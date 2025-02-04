@@ -67,14 +67,16 @@ def calculate_all_rounds_anchor_times(all_rounds_data_formatted):
 
     return anchor_times
 
-def generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps):
-    all_round_data = round_agents
+def generate_all_round_info(round_engagements_agents, list_of_sides_of_each_event_each_round, plants_or_not, timestamps):
+    rounds_engagements_events_data = round_engagements_agents
 
-    for r, round_instance in enumerate(all_round_data):
+    print(list_of_sides_of_each_event_each_round)
+
+    for r, round_instance in enumerate(rounds_engagements_events_data):
         for i, timestamp in enumerate(timestamps[r]):
-
+            print(timestamp, list_of_sides_of_each_event_each_round[r][i])
             round_instance[i].append(timestamp)
-            round_instance[i].append(event_sides[r][i])
+            round_instance[i].append(list_of_sides_of_each_event_each_round[r][i])
             try:
                 if plants_or_not[r][i] == "Planted" or plants_or_not[r][i] == "Defused":
                     round_instance[i].append('Spike')
@@ -84,7 +86,7 @@ def generate_all_round_info(round_agents, event_sides, plants_or_not, timestamps
             except IndexError:
                 round_instance[i].append('Kill')
 
-    return all_round_data
+    return rounds_engagements_events_data
 
 
 def get_first_three_rounds_kill_data(first_event_is_plant_boolean_all_rounds, second_event_is_plant_boolean_all_rounds, first_event_left_player,

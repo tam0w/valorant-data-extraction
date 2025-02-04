@@ -24,6 +24,7 @@ timestamps, plants_or_not, buy_info_team, buy_info_oppo, awps = img.rounds_ocr(t
 outcomes = img.get_round_outcomes_all_rounds(timeline_images)
 map_name = img.get_metadata(first_timeline_image)
 events_team_counter_each_round, events_opponent_counter_each_round, list_of_sides_of_each_event_each_round = img.total_events(timeline_images)
+print(list_of_sides_of_each_event_each_round)
 spike_plant_site_list = img.bombsites_plants(timeline_images, map_name)
 awp_information = txt.awp_info(awps)
 kills, assists = txt.kill_ass_kast(timeline_images)
