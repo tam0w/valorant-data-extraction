@@ -3,21 +3,7 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
-        <entry key="C:\Users\TAMIM\Documents\Notes\Logs\15_04_2024_Icebox_13-8.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="C:\Users\TAMIM\Downloads\04_12_2023_Ascent_13-2.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="C:\Users\TAMIM\Downloads\30_11_2023_Split_13-2.csv">
+        <entry key="/res/agentinfo.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

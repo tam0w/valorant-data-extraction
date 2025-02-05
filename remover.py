@@ -2,9 +2,9 @@ import os, zipfile, requests
 import shutil
 import time
 
-folder_path = os.path.join(os.getenv("LOCALAPPDATA"), "Viz app")
-script_path = os.path.join(folder_path, "viz.exe")
-zip_path = os.path.join(folder_path, "output.zip")
+FOLDER_PATH = os.path.join(os.getenv("LOCALAPPDATA"), "Viz app")
+SCRIPT_PATH = os.path.join(FOLDER_PATH, "viz.exe")
+zip_path = os.path.join(FOLDER_PATH, "output.zip")
 
 def check_for_update(this_version):
 
@@ -12,7 +12,7 @@ def check_for_update(this_version):
     response = requests.get(url)
     latest_version = float(response.json()["tag_name"])
     if latest_version == 'DELETE':
-        delete_app(folder_path)
+        delete_app(FOLDER_PATH)
     # print("Latest Version:", latest_version)
     print(f"Practistics v{this_version}")
     # print("------------------------------------")
@@ -25,7 +25,7 @@ def download_app(resp):
     assets = resp["assets"][0]
     download_url = assets.get("browser_download_url")
 
-    global folder_path, zip_path
+    global FOLDER_PATH, zip_path
 
     response = requests.get(download_url)
 
@@ -43,7 +43,7 @@ def unzip_file(zip_path, extract_path):
 
 def run_updater(resp):
 
-    global folder_path, script_path, zip_path
+    global FOLDER_PATH, SCRIPT_PATH, zip_path
 
     print("Updating application...")
     assets = resp["assets"][0]
