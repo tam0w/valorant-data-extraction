@@ -180,7 +180,7 @@ def map_player_agents(who_fb, fk_player, fk_dt, players_agents):
     return final_player_fk_list, final_opponent_dt_list
 
 
-def check_true_fb_all_rounds(timestamps, fk_player, sk_death):
+def check_true_fb_all_rounds(timestamps, fk_player, sk_death, event_sides, tk_death):
     true_fb = []
 
     for i in range(len(timestamps)):

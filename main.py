@@ -1,3 +1,4 @@
+import pprint
 from datetime import datetime
 
 import pandas
@@ -47,10 +48,10 @@ all_rounds_anchor_times = txt.calculate_all_rounds_anchor_times(all_rounds_data_
 
 
 fk_player, fk_death, sk_player, sk_death, tk_player, tk_death= txt.get_first_three_rounds_kill_data(first_event_is_plant_boolean_all_rounds, second_event_is_plant_boolean_all_rounds, first_event_left_player,
-                                     second_event_left_player, third_event_left_player,  first_event_right_player,
-                                     second_event_right_player, third_event_right_player)
+                                     second_event_left_player, third_event_left_player, fourth_event_left_player, first_event_right_player,
+                                     second_event_right_player, third_event_right_player, fourth_event_right_player)
 
-true_fb_each_round = txt.check_true_fb_all_rounds(timestamps, fk_player, fk_death) # method again
+true_fb_each_round = txt.check_true_fb_all_rounds(timestamps, fk_player, fk_death, list_of_sides_of_each_event_each_round, tk_death) # method again
 
 
 first_kill_times, second_kill_times = txt.first_and_second_kills(timestamps, first_event_is_plant_boolean_all_rounds)
@@ -72,7 +73,10 @@ names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "ou
          "players_agents", "anchor_times", "all_round_data", "kills", "assists", "scoreboard"]
 
 for name, lst in zip(names, lists):
+
     data[name] = lst
+
+pprint.pprint(data)
 
 df = pandas.DataFrame
 df = df(data)
