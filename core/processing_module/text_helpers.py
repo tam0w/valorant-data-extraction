@@ -70,11 +70,10 @@ def calculate_all_rounds_anchor_times(all_rounds_data_formatted):
 def generate_all_round_info(round_engagements_agents, list_of_sides_of_each_event_each_round, plants_or_not, timestamps):
     rounds_engagements_events_data = round_engagements_agents
 
-    print(list_of_sides_of_each_event_each_round)
 
     for r, round_instance in enumerate(rounds_engagements_events_data):
         for i, timestamp in enumerate(timestamps[r]):
-            print(timestamp, list_of_sides_of_each_event_each_round[r][i])
+
             round_instance[i].append(timestamp)
             round_instance[i].append(list_of_sides_of_each_event_each_round[r][i])
             try:

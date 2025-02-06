@@ -25,7 +25,6 @@ timestamps, plants_or_not, buy_info_team, buy_info_oppo, awps = img.rounds_ocr(t
 outcomes = img.get_round_outcomes_all_rounds(timeline_images)
 map_name = img.get_metadata(first_timeline_image)
 events_team_counter_each_round, events_opponent_counter_each_round, list_of_sides_of_each_event_each_round = img.total_events(timeline_images)
-print(list_of_sides_of_each_event_each_round)
 spike_plant_site_list = img.bombsites_plants(timeline_images, map_name)
 awp_information = txt.awp_info(awps)
 kills, assists = txt.kill_ass_kast(timeline_images)
@@ -61,27 +60,36 @@ date = datetime.now()
 dt_string = date.strftime("%d/%m/%Y")
 
 data = {}
+json_data = {}
 
 lists = [timestamps, spike_planted_boolean_all_rounds, spike_defused_boolean_all_rounds, fk_player, fk_death, outcomes, first_bloods_team_each_round, awp_information, buy_info_team,
          buy_info_oppo, kills_team_counter_each_round, kills_opponent_counter_each_round, first_event_is_plant_boolean_all_rounds, sides_each_round, fbs_players, dt_players, first_kill_times,
          total_rounds_no, spike_plant_site_list, true_fb_each_round, final_score, map_name, dt_string, player_agents_zipped, all_rounds_anchor_times, all_rounds_data_formatted,
          kills, assists, scoreboard_val]
 
-names = ["first_action_times", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "awp_info",
+names = ["event_timestamps", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "awp_info",
          "buy_info_team", "buy_info_oppo", "kills_team", "kills_opp", "first_is_plant", "sides", "fbs_players",
          "dt_players", "first_kill_times", "rounds", "bombsites", "true_fb", "fscore", "map_name", "dt_string",
-         "players_agents", "anchor_times", "all_round_data", "kills", "assists", "scoreboard"]
+         "players_agents", "anchor_times", "round_events", "kills", "assists", "scoreboard"]
 
 for name, lst in zip(names, lists):
 
-    data[name] = lst
+    json_data[name] = lst
 
-pprint.pprint(data)
+    excluded_headers = ["scoreboard", "event_timestamps", "kills", "assists"]
+    if type(lst) == list and name not in excluded_headers:
+        print(name, len(lst))
+        data[name] = lst
+
+# pprint.pprint(data)
 
 df = pandas.DataFrame
 df = df(data)
 
+print(df.columns)
 print(df.head(5))
+
+df.to_csv("data.csv")
 
 Logger.info("Data extraction complete.")
 
