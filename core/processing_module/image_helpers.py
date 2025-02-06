@@ -305,7 +305,7 @@ def final_score_ocr(cv_image):
     # score1 = plt.imread(score)
     # plt.imshow(score1)
     score = reader.readtext(score, detail=0)
-    print(score)
+
 
     return score[0].__str__(), score[1].__str__(), score[2].__str__()
 
