@@ -19,6 +19,8 @@ linux = base_log_dir / "E0619900"
 
 def read_images_from_folder():
 
+    """Read images from the folder and return the timeline, scoreboard and summary images. Currently only for testing purposes."""
+
     image_files = sorted(glob.glob(os.path.join(linux, "*.png")))
     timeline_images = []
     scoreboard_image = None
