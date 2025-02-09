@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 import random
 import string

@@ -1,30 +1,7 @@
-import os
-
-import cv2 as cv
-import matplotlib.pyplot as plt
-import numpy
-
-from core.constants import list_of_agents
-from core.logger_module.logger import Logger
-from core.ocr_module.ocr import reader
-from core.processing_module.text_helpers import correct_agent_name, fix_times
-
 
 import os
 
 import cv2 as cv
-import matplotlib.pyplot as plt
-import numpy
-
-from core.constants import list_of_agents
-from core.logger_module.logger import Logger
-from core.ocr_module.ocr import reader
-from core.processing_module.text_helpers import correct_agent_name, fix_times
-
-import os
-
-import cv2 as cv
-import matplotlib.pyplot as plt
 import numpy
 
 from core.constants import list_of_agents

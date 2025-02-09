@@ -80,7 +80,6 @@ for name, lst in zip(names, lists):
 
     excluded_headers = ["scoreboard", "event_timestamps", "kills", "assists"]
     if type(lst) == list and name not in excluded_headers:
-        print(name, len(lst))
         data[name] = lst
 
 df = pandas.DataFrame
