@@ -10,9 +10,37 @@ from core.ocr_module.ocr import reader
 from core.processing_module.text_helpers import correct_agent_name, fix_times
 
 
-def side_first_half(cv_image):
-    """Determines the side of the team in the first half of the game"""
+import os
 
+import cv2 as cv
+import matplotlib.pyplot as plt
+import numpy
+
+from core.constants import list_of_agents
+from core.logger_module.logger import Logger
+from core.ocr_module.ocr import reader
+from core.processing_module.text_helpers import correct_agent_name, fix_times
+
+import os
+
+import cv2 as cv
+import matplotlib.pyplot as plt
+import numpy
+
+from core.constants import list_of_agents
+from core.logger_module.logger import Logger
+from core.ocr_module.ocr import reader
+from core.processing_module.text_helpers import correct_agent_name, fix_times
+def side_first_half(cv_image):
+    """
+    Determines the side of the team in the first half of the game.
+
+    Args:
+        cv_image (numpy.ndarray): The image of the game.
+
+    Returns:
+        list: A list indicating the sides ('Defense' or 'Attack') for each round.
+    """
     file = cv_image[300:400, 1300:1500]
     gray = cv.cvtColor(file, cv.COLOR_RGB2BGR)
     res1 = reader.readtext(gray, detail=0)
@@ -28,7 +56,6 @@ def side_first_half(cv_image):
 
     return sides
 
-
 def total_events(tl_ss):
     """
     Calculate the total events including plants and defuses for each round.
@@ -42,7 +69,6 @@ def total_events(tl_ss):
             - events_opponent_counter_each_round (list): Number of events for the opponent in each round.
             - list_of_sides_of_each_event_all_rounds (list): List of sides ('team' or 'opponent') for each event in all rounds.
     """
-
     events_team_counter_each_round = []
     events_opponent_counter_each_round = []
     list_of_sides_of_each_event_all_rounds = []
@@ -54,11 +80,9 @@ def total_events(tl_ss):
         counter_team = 0
         specific_round_events = []
 
-        print("Round", round_index + 1)
         u = start
         while True:
 
-            print("Start:", u)
             b1, g1, r1 = pic[u, 940]
 
             while g1 < 100 and r1 < 100 and b1 < 100:
@@ -86,6 +110,16 @@ def total_events(tl_ss):
     return events_team_counter_each_round, events_opponent_counter_each_round, list_of_sides_of_each_event_all_rounds
 
 def bombsites_plants(tl_ss, map_name):
+    """
+    Determine the bombsite where the spike was planted for each round.
+
+    Args:
+        tl_ss (list): List of images representing each round.
+        map_name (str): The name of the map.
+
+    Returns:
+        list: A list indicating the bombsite ('A', 'B', 'C', or 'False') for each round.
+    """
     spike_p = os.path.join(os.getcwd(), "spike.png")
     spike = cv.imread(spike_p)
 
@@ -158,7 +192,17 @@ def bombsites_plants(tl_ss, map_name):
     return sites
 
 def get_player_and_agents_names(image):
+    """
+    Extract the player and agent names from the image.
 
+    Args:
+        image (numpy.ndarray): The image of the game.
+
+    Returns:
+        tuple: Contains two lists:
+            - player_list (list): List of player names.
+            - agent_list (list): List of agent names.
+    """
     agent_list = []
     player_list = []
 
@@ -233,10 +277,19 @@ def get_player_and_agents_names(image):
 
     return player_list, agent_list
 
-
 def scores_ocr(summary_image):
-    """This function will extract the final score of the match and the result of the match from the summary image."""
+    """
+    Extract the final score of the match and the result of the match from the summary image.
 
+    Args:
+        summary_image (numpy.ndarray): The summary image of the game.
+
+    Returns:
+        tuple: Contains the following elements:
+            - total_rounds (int): The total number of rounds played.
+            - sides (list): List of sides ('Defense' or 'Attack') for each round.
+            - fscore (str): The final score of the match.
+    """
     sides = side_first_half(summary_image)
     my_rounds, match_result, opp_rounds = final_score_ocr(summary_image)
 
@@ -252,10 +305,16 @@ def scores_ocr(summary_image):
 
     return total_rounds, sides, fscore
 
-def  scoreboard_ocr(img):
-    """Gets the OCR value of the scoreboard and returns the values of the scoreboard in a list of lists. Each list contains
-    the player IGN, kills, deaths, assists and which side they are on. This function will also ask for user input if the
-    OCR fails to read the values."""
+def scoreboard_ocr(img):
+    """
+    Extract the values of the scoreboard and return them in a list of lists.
+
+    Args:
+        img (numpy.ndarray): The image of the scoreboard.
+
+    Returns:
+        list: A list of lists, each containing the player IGN, kills, deaths, assists, and side.
+    """
     start = 340
 
     scoreboard = []
@@ -301,17 +360,33 @@ def  scoreboard_ocr(img):
     return scoreboard
 
 def final_score_ocr(cv_image):
-    score = cv_image[70:170, 700:1150]
-    # score1 = plt.imread(score)
-    # plt.imshow(score1)
-    score = reader.readtext(score, detail=0)
+    """
+    Extract the final score of the match from the image.
 
+    Args:
+        cv_image (numpy.ndarray): The image of the game.
+
+    Returns:
+        tuple: Contains the following elements:
+            - str: The score of the player's team.
+            - str: The result of the match.
+            - str: The score of the opponent's team.
+    """
+    score = cv_image[70:170, 700:1150]
+    score = reader.readtext(score, detail=0)
 
     return score[0].__str__(), score[1].__str__(), score[2].__str__()
 
 def get_agent_sprites(image):
+    """
+    Extract the agent sprites from the image.
 
-    """This function will extract the agent sprites from the image and return a list of the sprites for each agent."""
+    Args:
+        image (numpy.ndarray): The image of the game.
+
+    Returns:
+        list: A list of sprites for each agent.
+    """
     agent_sprites_list = []
 
     st_u = 503
@@ -352,7 +427,7 @@ def get_agent_sprites(image):
 
     return agent_sprites_list
 
-# TODO: The way I'm currently working is that I do everything for every round at once, should I break this down to round stuff?
+
 def rounds_ocr(all_round_images):
     """
     Perform OCR and preprocessing of all the rounds to extract information such as:
@@ -371,7 +446,6 @@ def rounds_ocr(all_round_images):
             - buy_info_oppo (list): List of buy information for the opponent.
             - awps (list): List indicating if an AWP was used in each round.
     """
-
     buys = [images[425:480, 1020:1145] for images in all_round_images]
     buy_info = [reader.readtext(image, allowlist=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ','], detail=0) for
                 image in buys]
@@ -393,6 +467,15 @@ def rounds_ocr(all_round_images):
     return timestamps, plants, buy_info_team, buy_info_oppo, awps
 
 def get_round_outcomes_all_rounds(images):
+    """
+    Determine the outcome of each round (win or loss).
+
+    Args:
+        images (list): List of images representing each round.
+
+    Returns:
+        list: A list indicating the outcome ('win' or 'loss') for each round.
+    """
     round_outcomes = []
 
     for image in images:
@@ -406,17 +489,43 @@ def get_round_outcomes_all_rounds(images):
     return round_outcomes
 
 def get_metadata(first_timeline_image):
+    """
+    Extract metadata from the first timeline image.
+
+    Args:
+        first_timeline_image (numpy.ndarray): The first timeline image.
+
+    Returns:
+        str: The extracted metadata.
+    """
     file = first_timeline_image[125:145, 120:210]
     gray = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
     gray = cv.convertScaleAbs(gray, 1, 5)
     result = reader.readtext(gray, detail=0)
     return result[0].__str__().lower()
 
-
 def match_agent(agent_sprites, timeline_images, agents_names_list, timestamps):
-    """This function matches all the agents kills and death sprites to their actual agent names and returns
-    what agent got the kill and died for the first n engagements, usually 3."""
+    """
+    Matches agents to their respective kills and deaths in each round based on timeline images.
 
+    Args:
+        agent_sprites (list): List of agent sprites.
+        timeline_images (list): List of images representing the timeline of each round.
+        agents_names_list (list): List of agent names.
+        timestamps (list): List of timestamps for each round.
+
+    Returns:
+        tuple: Contains the following elements:
+            - first_eng_left (list): List of agents who got the first kill in each round.
+            - sec_eng_left (list): List of agents who got the second kill in each round.
+            - third_eng_left (list): List of agents who got the third kill in each round.
+            - fourth_eng_left (list): List of agents who got the fourth kill in each round.
+            - first_eng_right (list): List of agents who died first in each round.
+            - sec_eng_right (list): List of agents who died second in each round.
+            - third_eng_right (list): List of agents who died third in each round.
+            - fourth_eng_right (list): List of agents who died fourth in each round.
+            - round_agents (list): List of lists containing pairs of agents (killer, victim) for each round.
+    """
     round_agents = []
 
     for r, image in enumerate(timeline_images):

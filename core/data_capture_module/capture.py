@@ -11,23 +11,37 @@ import numpy as np
 # Internal Packages
 from core.logger_module.logger import Logger
 
+# Define base directory in Documents folder
 documents_path = Path.home() / "Documents"
-base_log_dir = documents_path / "practistics_error_logs"
-windows = base_log_dir / "E4052"
-linux = base_log_dir / "E0619900"
+base_dir = documents_path / "practistics" / "error_logs"
 
 
-def read_images_from_folder():
+def read_images_from_folder(sub_dir):
+    """
+    Read images from the specified subdirectory within the error logs folder and return the timeline, scoreboard, and summary images.
 
-    """Read images from the folder and return the timeline, scoreboard and summary images. Currently only for testing purposes."""
+    Args:
+        sub_dir (str): The name of the subdirectory within error logs to read images from.
 
-    image_files = sorted(glob.glob(os.path.join(linux, "*.png")))
+    Returns:
+        tuple: A tuple containing:
+
+            - timeline_images (list): List of timeline images.
+
+            - scoreboard_image (numpy.ndarray or None): The scoreboard image.
+
+            - summary_image (numpy.ndarray or None): The summary image.
+    """
+    target_dir = base_dir / sub_dir
+    if not target_dir.exists():
+        raise FileNotFoundError(f"The directory {target_dir} does not exist.")
+
+    image_files = sorted(glob.glob(os.path.join(target_dir, "*.png")))
     timeline_images = []
     scoreboard_image = None
     summary_image = None
 
     for image_file in image_files:
-
         image = cv.imread(image_file)
 
         if "scoreboard" in image_file:
@@ -54,7 +68,18 @@ def read_images_from_folder():
     return timeline_images, scoreboard_image, summary_image
 
 def screenshot_pages():
+    """
+    Capture screenshots of the summary, scoreboard, and timeline pages.
 
+    Returns:
+        tuple: A tuple containing:
+
+            - timeline_images (list): List of timeline images.
+
+            - scoreboard_image (numpy.ndarray or None): The scoreboard image.
+
+            - summary_image (numpy.ndarray or None): The summary image.
+    """
     timeline_images = []
     scoreboard_image = None
 
@@ -68,7 +93,6 @@ def screenshot_pages():
             break
 
     while True:
-
         if keyboard.is_pressed('b'):
             image = py.screenshot()
             scoreboard_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)

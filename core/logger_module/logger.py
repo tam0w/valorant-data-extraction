@@ -88,9 +88,8 @@ class Logger:
         if not self.error_id:
             self.error_id = self._generate_error_id()
 
-        # Create log directory
         documents_path = Path.home() / "Documents"
-        base_log_dir = documents_path / "practistics_error_logs"
+        base_log_dir = documents_path / "practistics" / "error_logs"
         error_dir = base_log_dir / self.error_id
         error_dir.mkdir(parents=True, exist_ok=True)
 

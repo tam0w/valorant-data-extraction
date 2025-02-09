@@ -1,6 +1,6 @@
-import pprint
+import os
+from pathlib import Path
 from datetime import datetime
-
 import pandas
 
 # Internal Packages
@@ -9,12 +9,17 @@ from core.logger_module.logger import Logger
 from core.processing_module import text_helpers as txt
 from core.processing_module import image_helpers as img
 
+# Define base directory in Documents folder
+documents_path = Path.home() / "Documents"
+base_dir = documents_path / "practistics" / "matches"
+base_dir.mkdir(parents=True, exist_ok=True)
+
 Logger.info("Starting application")
 
-timeline_images, scoreboard_image, summary_image = capture.read_images_from_folder()
+# sub_dir = input("Enter the subdirectory within error_logs to read images from: ")
+# timeline_images, scoreboard_image, summary_image = capture.read_images_from_folder(sub_dir)
+timeline_images, scoreboard_image, summary_image = capture.screenshot_pages()
 first_timeline_image = timeline_images[0]
-
-# Logger.save_logs(None)
 
 total_rounds_no, sides_each_round, final_score = img.scores_ocr(summary_image)
 scoreboard_val = img.scoreboard_ocr(scoreboard_image)
@@ -28,7 +33,6 @@ events_team_counter_each_round, events_opponent_counter_each_round, list_of_side
 spike_plant_site_list = img.bombsites_plants(timeline_images, map_name)
 awp_information = txt.awp_info(awps)
 kills, assists = txt.kill_ass_kast(timeline_images)
-# TODO: Implement the main flow of the program, top level code I think.
 
 spike_planted_boolean_all_rounds = [round_instance.__contains__('Planted') for round_instance in plants_or_not]
 spike_defused_boolean_all_rounds = [round_instance.__contains__('Defused') for round_instance in plants_or_not]
@@ -43,15 +47,13 @@ kills_opponent_counter_each_round, kills_team_counter_each_round = txt.update_ki
 
 all_rounds_data_formatted = txt.generate_all_round_info(round_agents, list_of_sides_of_each_event_each_round, plants_or_not, timestamps)
 
-all_rounds_anchor_times = txt.calculate_all_rounds_anchor_times(all_rounds_data_formatted) # make into method
-
+all_rounds_anchor_times = txt.calculate_all_rounds_anchor_times(all_rounds_data_formatted)
 
 fk_player, fk_death, sk_player, sk_death, tk_player, tk_death= txt.get_first_three_rounds_kill_data(first_event_is_plant_boolean_all_rounds, second_event_is_plant_boolean_all_rounds, first_event_left_player,
                                      second_event_left_player, third_event_left_player, fourth_event_left_player, first_event_right_player,
                                      second_event_right_player, third_event_right_player, fourth_event_right_player)
 
-true_fb_each_round = txt.check_true_fb_all_rounds(timestamps, fk_player, fk_death, list_of_sides_of_each_event_each_round, tk_death) # method again
-
+true_fb_each_round = txt.check_true_fb_all_rounds(timestamps, fk_player, fk_death, list_of_sides_of_each_event_each_round, tk_death)
 
 first_kill_times, second_kill_times = txt.first_and_second_kills(timestamps, first_event_is_plant_boolean_all_rounds)
 fbs_players, dt_players = txt.map_player_agents(first_bloods_team_each_round, fk_player, fk_death, player_agents_zipped)
@@ -81,15 +83,15 @@ for name, lst in zip(names, lists):
         print(name, len(lst))
         data[name] = lst
 
-# pprint.pprint(data)
-
 df = pandas.DataFrame
 df = df(data)
 
-print(df.columns)
 print(df.head(5))
 
-df.to_csv("data.csv")
+# Generate a dynamic file name using map name, final score, and current date
+file_name = f"{base_dir}/data_{map_name}_{final_score}_{dt_string.replace('/', '-')}.csv"
+os.makedirs(os.path.dirname(file_name), exist_ok=True)
+
+df.to_csv(file_name)
 
 Logger.info("Data extraction complete.")
-
