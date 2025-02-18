@@ -1,32 +1,52 @@
-
 # Practistics Scrim OCR
 
-Practistics Scrim OCR is an open-source project designed to capture and process screenshots of VALORANT private scrim match scoreboards, summaries, and timelines. It uses OCR (Optical Character Recognition) to extract data from images and logs the information for further analysis.
+Practistics is an open-source OCR tool designed to capture and analyze VALORANT private scrim matches. It automatically extracts data from match scoreboards, summaries, and timelines, converting them into structured CSV data for analysis.
 
-Practistics Scrim OCR was intended for teams, to be used to extract tabular data match-by-match, allow technical and non-technical analysts to aggregrate and analyze performance in multiple practice matches. That is where the value would lie in using it. I wrote this OCR script since there wasn't really a way to access hidden scrim data post the scrim. The data output structure of this script is a .csv file. For that reason the code is written to generate CSV files (almost everything is a bunch of lists, far from ideal).
+## Key Features
 
-## Features
-- Screenshot capture of match data
+- Automated screenshot capture of match data
 - OCR processing of game information
-- CSV output for analysis
+- Detailed round-by-round data extraction
+- CSV output for easy analysis
+- Support for both live capture and pre-saved screenshots
 
 ## Quick Start
-1. Install Python 3.11
+
+1. Install Python 3.11 from the [Python website](https://www.python.org/downloads/)
 2. Download and unzip Practistics
-3. Run `pip install -r requirements.txt`
-4. Read [Usage Guide](docs/USAGE.md) to get started
+3. Install dependencies:
+   ```sh
+   pip install -r requirements.txt
+   ```
+4. Run the tool and press:
+   - `S` on match summary screen
+   - `B` on scoreboard
+   - `P` on each round timeline
+   - `Q` when finished
+   - Let it process
+
+Find your data in `Documents/practistics/matches/`
 
 ## Documentation
-- [Installation Guide](docs/INSTALLATION.md)
-- [Usage Guide](docs/USAGE.md)
-- [Technical Documentation](docs/TECHNICAL.md)
+
+- [Installation Guide](docs/INSTALLATION.md) - Detailed setup instructions
+- [Usage Guide](docs/USAGE.md) - How to use Practistics
+- [Technical Documentation](docs/TECHNICAL.md) - Under the hood details
 
 ## Project Status
-Not very active, would like contributions
 
-## Support
-- Discord: [Join Here](https://discord.gg/2eQ85rcQSQ)
-- Twitter: [@tam0w](https://twitter.com/tam0w)
+This project is currently in active development. It was created to fill the gap in accessing hidden scrim data and help teams analyze their practice matches. While functional, it's one of my earlier projects and contributions/improvements are welcome.
+
+## Support & Community
+
+- Join our [Discord server](https://discord.gg/2eQ85rcQSQ)
+- Follow on [Twitter](https://twitter.com/tam0w)
+- Report issues on [GitHub](https://github.com/yourusername/practistics/issues)
+
+## Contributing
+
+Contributions are welcome! See our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## License
-GNU Affero General Public License v3.0
+
+This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
