@@ -18,7 +18,7 @@ Practistics Scrim OCR was intended for teams, to be used to extract tabular data
 
 ## Installation
 
-1. Clone the repository:
+1. Clone the repository (or download the code):
     ```sh
     git clone https://github.com/yourusername/practistics.git
     cd practistics
@@ -104,9 +104,10 @@ Contributions are welcome! Please follow these steps to contribute:
 
 This project is licensed under the GNU Affero General Public License v3.0 - see the LICENSE file for details.
 
-## Contact
+## Note
 
-For any questions or suggestions, please open an issue on GitHub. You can also reach out to me on my [twitter](https://twitter.com/tam0w), or on the project's [discord server](https://discord.gg/yourdiscordserver).
+This project is a work in progress that I do not have a lot of time to dedicate to. Its one of the first things I ever wrote, and all contributions and/or improvements are welcome.
+For any questions or suggestions, please open an issue on GitHub. You can also reach out to me on my [twitter](https://twitter.com/tam0w), or on the project's [discord server]([https://discord.gg/yourdiscordserver](https://discord.gg/2eQ85rcQSQ)).
 
 ---
 
