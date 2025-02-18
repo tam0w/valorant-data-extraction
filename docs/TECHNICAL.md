@@ -88,6 +88,25 @@ Here, `events_team_counter_each_round` and `events_opponent_counter_each_round` 
 
 This structure, where each list represents a specific attribute across all rounds, is common throughout the codebase. When working with this data, it's crucial to keep in mind that the index of each list corresponds to a specific round.
 
+The current implementation heavily relies on parallel lists for related data. For example, in the `get_first_three_rounds_kill_data` function:
+
+```python
+def get_first_three_rounds_kill_data(first_event_is_plant_boolean_all_rounds,
+                                   first_event_left_player,
+                                   first_event_right_player,
+                                   # ... more parallel lists
+                                   ):
+    fk_player = []
+    fk_death = []
+    sk_player = []
+    sk_death = []
+    tk_player = []
+    tk_death = []
+    # ... processing these parallel lists
+```
+
+
+
 ### Hard-coded Coordinates
 
 A significant portion of the image processing in Practistics relies on hard-coded pixel coordinates. These coordinates are used to crop specific regions of interest from the screenshots.
@@ -111,26 +130,215 @@ for i in range(5):
 
 Here, `st_u`, `gr_check`, and `st_l` are hard-coded coordinates that are used to locate and crop the region containing the player and agent names. The function relies on the assumption that these names will always appear at these specific locations in the screenshot.
 
-While this approach works for screenshots with a consistent format, it can be brittle. If the UI of the game changes, or if the screenshots are taken at a different resolution, these hard-coded coordinates may no longer be valid. An area for improvement could be to use more flexible methods for locating regions of interest, such as feature detection or relative positioning.
+While this approach works for screenshots with a consistent format, it can be brittle. If the UI of the game changes, or if the screenshots are taken at a different resolution, these hard-coded coordinates are no longer be valid. An area for improvement could be to use more flexible methods for locating regions of interest, such as feature detection or relative positioning.
 
-## Improvement Opportunities
+## Possible Improvements
 
-While Practistics is a robust and functional system, there are several areas where it could potentially be improved:
+### Dynamic Coordinate Management
 
-1. **Dynamic Coordinates**: As mentioned, the reliance on hard-coded coordinates for image processing can be brittle. Investigating methods to dynamically locate regions of interest could make the system more resilient to changes in the game's UI or screenshot format.
+The current implementation relies heavily on hard-coded coordinates for image processing, making it brittle in the face of UI changes. These hard-coded values appear throughout the codebase:
 
-2. **Redundant Functions**: Some parts of the codebase contain functions that perform similar tasks. For example, the `get_player_and_agents_names` function contains two nearly identical blocks of code for processing the top and bottom halves of the image. Refactoring these into a single, reusable function could improve code maintainability.
+```python
+# In total_events():
+b, g, r = image[520, 1150]  # Team detection coordinates
 
-3. **Error Handling**: While the code does include some error handling, there are many potential edge cases that aren't currently handled, such as missing or corrupted screenshots. More comprehensive error handling could make the system more robust.
+# In get_player_and_agents_names():
+st_u = 495  # Starting y-coordinate
+gr_check = 200  # x-coordinate for color checking
 
-4. **Configuration Management**: Currently, many of the system's configurations (such as file paths and OCR settings) are hard-coded into the scripts. Moving these into a separate configuration file could make the system easier to manage and adapt to different environments.
+# In scoreboard_ocr():
+img1 = img[start:start + 50, 330:700]  # Player name region
+```
 
-5. **Performance Optimization**: Some of the image processing tasks, particularly those that involve scanning the entire image pixel by pixel, could potentially be optimized for better performance. Techniques like downsampling or using more efficient color space representations could be explored.
+We can make this more resilient by implementing a coordinate management system:
 
-6. **Code Documentation**: While the code is commented, there is room for more extensive documentation, particularly around the expected format of the input screenshots and the structure of the output data.
+```python
+from dataclasses import dataclass
+from typing import Dict, Tuple
 
-For developers looking to contribute to Practistics, the best starting point is to familiarize yourself with the main modules and their interactions. From there, dive into the specific functions to understand how they process and transform the data. Keep in mind the overall data flow and the structure of the output data.
+@dataclass
+class UIRegion:
+    name: str
+    coordinates: Tuple[int, int, int, int]
+    purpose: str
 
-As with any complex system, don't hesitate to experiment, debug, and ask questions. The beauty of a modular, well-commented codebase is that it invites exploration and understanding.
+class CoordinateManager:
+    def __init__(self):
+        self.regions: Dict[str, UIRegion] = self._load_regions()
+    
+    def get_region(self, region_name: str) -> UIRegion:
+        if region_name not in self.regions:
+            raise ValidationError(f"Unknown region: {region_name}")
+        return self.regions[region_name]
+```
 
-Happy coding, and may your data always be insightful!
+### Structured Data Types and Processing
+
+The current implementation often uses parallel lists and multiple return values. This pattern appears in several functions:
+
+```python
+# Current approach in generate_all_round_info():
+def generate_all_round_info(round_engagements_agents, 
+                          list_of_sides_of_each_event_each_round,
+                          plants_or_not, timestamps):
+    rounds_engagements_events_data = round_engagements_agents
+    # ... manipulating multiple lists
+```
+
+We can improve this with proper data structures:
+
+```python
+from dataclasses import dataclass
+from typing import List, Optional
+
+@dataclass
+class RoundEvent:
+    timestamp: int
+    agent: str
+    target: Optional[str]
+    event_type: str
+    side: str
+
+@dataclass
+class Round:
+    events: List[RoundEvent]
+    plants: bool
+    side: str
+```
+
+### Error Handling and Validation
+
+The current codebase uses basic error handling with silent failures or user prompts. This pattern appears in multiple places:
+
+```python
+# In get_player_and_agents_names():
+if not res_assists:
+    res_assists = [input(f'Please confirm the assists for player {res_name}:')]
+
+# In correct_agent_name():
+if closest_match:
+    return closest_match[0]
+else:
+    return 0
+```
+
+We can implement comprehensive error handling:
+
+```python
+class ValidationError(Exception):
+    pass
+
+class OCRError(Exception):
+    pass
+
+def validate_agent_name(agent_name: str) -> str:
+    match = get_close_matches(agent_name, self.static_data.agents, n=1)
+    if not match:
+        raise ValidationError(f"No match found for agent: {agent_name}")
+    return match[0]
+```
+
+### Static Data Management
+
+Currently, the code uses hard-coded lists and constants:
+
+```python
+from core.constants import list_of_agents
+
+def correct_agent_name(agent_name):
+    closest_match = get_close_matches(agent_name, list_of_agents, n=1)
+    return closest_match[0] if closest_match else 0
+```
+
+We can improve this with a proper static data management system:
+
+```python
+class GameData:
+    def __init__(self):
+        self.agents = self._load_agent_data()
+        self.maps = self._load_map_data()
+    
+    def _load_agent_data(self):
+        """Load agent data from configuration files"""
+        with open('config/agents.json', 'r') as f:
+            return json.load(f)
+    
+    def validate_agent(self, name: str) -> Optional[str]:
+        return process.extractOne(
+            name,
+            self.agents.keys(),
+            score_cutoff=80
+        )[0]
+```
+
+### Time Processing and Standardization
+
+The codebase handles time processing in multiple places with string manipulation:
+
+```python
+def fix_times(timestamps):
+    """Converts various timestamp formats to integers"""
+    new_timestamps = []
+    for round in timestamps:
+        new_round = []
+        for timestamp in round:
+            if timestamp.startswith('0'):
+                timestamp = int(timestamp.replace('0:0', '')
+                              .replace('0:', '')
+                              .replace('.', '')
+                              .replace(':', ''))
+```
+
+We can standardize this with a proper time processing system:
+
+```python
+@dataclass
+class GameTime:
+    raw_time: str
+    seconds: int
+    
+    @classmethod
+    def parse(cls, timestamp: str) -> 'GameTime':
+        try:
+            if timestamp.startswith('0'):
+                seconds = cls._parse_short_time(timestamp)
+            else:
+                seconds = cls._parse_long_time(timestamp)
+            return cls(raw_time=timestamp, seconds=seconds)
+        except ValueError as e:
+            raise ValidationError(f"Invalid timestamp: {timestamp}")
+```
+
+### Code Organization
+
+Many functions handle multiple responsibilities and process data linearly. This appears in functions like `total_events()`, `bombsites_plants()`, and `match_agent()`. We can improve this with a proper processing pipeline:
+
+```python
+class RoundProcessor:
+    def __init__(self, static_data: GameData):
+        self.static_data = static_data
+    
+    def process_round(self, image: np.ndarray) -> Round:
+        """Process all aspects of a round in one pass"""
+        events = self._extract_events(image)
+        economy = self._process_economy(image)
+        plants = self._process_plants(image)
+        
+        return Round(
+            events=events,
+            economy=economy,
+            plants=plants,
+            side=self._detect_side(image)
+        )
+```
+
+These improvements work together to create a more maintainable and robust system. Each enhancement addresses patterns that appear throughout the codebase, making it easier for contributors to implement systematic improvements while maintaining the core functionality of extracting match data.
+
+The improvements focus on:
+- Creating clear data structures
+- Implementing consistent error handling
+- Centralizing configuration
+- Standardizing data processing
+- Improving code organization
+
+For developers looking to contribute, these patterns provide a roadmap for systematic improvements while maintaining the tool's core functionality.
