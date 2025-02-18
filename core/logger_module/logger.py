@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 import random
 import string
@@ -20,7 +19,7 @@ class Logger:
     def __init__(self, name: str = "PractisticsLogger"):
         # Initialize logger
         self.logger = logging.getLogger(name)
-        self.logger.setLevel(logging.CRITICAL)  # Capture all logs
+        self.logger.setLevel(logging.DEBUG)  # Capture all logs
 
         # Create formatter for consistent log formatting
         self.formatter = logging.Formatter(
@@ -88,9 +87,8 @@ class Logger:
         if not self.error_id:
             self.error_id = self._generate_error_id()
 
-        # Create log directory
         documents_path = Path.home() / "Documents"
-        base_log_dir = documents_path / "practistics_error_logs"
+        base_log_dir = documents_path / "practistics" / "error_logs"
         error_dir = base_log_dir / self.error_id
         error_dir.mkdir(parents=True, exist_ok=True)
 
