@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from datetime import datetime
-import pandas
+import pandas as pd
 
 # Internal Packages
 from core.data_capture_module import capture
@@ -16,9 +16,9 @@ base_dir.mkdir(parents=True, exist_ok=True)
 
 Logger.info("Starting application")
 
-# sub_dir = input("Enter the subdirectory within error_logs to read images from: ")
-# timeline_images, scoreboard_image, summary_image = capture.read_images_from_folder(sub_dir)
-timeline_images, scoreboard_image, summary_image = capture.screenshot_pages()
+sub_dir = input("Enter the subdirectory within error_logs to read images from: ")
+timeline_images, scoreboard_image, summary_image = capture.read_images_from_folder(sub_dir)
+# timeline_images, scoreboard_image, summary_image = capture.screenshot_pages()
 first_timeline_image = timeline_images[0]
 
 total_rounds_no, sides_each_round, final_score = img.scores_ocr(summary_image)
@@ -64,10 +64,12 @@ dt_string = date.strftime("%d/%m/%Y")
 data = {}
 json_data = {}
 
-lists = [timestamps, spike_planted_boolean_all_rounds, spike_defused_boolean_all_rounds, fk_player, fk_death, outcomes, first_bloods_team_each_round, awp_information, buy_info_team,
-         buy_info_oppo, kills_team_counter_each_round, kills_opponent_counter_each_round, first_event_is_plant_boolean_all_rounds, sides_each_round, fbs_players, dt_players, first_kill_times,
-         total_rounds_no, spike_plant_site_list, true_fb_each_round, final_score, map_name, dt_string, player_agents_zipped, all_rounds_anchor_times, all_rounds_data_formatted,
-         kills, assists, scoreboard_val]
+lists = [timestamps, spike_planted_boolean_all_rounds, spike_defused_boolean_all_rounds, fk_player, fk_death, outcomes,
+          first_bloods_team_each_round, awp_information, buy_info_team, buy_info_oppo, kills_team_counter_each_round,
+          kills_opponent_counter_each_round, first_event_is_plant_boolean_all_rounds, sides_each_round, fbs_players,
+          dt_players, first_kill_times, total_rounds_no, spike_plant_site_list, true_fb_each_round, final_score,
+          map_name, dt_string, player_agents_zipped, all_rounds_anchor_times, all_rounds_data_formatted, kills,
+          assists, scoreboard_val]
 
 names = ["event_timestamps", "plants", "defuses", "fk_player", "fk_death", "outcomes", "fb_team", "awp_info",
          "buy_info_team", "buy_info_oppo", "kills_team", "kills_opp", "first_is_plant", "sides", "fbs_players",
@@ -80,10 +82,39 @@ for name, lst in zip(names, lists):
 
     excluded_headers = ["scoreboard", "event_timestamps", "kills", "assists"]
     if type(lst) == list and name not in excluded_headers:
+        Logger.info(f"List {name} has {len(lst)} elements.")
         data[name] = lst
 
-df = pandas.DataFrame
-df = df(data)
+    data["sides"] = sides_each_round[:total_rounds_no]
+
+df = pd.DataFrame.from_dict(data)
+
+# new_header = ['first_kill', 'time', 'first_death', 'spike_plant', 'defuse', 'anchor_time', 'fb_team', 'true_fb',
+#               'fb_players', 'dt_players', 'team_buy', 'oppo_buy', 'total_kills', 'total_deaths', 'awps_info', 'side', 'round_win']
+#
+# df = pd.DataFrame(columns=new_header)
+
+# Example data population (replace with actual logic)
+# for round_num in range(total_rounds_no):
+#     df = df._append({
+#         'first_kill': fk_player[round_num],
+#         'time': first_kill_times[round_num],
+#         'first_death': fk_death[round_num],
+#         'spike_planted': spike_plant_site_list[round_num],
+#         'spike_defused': spike_defused_boolean_all_rounds[round_num],
+#         'anchor_time': all_rounds_anchor_times[round_num],
+#         'first_blood_team': first_bloods_team_each_round[round_num],
+#         'true_first_blood': true_fb_each_round[round_num],
+#         'first_blood_player': fbs_players[round_num],
+#         'first_death_player': dt_players[round_num],
+#         'avg_team_buy': buy_info_team[round_num],
+#         'avg_oppo_buy': buy_info_oppo[round_num],
+#         'round_kills_team': kills_team_counter_each_round[round_num],
+#         'round_deaths_team': kills_opponent_counter_each_round[round_num],
+#         'round_awps_info': awp_information[round_num],
+#         'side': sides_each_round[round_num],
+#         'round_win': outcomes[round_num]
+#     }, ignore_index=True)
 
 print(df.head(5))
 

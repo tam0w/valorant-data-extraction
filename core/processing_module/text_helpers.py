@@ -54,10 +54,14 @@ def update_kills_from_total_events_each_round(events_opponent_counter_each_round
     Returns:
         tuple: Updated kill counts for the opponent and player's team for each round.
     """
+
     kills_opponent_counter_each_round = events_opponent_counter_each_round
     kills_team_counter_each_round = events_team_counter_each_round
 
     for i in range(len(first_bloods_team_each_round)):
+
+        Logger.info(f"Round {i + 1} - First blood: {first_bloods_team_each_round[i]} Events [Team/Opp]: {events_team_counter_each_round[i], events_opponent_counter_each_round[i]}")
+
         if plants[i] is True:
             if sides[i] == 'Attack':
                 kills_team_counter_each_round[i] -= 1

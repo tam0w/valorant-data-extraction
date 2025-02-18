@@ -2,6 +2,7 @@
 import os
 
 import cv2 as cv
+import matplotlib.pyplot as plt
 import numpy
 
 from core.constants import list_of_agents
@@ -52,31 +53,45 @@ def total_events(tl_ss):
 
     for round_index, pic in enumerate(tl_ss):
 
+        if round_index > 2 and round_index < 6:
+            plt.imshow(tl_ss[round_index])
+            plt.show()
+
         start = 500
         counter_opp = 0
         counter_team = 0
         specific_round_events = []
+        gr_check = 1185
 
         u = start
         while True:
 
-            b1, g1, r1 = pic[u, 940]
+            b, g, r = pic[u, gr_check]
 
-            while g1 < 100 and r1 < 100 and b1 < 100:
+
+            # team is 34 255 198
+            # opp  is 255 70 85
+            # self is 240 203 116
+
+            while g < 100 and r < 100 and b < 100:
                 u += 1
-                b1, g1, r1 = pic[u, 940]
+                b, g, r = pic[u, gr_check]
 
-                if u > 900:
+                if u > 1060:
                     break
-            if u > 900:
+            if u > 1060:
                 break
 
-            if g1 > 100 and b1 > 100:
-                counter_team += 1
-                specific_round_events.append('team')
-            else:
+            if round_index > 2 and round_index < 6:
+                plt.imshow(pic[u:u+36, gr_check:gr_check+100])
+                plt.show()
+
+            if g < 100:
                 counter_opp += 1
                 specific_round_events.append('opponent')
+            else:
+                counter_team += 1
+                specific_round_events.append('team')
 
             u += 36
 
@@ -537,9 +552,9 @@ def match_agent(agent_sprites, timeline_images, agents_names_list, timestamps):
                 u = u + 1
                 b, g, r = image[u, gr_check]
 
-                if u > 900:
+                if u > 1060:
                     break
-            if u > 900:
+            if u > 1060:
                 break
 
             # plt.imshow(image[u:u+36, gr_check:gr_check+100])

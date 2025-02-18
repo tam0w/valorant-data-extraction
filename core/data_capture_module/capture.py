@@ -1,5 +1,6 @@
 import glob
 import os
+import re
 from pathlib import Path
 import cv2 as cv
 import keyboard
@@ -36,7 +37,16 @@ def read_images_from_folder(sub_dir):
     if not target_dir.exists():
         raise FileNotFoundError(f"The directory {target_dir} does not exist.")
 
-    image_files = sorted(glob.glob(os.path.join(target_dir, "*.png")))
+    def extract_number(filepath):
+        filename = os.path.basename(filepath)
+        match = re.search(r'\d+', filename)
+        return int(match.group()) if match else float('inf')
+
+    image_files = sorted(glob.glob(os.path.join(target_dir, "*.png")), key=extract_number)
+
+
+    print(image_files)
+
     timeline_images = []
     scoreboard_image = None
     summary_image = None
