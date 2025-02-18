@@ -54,7 +54,7 @@ To do this analysis, you can use tools like:
 
 - **Excel/Google Sheets:** Quick and easy for basic analysis. Great for calculating things like kill/death ratios, win rates, etc.
 - **Tableau:** Powerful data visualization tool. You can create interactive dashboards to view trends over time.
-- **R/Python: **If you want to do more complex statistical analysis, these programming languages are a great choice. You could build predictive models to figure out your optimal team comps, for example.
+- **R/Python:** If you want to do more complex statistical analysis, these programming languages are a great choice. You could build predictive models to figure out your optimal team comps, for example.
 - **PowerBI:** Business intelligence tool that's great for building shareable dashboards. Nice balance of analysis and visualization capabilities.
 
 
