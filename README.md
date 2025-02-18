@@ -25,7 +25,6 @@ Find your data in `Documents/practistics/matches/`
 - [Understanding the Data](docs/DATA_STRUCTURE.md) - Complete data points documentation
 - [Practical Usage Guide](docs/USAGE.md) - Making the most of your scrim data
 - [Technical Documentation](docs/TECHNICAL.md) - Under the hood details
-- [Analysis Examples](docs/ANALYSIS_EXAMPLES.md) - Real-world applications
 
 ## Why Practistics?
 
