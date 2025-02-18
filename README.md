@@ -2,14 +2,6 @@
 
 Practistics is an open-source OCR tool designed to capture and analyze VALORANT private scrim matches. It automatically extracts data from match scoreboards, summaries, and timelines, converting them into structured CSV data for analysis.
 
-## Why Practistics?
-
-Traditional scrim reviews often miss the subtle patterns that emerge across multiple matches. Practistics captures these patterns by converting match data into structured formats, allowing teams to:
-- Track performance trends across multiple scrims
-- Analyze round-specific strategies and outcomes
-- Identify patterns in economy management and site control
-- Build data-driven practice routines
-
 ## Quick Start
 
 1. Install Python 3.11 from the [Python website](https://www.python.org/downloads/)
@@ -35,9 +27,17 @@ Find your data in `Documents/practistics/matches/`
 - [Technical Documentation](docs/TECHNICAL.md) - Under the hood details
 - [Analysis Examples](docs/ANALYSIS_EXAMPLES.md) - Real-world applications
 
+## Why Practistics?
+
+Traditional scrim reviews often miss the subtle patterns that emerge across multiple matches. Practistics captures these patterns by converting match data into structured formats, allowing teams to:
+- Track performance trends across multiple scrims
+- Analyze round-specific strategies and outcomes
+- Identify patterns in economy management and site control
+- Build data-driven practice routines
+
 ## Project Status
 
-This project is currently in active development. It was created to fill the gap in accessing hidden scrim data and help teams analyze their practice matches. While functional, it's one of my earlier projects and contributions/improvements are welcome.
+This project is currently not in active development. It was created to fill the gap in accessing hidden scrim data and help teams analyze their practice matches. While functional, it's one of my earlier projects and contributions/improvements are welcome.
 
 ## Support & Community
 
