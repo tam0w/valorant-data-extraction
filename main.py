@@ -82,7 +82,7 @@ for name, lst in zip(names, lists):
 
     excluded_headers = ["scoreboard", "event_timestamps", "kills", "assists"]
     if type(lst) == list and name not in excluded_headers:
-        Logger.info(f"List {name} has {len(lst)} elements.")
+        Logger.debug(f"List {name} has {len(lst)} elements.")
         data[name] = lst
 
     data["sides"] = sides_each_round[:total_rounds_no]

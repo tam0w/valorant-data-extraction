@@ -60,7 +60,7 @@ def update_kills_from_total_events_each_round(events_opponent_counter_each_round
 
     for i in range(len(first_bloods_team_each_round)):
 
-        Logger.info(f"Round {i + 1} - First blood: {first_bloods_team_each_round[i]} Events [Team/Opp]: {events_team_counter_each_round[i], events_opponent_counter_each_round[i]}")
+        Logger.debug(f"Round {i + 1} - First blood: {first_bloods_team_each_round[i]} Events [Team/Opp]: {events_team_counter_each_round[i], events_opponent_counter_each_round[i]}")
 
         if plants[i] is True:
             if sides[i] == 'Attack':
