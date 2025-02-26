@@ -16,9 +16,9 @@ base_dir.mkdir(parents=True, exist_ok=True)
 
 Logger.info("Starting application")
 
-sub_dir = input("Enter the subdirectory within error_logs to read images from: ")
-timeline_images, scoreboard_image, summary_image = capture.read_images_from_folder(sub_dir)
-# timeline_images, scoreboard_image, summary_image = capture.screenshot_pages()
+# sub_dir = input("Enter the subdirectory within error_logs to read images from: ")
+# timeline_images, scoreboard_image, summary_image = capture.read_images_from_folder(sub_dir)
+timeline_images, scoreboard_image, summary_image = capture.screenshot_pages()
 first_timeline_image = timeline_images[0]
 
 total_rounds_no, sides_each_round, final_score = img.scores_ocr(summary_image)
