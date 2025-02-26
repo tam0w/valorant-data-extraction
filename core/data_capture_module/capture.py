@@ -92,6 +92,8 @@ def screenshot_pages():
     timeline_images = []
     scoreboard_image = None
 
+    print('Waiting to read your game data..')
+    
     while True:
         if keyboard.is_pressed('s'):
             image = py.screenshot()
