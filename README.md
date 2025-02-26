@@ -10,7 +10,7 @@ Practistics is an open-source OCR tool designed to capture and analyze VALORANT 
    ```sh
    pip install -r requirements.txt
    ```
-4. Run the tool and press:
+4. Run the tool with the `python main.py` command and press:
    - `S` on match summary screen
    - `B` on scoreboard
    - `P` on each round timeline
