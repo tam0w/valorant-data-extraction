@@ -2,7 +2,6 @@
 import os
 
 import cv2 as cv
-import matplotlib.pyplot as plt
 import numpy
 
 from core.constants import list_of_agents
@@ -53,10 +52,6 @@ def total_events(tl_ss):
 
     for round_index, pic in enumerate(tl_ss):
 
-        if round_index > 2 and round_index < 6:
-            plt.imshow(tl_ss[round_index])
-            plt.show()
-
         start = 500
         counter_opp = 0
         counter_team = 0
@@ -81,10 +76,6 @@ def total_events(tl_ss):
                     break
             if u > 1060:
                 break
-
-            if round_index > 2 and round_index < 6:
-                plt.imshow(pic[u:u+36, gr_check:gr_check+100])
-                plt.show()
 
             if g < 100:
                 counter_opp += 1
@@ -556,9 +547,6 @@ def match_agent(agent_sprites, timeline_images, agents_names_list, timestamps):
                     break
             if u > 1060:
                 break
-
-            # plt.imshow(image[u:u+36, gr_check:gr_check+100])
-            # plt.show()
 
             cur_img = image[u:u + 36, st_l:st_l + 36]
             cur_img_dt = image[u:u + 36, st_l_dt:st_l_dt + 36]
