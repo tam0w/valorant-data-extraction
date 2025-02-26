@@ -6,7 +6,6 @@ import cv2 as cv
 import keyboard
 import time
 import pyautogui as py
-import matplotlib.pyplot as plt
 import numpy as np
 
 # Internal Packages
