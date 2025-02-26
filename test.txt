@@ -1,0 +1,7 @@
+pandas==2.0.3
+numpy==1.25.1
+opencv-python==4.8.0.74
+opencv-python-headless==4.10.0.84
+easyocr==1.7.0
+keyboard==0.13.5
+PyAutoGUI==0.9.54
