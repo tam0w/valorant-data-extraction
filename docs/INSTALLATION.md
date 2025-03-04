@@ -1,6 +1,6 @@
 # Practistics Installation Guide
 
-This guide will walk you through the process of setting up Practistics on your computer. By the end, you'll have everything you need to start capturing valuable data from your Valorant scrims. 
+This guide will walk you through the process of setting up Practistics on your computer. By the end, you'll have everything you need to start capturing valuable data from your VALORANT scrims.
 
 ## Prerequisites
 
@@ -10,7 +10,7 @@ Before we dive into installation, let's make sure your system meets the requirem
 - **Python Version**: You'll need Python 3.11 or newer installed. If you're not sure which version of Python you have, don't worry - we'll cover checking that in the installation steps.
 - **Screen Resolution**: 1920x1080 is a fixed requirement for the resolution of the game. The script will not work correctly otherwise.
 
-> **Note**: Practistics is a data extraction tool, not a game mod. It does not modify Valorant in any way or give you an in-game advantage. It simply captures data from your matches for later analysis.
+> **Note**: Practistics is a data extraction tool, not a game mod. It does not modify VALORANT in any way or give you an in-game advantage. It simply captures data from your matches for later analysis.
 
 ## Step 1: Install Python
 
@@ -51,16 +51,20 @@ Practistics relies on a few other Python packages to do its job. We need to inst
    ```
    cd Documents/practistics
    ```
+
+2. **If you have an NVIDIA graphics card** and want up to 10x faster processing speed, run this command first (this is optional):
    
-2. Once you're in the Practistics folder, run the following command to install the required packages:
+   ```
+   pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 --index-url https://download.pytorch.org/whl/cu118
+   ```
+   
+3. Now install the remaining required packages:
    
    ```
    pip install -r requirements.txt
    ```
    
    This tells Python's package manager, pip, to install all the packages listed in the `requirements.txt` file.
-
-> **Troubleshooting**: If you get an error message during this step, double check that you're in the correct folder and that you've typed the command correctly. If the error persists, you may need to check your internet connection or try running the command as an administrator.
 
 ## Step 4: Verify Installation
 
@@ -84,8 +88,32 @@ Congratulations, you've installed Practistics! Let's do a quick test run to make
        ├── error_logs/     # For storing logs if something goes wrong
        ├── matches/        # Where your match data CSV files will be saved
    ```
-   
-> **Tip**: If Practistics doesn't start, or you see error messages, don't panic! Jump down to the Troubleshooting section for some common issues and how to resolve them.
+
+## Verifying GPU Acceleration (For NVIDIA Graphics Card Users)
+
+If you installed the CUDA version of PyTorch in Step 3, you can verify it's working correctly:
+
+1. Run this command to check if your GPU is detected:
+
+   ```
+   python -c "import torch; print('GPU Available:', torch.cuda.is_available())"
+   ```
+
+   If it prints "GPU Available: True", you're all set for 10x faster processing!
+
+2. When you run Practistics, you should briefly see a message in the terminal indicating that EasyOCR is using CUDA.
+
+### Troubleshooting GPU Setup
+
+- **Already had PyTorch installed?** You may need to uninstall it first:
+  ```
+  pip uninstall torch torchvision
+  ```
+  Then follow the installation steps above.
+
+- **Installation taking too long?** The CUDA packages are large (about 2GB). Make sure you have a good internet connection.
+
+- **Not working?** You can still use Practistics with CPU only - it will work, just not as quickly.
 
 ## Updating Practistics
 
@@ -108,10 +136,12 @@ Even with the clearest instructions, things can sometimes go wrong. Here are som
    
 3. **Practistics won't start**: Double check that you've installed all the dependencies (Step 3). If you have, try re-installing them. Also verify that you're using a compatible Python version.
 
+4. **OCR is too slow**: If text recognition is taking a long time, check that you've set up GPU acceleration correctly as described in the GPU section above.
+
 If you're still having trouble, don't hesitate to reach out for help:
 
 - Join our [Discord server](https://discord.gg/2eQ85rcQSQ) to chat with the Practistics community and get live support.
 - If you think you've found a bug, open an issue on our [GitHub repository](https://github.com/tam0w/valorant-data-extraction/issues).
 - Tweet at us [@tam0w](https://twitter.com/tam0w) on Twitter.
 
-We're here to help you get up and running with Practistics so you can start leveraging your Valorant data. Happy analyzing!
+We're here to help you get up and running with Practistics so you can start leveraging your VALORANT data. Happy analyzing!
