@@ -8,6 +8,10 @@ Practistics is an open-source OCR tool designed to capture and analyze VALORANT 
 2. Download and unzip Practistics
 3. Install dependencies:
    ```sh
+   # If you have an NVIDIA GPU (for 10x faster processing):
+   pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 --index-url https://download.pytorch.org/whl/cu118
+   
+   # Then for all users:
    pip install -r requirements.txt
    ```
 4. Run the tool with the `python main.py` command and press:
@@ -21,7 +25,7 @@ Find your data in `Documents/practistics/matches/`
 
 ## Documentation
 
-- [Installation Guide](docs/INSTALLATION.md) - Getting started with Practistics
+- [Installation Guide](docs/INSTALLATION.md) - Getting started with Practistics (includes GPU setup)
 - [Understanding the Data](docs/DATA_STRUCTURE.md) - Complete data points documentation
 - [Practical Usage Guide](docs/USAGE.md) - Making the most of your scrim data
 - [Technical Documentation](docs/TECHNICAL.md) - Under the hood details
@@ -51,5 +55,3 @@ Contributions are welcome! See our [Contributing Guide](CONTRIBUTING.md) for det
 ## License
 
 This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
-
-
