@@ -6,14 +6,35 @@ Practistics is an open-source OCR tool designed to capture and analyze VALORANT 
 
 1. Install Python 3.11 from the [Python website](https://www.python.org/downloads/)
 2. Download and unzip Practistics
-3. Install dependencies:
+3. Install Dependencies
+
+GPU Acceleration (Optional but Recommended)
+If you have an **NVIDIA GPU** that supports **CUDA** for faster processing, follow these steps:
+
+1. Install the **NVIDIA CUDA Toolkit** incase you havent:  
+   [Download CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) (Recommended Toolkit Version=12.4)
+
+2. Verify the installation:
    ```sh
-   # If you have an NVIDIA GPU (for 10x faster processing):
-   pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 --index-url https://download.pytorch.org/whl/cu118
-   
-   # Then for all users:
-   pip install -r requirements.txt
+   nvcc --version
    ```
+
+3. Go to [PyTorch's official website](https://pytorch.org/get-started/locally/) and select the appropriate PyTorch build for your CUDA version.
+
+4. If you have **CUDA 12.4**, install PyTorch with the following command:
+   ```sh
+   pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+   ```
+   If you have a **different CUDA version** that is not listed in the PyTorch documentation, you may need to **build PyTorch from source** to ensure compatibility.
+
+Install Other Dependencies
+For all users, install the required dependencies:
+
+```sh
+pip install -r requirements.txt
+```
+
+
 4. Run the tool with the `python main.py` command and press:
    - `S` on match summary screen
    - `B` on scoreboard
