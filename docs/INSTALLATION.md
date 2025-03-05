@@ -52,10 +52,10 @@ Practistics relies on a few other Python packages to do its job. We need to inst
    cd Documents/practistics
    ```
 
-2. **If you have an NVIDIA graphics card** and want up to 10x faster processing speed, run this command first (this is optional):
+2. **If you have an CUDA Supported NVIDIA graphics card** and want up to 10x faster processing speed, run this command after installing the [Toolkit](https://developer.nvidia.com/cuda-12-4-0-download-archive) (this is optional):
    
    ```
-   pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 --index-url https://download.pytorch.org/whl/cu118
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
    ```
    
 3. Now install the remaining required packages:
@@ -92,16 +92,22 @@ Congratulations, you've installed Practistics! Let's do a quick test run to make
 ## Verifying GPU Acceleration (For NVIDIA Graphics Card Users)
 
 If you installed the CUDA version of PyTorch in Step 3, you can verify it's working correctly:
+1. Check if CUDA Toolkit is installed properly 
+   ``` 
+   nvcc --version
+   ```
 
-1. Run this command to check if your GPU is detected:
-
+2. Run this command to check if your GPU is detected by EasyOCR:
+   
    ```
    python -c "import torch; print('GPU Available:', torch.cuda.is_available())"
    ```
-
+   
    If it prints "GPU Available: True", you're all set for 10x faster processing!
-
-2. When you run Practistics, you should briefly see a message in the terminal indicating that EasyOCR is using CUDA.
+   Please Note if it says "GPU Available: False" and you have followed all the steps correctly, there might be a version miss match between your CUDA toolkit and Pytorch.
+   Older CUDA versions might require pytorch to be built from Source.
+   
+4. When you run Practistics, you should briefly see a message in the terminal indicating that EasyOCR is using CUDA.
 
 ### Troubleshooting GPU Setup
 
