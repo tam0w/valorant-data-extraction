@@ -4,125 +4,111 @@ import random
 import string
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 import cv2
 import numpy as np
 
 
 class Logger:
-
     """
-    Custom logger that logs basic messages to terminal and saves detailed logs to a file. Also logs the all the
-    screenshots taken so far to the error directory.
+    Functional logger module that stores screenshots and logs
     """
+    _instance = None
 
-    def __init__(self, name: str = "PractisticsLogger"):
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(Logger, cls).__new__(cls)
+            cls._instance._init()
+        return cls._instance
+
+    def _init(self):
         # Initialize logger
-        self.logger = logging.getLogger(name)
-        self.logger.setLevel(logging.DEBUG)  # Capture all logs
+        self.logger = logging.getLogger("PractisticsLogger")
+        self.logger.setLevel(logging.DEBUG)
 
-        # Create formatter for consistent log formatting
+        # Create formatter
         self.formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S'
         )
 
-        # Setup console handler for minimal user feedback
+        # Console handler
         self.console_handler = logging.StreamHandler(sys.stdout)
         self.console_handler.setFormatter(self.formatter)
-        self.console_handler.setLevel(logging.INFO)  # Show INFO and above in console
+        self.console_handler.setLevel(logging.INFO)
         self.logger.addHandler(self.console_handler)
 
-        # Initialize file handler as None (will be created when saving logs)
+        # File handler will be created on demand
         self.file_handler = None
 
-        # Initialize image storage
-        self.scoreboard_image: Optional[np.ndarray] = None
-        self.summary_image: Optional[np.ndarray] = None
-        self.timeline_images: Optional[List[np.ndarray]] = []
+        # Image storage
+        self.scoreboard_image = None
+        self.summary_image = None
+        self.timeline_images = []
         self.error_id = None
 
     def store_scoreboard(self, image: np.ndarray):
-        """Store the scoreboard screenshot."""
         self.scoreboard_image = image.copy()
-        self.logger.debug("Stored scoreboard image")
+        self.debug("Stored scoreboard image")
 
     def store_summary(self, image: np.ndarray):
-        """Store the summary screenshot."""
         self.summary_image = image.copy()
-        self.logger.debug("Stored summary image")
+        self.debug("Stored summary image")
 
     def store_timeline(self, image: np.ndarray):
-        """Store a timeline screenshot."""
         self.timeline_images.append(image.copy())
-        self.logger.debug(f"Stored timeline image #{len(self.timeline_images)}")
-
-    def trace(self, message: str):
-        """Log a debug message (file only)."""
-        self.logger.trace(message)
+        self.debug(f"Stored timeline image #{len(self.timeline_images)}")
 
     def debug(self, message: str):
-        """Log a debug message (file only)."""
         self.logger.debug(message)
 
     def info(self, message: str):
-        """Log an info message (console and file)."""
         self.logger.info(message)
 
     def warning(self, message: str):
-        """Log a warning message (console and file)."""
         self.logger.warning(message)
 
     def error(self, message: str):
-        """Log an error message (console and file)."""
         self.logger.error(message)
 
     def _generate_error_id(self) -> str:
-        """Generate a unique error ID."""
         return 'E' + ''.join(random.choices(string.digits, k=7))
 
-    def _setup_file_logging(self) -> Path:
-        """Setup file logging and return the log directory path."""
+    def _setup_file_logging(self, config: Dict[str, Any]) -> Path:
         # Generate error ID if not exists
         if not self.error_id:
             self.error_id = self._generate_error_id()
 
-        documents_path = Path.home() / "Documents"
-        base_log_dir = documents_path / "practistics" / "error_logs"
-        error_dir = base_log_dir / self.error_id
-        error_dir.mkdir(parents=True, exist_ok=True)
+        log_dir = Path(config['log_dir']) / self.error_id
+        log_dir.mkdir(parents=True, exist_ok=True)
 
         # Create log file
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_file = error_dir / f"log_{timestamp}.txt"
+        log_file = log_dir / f"log_{timestamp}.txt"
 
         # Create and setup file handler
         self.file_handler = logging.FileHandler(log_file)
         self.file_handler.setFormatter(self.formatter)
-        self.file_handler.setLevel(logging.DEBUG)  # Capture all logs in file
+        self.file_handler.setLevel(logging.DEBUG)
         self.logger.addHandler(self.file_handler)
 
-        self.debug(error_dir)
+        self.debug(f"Log directory: {log_dir}")
 
-        return error_dir
+        return log_dir
 
-    def save_logs(self, exception_info: Optional[str] = None) -> str:
-        """
-        Save all logs and images.
-        Returns the error ID for reference.
-        """
-        log_dir = self._setup_file_logging()
+    def save_logs(self, config: Dict[str, Any], exception_info: Optional[str] = None) -> str:
+        log_dir = self._setup_file_logging(config)
 
         if exception_info:
             self.error(f"Exception Information: {exception_info}")
 
-        # Save scoreboard image if it exists
+        # Save scoreboard image
         if self.scoreboard_image is not None:
             image_path = log_dir / "scoreboard.png"
             cv2.imwrite(str(image_path), self.scoreboard_image)
             self.info("Saved scoreboard image")
 
-        # Save summary image if it exists
+        # Save summary image
         if self.summary_image is not None:
             image_path = log_dir / "summary.png"
             cv2.imwrite(str(image_path), self.summary_image)
@@ -142,4 +128,6 @@ class Logger:
 
         return self.error_id
 
-Logger = Logger()
+
+# Create singleton instance
+logger = Logger()
