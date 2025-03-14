@@ -11,6 +11,8 @@ from core.data_processing import create_match_data
 from core.export import match_to_csv, match_to_json
 from core.logger import logger
 
+logger.info("Before main")
+
 
 def main():
     try:
