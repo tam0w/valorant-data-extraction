@@ -44,6 +44,13 @@ pip install -r requirements.txt
 
 Find your data in `Documents/practistics/matches/`
 
+Before using Practistics, please ensure:
+
+- **Display Resolution:** Your display must be set to 1920x1080 (native resolution). The OCR coordinates are precisely calibrated for this resolution, and other resolutions will cause misalignments when capturing data.
+- **Match Access:** Practistics is designed to work only with matches accessed from your own match history or concluded matches that you have participated in. The tool relies on specific screen coordinates that align with - this view. Spectated matches or recordings from other players will likely cause misalignment issues.
+- **Character Support:** Player names with non-Latin characters (Chinese, Cyrillic, etc.) may not be accurately recognized by the OCR engine.
+
+
 ## Documentation
 
 - [Installation Guide](docs/INSTALLATION.md) - Getting started with Practistics (includes GPU setup)
