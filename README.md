@@ -27,7 +27,6 @@ If you have an **NVIDIA GPU** that supports **CUDA** for faster processing, foll
    ```
    If you have a **different CUDA version** that is not listed in the PyTorch documentation, you may need to **build PyTorch from source** to ensure compatibility.
 
-Install Other Dependencies
 For all users, install the required dependencies:
 
 ```sh
