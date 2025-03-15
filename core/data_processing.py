@@ -1,11 +1,12 @@
 from difflib import get_close_matches
 import numpy as np
+import cv2 as cv
 from typing import List, Dict, Tuple, Optional, Any, cast
 from datetime import datetime
 from core.types import RoundData, MatchData, PlayerData, EventData, Position, ImageRegion
 from core.constants import list_of_agents
 from core.ocr import extract_text
-from core.image_processing import crop_image, detect_color, get_team_color_from_pixel, detect_plant_site
+from core.image_processing import crop_image, detect_color, get_team_color_from_pixel, detect_plant_site, extract_agent_sprites
 from core.logger import logger
 
 
@@ -24,71 +25,149 @@ def normalize_agent_name(agent_name: str) -> str:
 
 def extract_player_data(image: np.ndarray) -> Tuple[List[str], List[str]]:
     """Extract player names and agent names from the scoreboard"""
+    logger.push_context(operation="extract_player_data")
+
     player_list = []
     agent_list = []
 
-    # Process team players (top section)
-    start_y = 495
-    check_x = 200
+    try:
+        # Process team players (top section)
+        start_y = 495
+        check_x = 200
 
-    for i in range(5):
-        y = start_y
-        while detect_color(image, Position(y, check_x))[1] < 90:  # green < 90
-            y += 1
+        logger.debug(f"Extracting team players starting at y={start_y}, x={check_x}")
 
-        # Extract player name and agent
-        player_region = crop_image(image, ImageRegion(y, y + 40, check_x + 3, check_x + 183))
-        ocr_result = extract_text(player_region, detail=0, width_ths=25)
+        for i in range(5):
+            logger.push_context(team="ally", player_index=i + 1)
 
-        if len(ocr_result) < 2:
-            # Handle case where OCR didn't detect both player and agent
-            if len(ocr_result) == 1:
-                player_name = ocr_result[0]
-                agent_name = input(f"Please confirm the agent {player_name} is playing: ").title()
-            else:
-                player_name = input(f"Please enter player name for position {i + 1}: ")
-                agent_name = input(f"Please enter agent for {player_name}: ").title()
-        else:
-            player_name, agent_name = ocr_result[0], ocr_result[1]
+            try:
+                y = start_y
+                while detect_color(image, Position(y, check_x), f"team_player_{i + 1}_check")[1] < 90:  # green < 90
+                    y += 1
+                    if y > 700:  # Safety check
+                        logger.warning(f"Reached safety limit when searching for team player {i + 1}")
+                        break
 
-        # Normalize agent name
-        if agent_name not in list_of_agents:
-            agent_name = normalize_agent_name(agent_name)
+                # Extract player name and agent
+                logger.debug(f"Found team player {i + 1} at y={y}, extracting player region")
+                player_region = crop_image(image, ImageRegion(y, y + 40, check_x + 3, check_x + 183),
+                                           f"team_player_{i + 1}_region")
 
-        player_list.append(player_name)
-        agent_list.append(agent_name)
-        start_y = y + 42
+                logger.debug(f"Running OCR on team player {i + 1} region")
+                ocr_result = extract_text(player_region, detail=0, width_ths=25, region_name=f"team_player_{i + 1}")
 
-    # Process opponent players (bottom section)
-    start_y = 726
+                if len(ocr_result) < 2:
+                    # Handle case where OCR didn't detect both player and agent
+                    logger.warning(f"OCR failed to detect both player and agent for team player {i + 1}")
 
-    for i in range(5):
-        y = start_y
-        while detect_color(image, Position(y, check_x))[2] < 40:  # red < 40
-            y += 1
+                    if len(ocr_result) == 1:
+                        player_name = ocr_result[0]
+                        logger.info(
+                            f"Detected only player name '{player_name}' for team player {i + 1}, prompting for agent")
+                        logger.user_output(f"Please confirm the agent {player_name} is playing: ")
+                        agent_name = input(f"Please confirm the agent {player_name} is playing: ").title()
+                    else:
+                        logger.info(f"Failed to detect name and agent for team player {i + 1}, prompting for both")
+                        logger.user_output(f"Please enter player name for position {i + 1}: ")
+                        player_name = input(f"Please enter player name for position {i + 1}: ")
+                        logger.user_output(f"Please enter agent for {player_name}: ")
+                        agent_name = input(f"Please enter agent for {player_name}: ").title()
+                else:
+                    player_name, agent_name = ocr_result[0], ocr_result[1]
+                    logger.info(f"Successfully detected team player {i + 1}: '{player_name}' playing '{agent_name}'")
 
-        # Extract player name and agent
-        player_region = crop_image(image, ImageRegion(y, y + 40, check_x + 3, check_x + 183))
-        ocr_result = extract_text(player_region, detail=0, width_ths=25)
+                # Normalize agent name
+                if agent_name not in list_of_agents:
+                    logger.debug(f"Agent name '{agent_name}' not in recognized list, normalizing")
+                    original_name = agent_name
+                    agent_name = normalize_agent_name(agent_name)
+                    logger.info(f"Normalized agent name from '{original_name}' to '{agent_name}'")
 
-        if len(ocr_result) < 2:
-            # Handle case where OCR didn't detect both player and agent
-            if len(ocr_result) == 1:
-                player_name = ocr_result[0]
-                agent_name = input(f"Please confirm the agent {player_name} is playing: ").title()
-            else:
-                player_name = input(f"Please enter opponent player name for position {i + 1}: ")
-                agent_name = input(f"Please enter agent for {player_name}: ").title()
-        else:
-            player_name, agent_name = ocr_result[0], ocr_result[1]
+                player_list.append(player_name)
+                agent_list.append(agent_name)
+                start_y = y + 42
 
-        # Normalize agent name
-        if agent_name not in list_of_agents:
-            agent_name = normalize_agent_name(agent_name)
+            except Exception as e:
+                logger.error(f"Error processing team player {i + 1}: {str(e)}")
+                # Add placeholder values to maintain indexing
+                player_list.append(f"TeamPlayer{i + 1}")
+                agent_list.append("Unknown")
+            finally:
+                logger.clear_context()  # Clear the player-specific context
 
-        player_list.append(player_name)
-        agent_list.append(agent_name)
-        start_y = y + 42
+        # Process opponent players (bottom section)
+        start_y = 726
+        logger.debug(f"Extracting opponent players starting at y={start_y}")
+
+        for i in range(5):
+            logger.push_context(team="opponent", player_index=i + 1)
+
+            try:
+                y = start_y
+                while detect_color(image, Position(y, check_x), f"opponent_player_{i + 1}_check")[2] < 40:  # red < 40
+                    y += 1
+                    if y > 900:  # Safety check
+                        logger.warning(f"Reached safety limit when searching for opponent player {i + 1}")
+                        break
+
+                # Extract player name and agent
+                logger.debug(f"Found opponent player {i + 1} at y={y}, extracting player region")
+                player_region = crop_image(image, ImageRegion(y, y + 40, check_x + 3, check_x + 183),
+                                           f"opponent_player_{i + 1}_region")
+
+                logger.debug(f"Running OCR on opponent player {i + 1} region")
+                ocr_result = extract_text(player_region, detail=0, width_ths=25, region_name=f"opponent_player_{i + 1}")
+
+                if len(ocr_result) < 2:
+                    # Handle case where OCR didn't detect both player and agent
+                    logger.warning(f"OCR failed to detect both player and agent for opponent player {i + 1}")
+
+                    if len(ocr_result) == 1:
+                        player_name = ocr_result[0]
+                        logger.info(
+                            f"Detected only player name '{player_name}' for opponent player {i + 1}, prompting for agent")
+                        logger.user_output(f"Please confirm the agent {player_name} is playing: ")
+                        agent_name = input(f"Please confirm the agent {player_name} is playing: ").title()
+                    else:
+                        logger.info(f"Failed to detect name and agent for opponent player {i + 1}, prompting for both")
+                        logger.user_output(f"Please enter opponent player name for position {i + 1}: ")
+                        player_name = input(f"Please enter opponent player name for position {i + 1}: ")
+                        logger.user_output(f"Please enter agent for {player_name}: ")
+                        agent_name = input(f"Please enter agent for {player_name}: ").title()
+                else:
+                    player_name, agent_name = ocr_result[0], ocr_result[1]
+                    logger.info(
+                        f"Successfully detected opponent player {i + 1}: '{player_name}' playing '{agent_name}'")
+
+                # Normalize agent name
+                if agent_name not in list_of_agents:
+                    logger.debug(f"Agent name '{agent_name}' not in recognized list, normalizing")
+                    original_name = agent_name
+                    agent_name = normalize_agent_name(agent_name)
+                    logger.info(f"Normalized agent name from '{original_name}' to '{agent_name}'")
+
+                player_list.append(player_name)
+                agent_list.append(agent_name)
+                start_y = y + 42
+
+            except Exception as e:
+                logger.error(f"Error processing opponent player {i + 1}: {str(e)}")
+                # Add placeholder values to maintain indexing
+                player_list.append(f"OpponentPlayer{i + 1}")
+                agent_list.append("Unknown")
+            finally:
+                logger.clear_context()  # Clear the player-specific context
+
+        logger.info(f"Extracted data for {len(player_list)} players in total")
+
+    except Exception as e:
+        logger.error(f"Failed to extract player data: {str(e)}")
+        # Return some minimal data to prevent complete failure
+        if len(player_list) == 0:
+            player_list = [f"Player{i}" for i in range(1, 11)]
+            agent_list = ["Unknown" for _ in range(10)]
+    finally:
+        logger.clear_context()
 
     return player_list, agent_list
 
