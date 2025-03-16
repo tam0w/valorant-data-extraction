@@ -329,7 +329,8 @@ def extract_first_bloods(timeline_images: List[np.ndarray]) -> List[str]:
     """Determine which team got first blood in each round"""
     first_bloods = []
 
-    for image in timeline_images:
+    for i, image in enumerate(timeline_images):
+        logger.push_context(operation="process_match_data", sub_operation="first_bloods", round=i)
         # Check pixel color at first blood position
         b, g, r = detect_color(image, Position(520, 1150))
 
@@ -337,6 +338,7 @@ def extract_first_bloods(timeline_images: List[np.ndarray]) -> List[str]:
         team = 'team' if g > 100 else 'opponent'
         first_bloods.append(team)
 
+    logger.clear_context()
     return first_bloods
 
 
@@ -371,8 +373,8 @@ def determine_awp_info(awp_data: List[List[str]]) -> List[str]:
 def process_round_outcomes(timeline_images: List[np.ndarray]) -> List[str]:
     """Determine if each round was a win or loss"""
     outcomes = []
-
-    for image in timeline_images:
+    for i, image in enumerate(timeline_images):
+        logger.push_context(operation="process_match_data", sub_operation="round_outcomes", round=i)
         outcome_region = crop_image(image, ImageRegion(430, 470, 130, 700))
         outcome_text = extract_text(outcome_region, detail=0)
 
@@ -380,6 +382,9 @@ def process_round_outcomes(timeline_images: List[np.ndarray]) -> List[str]:
         is_loss = any('LOSS' in t.upper() for t in outcome_text)
         outcomes.append('loss' if is_loss else 'win')
 
+        logger.debug(f"Round determined {outcomes[i]}")
+
+    logger.clear_context()
     return outcomes
 
 
@@ -407,9 +412,11 @@ def create_match_data(
 
     # Extract round timestamps and events
     round_events = []
-    for image in timeline_images:
+    for i, image in enumerate(timeline_images):
+        logger.push_context(operation="process_match_data", sub_operation="events", round=i)
         events = extract_round_events(image, agent_sprites, agent_list)
         round_events.append(events)
+        logger.clear_context()
 
     # Process economy and other round data
     economy_regions = [crop_image(img, ImageRegion(425, 480, 1020, 1145)) for img in timeline_images]

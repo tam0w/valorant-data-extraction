@@ -12,24 +12,6 @@ from core.data_processing import create_match_data
 from core.export import match_to_csv, match_to_json
 from core.logger import logger
 
-
-def parse_arguments():
-    """Parse command line arguments"""
-    parser = argparse.ArgumentParser(description="Practistics - VALORANT Scrim OCR Tool")
-
-    # Input mode
-    input_group = parser.add_mutually_exclusive_group()
-    input_group.add_argument('--read', metavar='FOLDER', help='Read screenshots from specified folder')
-
-    # Logging options
-    parser.add_argument('--log-level', choices=['debug', 'info', 'warning', 'error', 'critical'],
-                        default='info', help='Set logging level (default: info)')
-    parser.add_argument('--dev', action='store_true', help='Enable development mode with verbose logging')
-    parser.add_argument('--quiet', action='store_true', help='Suppress user output, show only logs')
-
-    return parser.parse_args()
-
-
 def main():
     try:
         # Parse command line arguments
@@ -139,6 +121,21 @@ def main():
             logger.user_output("\nTraceback:")
             logger.user_output(error_info)
 
+def parse_arguments():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(description="Practistics - VALORANT Scrim OCR Tool")
+
+    # Input mode
+    input_group = parser.add_mutually_exclusive_group()
+    input_group.add_argument('--read', metavar='FOLDER', help='Read screenshots from specified folder')
+
+    # Logging options
+    parser.add_argument('--log-level', choices=['debug', 'info', 'warning', 'error', 'critical'],
+                        default='info', help='Set logging level (default: info)')
+    parser.add_argument('--dev', action='store_true', help='Enable development mode with verbose logging')
+    parser.add_argument('--quiet', action='store_true', help='Suppress user output, show only logs')
+
+    return parser.parse_args()
 
 if __name__ == "__main__":
     main()
