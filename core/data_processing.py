@@ -391,93 +391,117 @@ def extract_match_metadata(image: np.ndarray, config: Dict[str, Any]) -> Dict[st
     finally:
         logger.clear_context()
 
+
 def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndarray],
-                         agent_list: List[str]) -> List[Tuple[str, str, int, str]]:
-    """Extract events (kills, plants, defuses) from a round timeline"""
-    events = []
-    start_y = 500
-    check_x = 940  # Position to check for event color
-    kill_x = 945  # Position of killer agent icon
-    death_x = 1231  # Position of death agent icon
+                         agent_list: List[str]) -> List[Tuple[str, str, int, str, str]]:
+    """
+    Extract kill, plant, and defuse events from a round timeline image
 
-    # Scan vertically for events
-    current_y = start_y
-    while current_y < 1060:
-        # Check if there's an event at this position
-        b, g, r = detect_color(timeline_image, Position(current_y, check_x))
+    This function analyzes the pixel colors and visual patterns in a timeline image
+    to identify game events and their details (who, what, when).
 
-        if g < 100 and r < 100 and b < 100:
-            # No event, move down
-            current_y += 1
-            continue
+    Args:
+        timeline_image: Screenshot of the round timeline UI
+        agent_sprites: Reference images of agent icons for pattern matching
+        agent_list: List of agent names corresponding to the sprites
 
-        # Determine side (team/opponent)
-        side = 'team' if g > 100 else 'opponent'
+    Returns:
+        List of event tuples: (killer_agent, victim_agent, timestamp, event_type, side)
+                               where side indicates whether this was a team or opponent event
+    """
+    logger.push_context(operation="extract_round_events")
 
-        # Extract timestamp
-        timestamp_region = crop_image(timeline_image, ImageRegion(
-            current_y, current_y + 36, 980, 1040))
-        timestamp_text = extract_text(timestamp_region, detail=0)
+    try:
+        events = []
+        start_y = 500  # Vertical start position where events begin appearing
+        check_x = 940  # Horizontal position for detecting event color (team vs opponent)
+        kill_x = 945  # Horizontal position of the killer agent icon
+        death_x = 1231  # Horizontal position of the death/victim agent icon
 
-        # Check if it's a plant/defuse
-        event_type_region = crop_image(timeline_image, ImageRegion(
-            current_y, current_y + 36, 1150, 1230))
-        event_type_text = extract_text(event_type_region, detail=0)
+        # Scan the timeline from top to bottom looking for events
+        current_y = start_y
+        while current_y < 1060:  # Stop at bottom of timeline area
+            # Events appear as colored pixels; no event = dark/black
+            b, g, r = detect_color(timeline_image, Position(current_y, check_x))
 
-        # Extract agent icons for kill events
-        killer_icon = crop_image(timeline_image, ImageRegion(
-            current_y, current_y + 36, kill_x, kill_x + 36))
-        victim_icon = crop_image(timeline_image, ImageRegion(
-            current_y, current_y + 36, death_x, death_x + 36))
+            # Skip empty rows (dark pixels indicate no event)
+            if g < 100 and r < 100 and b < 100:
+                current_y += 1
+                continue
 
-        # Match agent icons to determine killer and victim
-        killer_scores = []
-        victim_scores = []
+            # Green pixels (g > 100) indicate team events, red pixels indicate opponent events
+            side = 'team' if g > 100 else 'opponent'
+            logger.debug(f"Found event at y={current_y}, side={side}")
 
-        for agent_sprite in agent_sprites:
-            # Match killer
-            killer_result = cv.matchTemplate(killer_icon, agent_sprite, cv.TM_CCOEFF_NORMED)
-            _, killer_max_val, _, _ = cv.minMaxLoc(killer_result)
-            killer_scores.append(killer_max_val)
+            # Extract timestamp text, located to the left of the event
+            timestamp_region = crop_image(timeline_image, ImageRegion(
+                current_y, current_y + 36, 980, 1040), "timestamp_region")
+            timestamp_text = extract_text(timestamp_region, detail=0, region_name="timestamp")
 
-            # Match victim
-            victim_result = cv.matchTemplate(victim_icon, agent_sprite, cv.TM_CCOEFF_NORMED)
-            _, victim_max_val, _, _ = cv.minMaxLoc(victim_result)
-            victim_scores.append(victim_max_val)
+            # Examine text on right side to distinguish plant/defuse from kills
+            event_type_region = crop_image(timeline_image, ImageRegion(
+                current_y, current_y + 36, 1150, 1230), "event_type_region")
+            event_type_text = extract_text(event_type_region, detail=0, region_name="event_type")
 
-        killer_idx = killer_scores.index(max(killer_scores))
-        victim_idx = victim_scores.index(max(victim_scores))
+            # Extract the agent icons that appear in the event
+            # Killer icon is on the left, victim on the right for kill events
+            killer_icon = crop_image(timeline_image, ImageRegion(
+                current_y, current_y + 36, kill_x, kill_x + 36), "killer_icon")
+            victim_icon = crop_image(timeline_image, ImageRegion(
+                current_y, current_y + 36, death_x, death_x + 36), "victim_icon")
 
-        killer_agent = agent_list[killer_idx]
-        victim_agent = agent_list[victim_idx]
+            # Identify agents by comparing extracted icons against reference sprites
+            # using template matching (higher score = better match)
+            killer_scores = []
+            victim_scores = []
 
-        # Determine timestamp as integer
-        timestamp = 0
-        if timestamp_text:
-            ts_text = timestamp_text[0]
-            if ts_text.startswith('0'):
-                # Format: 0:MM or 0:SS
-                ts_text = ts_text.replace('0:0', '').replace('0:', '').replace('.', '').replace(':', '')
-                timestamp = int(ts_text) if ts_text.isdigit() else 0
-            elif ts_text.startswith('1'):
-                # Format: 1:MM or 1:SS (add 60 seconds)
-                ts_text = ts_text.replace('1.', '').replace('1:', '').replace('.', '').replace(':', '')
-                timestamp = int(ts_text) + 60 if ts_text.isdigit() else 60
+            for agent_sprite in agent_sprites:
+                # Match killer agent icon
+                killer_result = cv.matchTemplate(killer_icon, agent_sprite, cv.TM_CCOEFF_NORMED)
+                _, killer_max_val, _, _ = cv.minMaxLoc(killer_result)
+                killer_scores.append(killer_max_val)
 
-        # Determine event type
-        if event_type_text and any('Plant' in t for t in event_type_text):
-            event_type = 'plant'
-        elif event_type_text and any('Defuse' in t for t in event_type_text):
-            event_type = 'defuse'
-        else:
-            event_type = 'kill'
+                # Match victim agent icon
+                victim_result = cv.matchTemplate(victim_icon, agent_sprite, cv.TM_CCOEFF_NORMED)
+                _, victim_max_val, _, _ = cv.minMaxLoc(victim_result)
+                victim_scores.append(victim_max_val)
 
-        events.append((killer_agent, victim_agent, timestamp, event_type))
+            # Get indices of best-matching agents
+            killer_idx = killer_scores.index(max(killer_scores))
+            victim_idx = victim_scores.index(max(victim_scores))
 
-        # Move to next event
-        current_y += 36
+            # Map indices back to agent names
+            killer_agent = agent_list[killer_idx] if killer_idx < len(agent_list) else "Unknown"
+            victim_agent = agent_list[victim_idx] if victim_idx < len(agent_list) else "Unknown"
 
-    return events
+            # Convert OCR timestamp to seconds using normalized format
+            timestamp = 0
+            if timestamp_text:
+                ts_text = timestamp_text[0]
+                timestamp = normalize_timestamp(ts_text)
+
+            # Determine event type based on extracted text
+            if event_type_text and any('Plant' in t for t in event_type_text):
+                event_type = 'plant'
+            elif event_type_text and any('Defuse' in t for t in event_type_text):
+                event_type = 'defuse'
+            else:
+                event_type = 'kill'
+
+            # Record the event WITH side information
+            logger.info(f"Extracted {event_type} ({side}): {killer_agent} → {victim_agent} at {timestamp}s")
+            events.append((killer_agent, victim_agent, timestamp, event_type, side))
+
+            # Move to next event
+            current_y += 36
+
+        return events
+
+    except Exception as e:
+        logger.error(f"Failed to extract round events: {str(e)}")
+        return []
+    finally:
+        logger.clear_context()
 
 def extract_first_bloods(timeline_images: List[np.ndarray]) -> List[str]:
     """Determine which team got first blood in each round"""
@@ -574,7 +598,9 @@ def create_match_data(
         # Extract round timestamps and events
         round_events = []
         for i, image in enumerate(timeline_images):
-            logger.push_context(operation="process_match_data", sub_operation="events", round=i)
+            logger.push_context(operation="process_match_data", sub_operation="events", round=i+1)
+            logger.info(f"Extracting events for round {i+1}")
+
             events = extract_round_events(image, agent_sprites, agent_list)
             round_events.append(events)
             logger.clear_context()
@@ -593,6 +619,13 @@ def create_match_data(
         # Extract plant information
         plant_site_list = [detect_plant_site(img, metadata['map_name']) for img in timeline_images]
 
+        round_events = []
+        for i, image in enumerate(timeline_images):
+            logger.push_context(operation="process_match_data", sub_operation="events", round=i)
+            events = extract_round_events(image, agent_sprites, agent_list)
+            round_events.append(events)
+            logger.clear_context()
+
         # Create round data
         rounds = []
         for i in range(len(timeline_images)):
@@ -610,7 +643,7 @@ def create_match_data(
                 # Determine if spike was planted/defused
                 has_plant = False
                 has_defuse = False
-                for _, _, _, event_type in round_events[i]:
+                for _, _, _, event_type, _ in round_events[i]:
                     if event_type == 'plant':
                         has_plant = True
                     elif event_type == 'defuse':
@@ -619,7 +652,7 @@ def create_match_data(
                 # Calculate kills for each team
                 team_kills = 0
                 opponent_kills = 0
-                for killer, victim, _, event_type in round_events[i]:
+                for killer, victim, _, event_type, _ in round_events[i]:
                     if event_type == 'kill':
                         killer_idx = agent_list.index(killer) if killer in agent_list else -1
                         if 0 <= killer_idx < 5:  # Team player
@@ -698,14 +731,15 @@ def create_match_data(
     finally:
         logger.clear_context()
 
-def format_round_events(round_events: List[Tuple[str, str, int, str]],
+
+def format_round_events(round_events: List[Tuple[str, str, int, str, str]],
                         player_list: List[str],
                         agent_list: List[str]) -> Tuple[List[EventData], str, str]:
     """
     Format raw event tuples into EventData objects and identify first blood/death players
 
     Args:
-        round_events: List of event tuples (killer_agent, victim_agent, timestamp, event_type)
+        round_events: List of event tuples (killer_agent, victim_agent, timestamp, event_type, side)
         player_list: List of player names
         agent_list: List of agent names
 
@@ -722,13 +756,23 @@ def format_round_events(round_events: List[Tuple[str, str, int, str]],
         first_blood_player = ""
         first_death_player = ""
 
-        for killer_agent, victim_agent, timestamp, event_type in sorted_events:
-            logger.push_context(event_type=event_type, timestamp=timestamp)
+        for event_tuple in sorted_events:
+            # Handle both old format (4 elements) and new format (5 elements with side)
+            if len(event_tuple) == 5:
+                killer_agent, victim_agent, timestamp, event_type, side = event_tuple
+            else:
+                killer_agent, victim_agent, timestamp, event_type = event_tuple
+                # Default side based on first player with that agent name
+                # This is a fallback for backward compatibility
+                killer_idx = agent_list.index(killer_agent) if killer_agent in agent_list else -1
+                side = 'team' if 0 <= killer_idx < 5 else 'opponent'
+
+            logger.push_context(event_type=event_type, timestamp=timestamp, side=side)
 
             try:
                 if event_type == 'kill':
                     event_data, killer_player, victim_player = _format_kill_event(
-                        killer_agent, victim_agent, timestamp, player_list, agent_list
+                        killer_agent, victim_agent, timestamp, player_list, agent_list, side
                     )
                     formatted_events.append(event_data)
 
@@ -740,7 +784,7 @@ def format_round_events(round_events: List[Tuple[str, str, int, str]],
 
                 elif event_type in ['plant', 'defuse']:
                     event_data = _format_utility_event(
-                        killer_agent, event_type, timestamp, player_list, agent_list
+                        killer_agent, event_type, timestamp, player_list, agent_list, side
                     )
                     formatted_events.append(event_data)
             finally:
@@ -750,10 +794,11 @@ def format_round_events(round_events: List[Tuple[str, str, int, str]],
     finally:
         logger.clear_context()  # Clear operation context
 
+
 def _format_kill_event(killer_agent: str, victim_agent: str, timestamp: int,
-                       player_list: List[str], agent_list: List[str]) -> Tuple[EventData, str, str]:
+                       player_list: List[str], agent_list: List[str], side: str) -> Tuple[EventData, str, str]:
     """
-    Format a kill event into an EventData object
+    Format a kill event into an EventData object, handling duplicate agents correctly
 
     Args:
         killer_agent: The agent name of the killer
@@ -761,20 +806,55 @@ def _format_kill_event(killer_agent: str, victim_agent: str, timestamp: int,
         timestamp: Event timestamp
         player_list: List of player names
         agent_list: List of agent names
+        side: The side of the killer ('team' or 'opponent')
 
     Returns:
         Tuple containing (event_data, killer_player_name, victim_player_name)
     """
-    # Get player indices based on agent names
-    killer_idx = agent_list.index(killer_agent) if killer_agent in agent_list else -1
-    victim_idx = agent_list.index(victim_agent) if victim_agent in agent_list else -1
+    # Find all indices where this agent appears
+    killer_indices = [i for i, agent in enumerate(agent_list) if agent == killer_agent]
+    victim_indices = [i for i, agent in enumerate(agent_list) if agent == victim_agent]
+
+    # Use side information to choose the correct killer_idx
+    # Team side = indices 0-4, Opponent side = indices 5-9
+    if side == 'team':
+        # For team kills, pick a killer from team indices (0-4)
+        team_killer_indices = [idx for idx in killer_indices if 0 <= idx < 5]
+        if team_killer_indices:
+            killer_idx = team_killer_indices[0]
+        else:
+            # Fallback to first match
+            killer_idx = killer_indices[0] if killer_indices else -1
+    else:
+        # For opponent kills, pick a killer from opponent indices (5-9)
+        opponent_killer_indices = [idx for idx in killer_indices if 5 <= idx < 10]
+        if opponent_killer_indices:
+            killer_idx = opponent_killer_indices[0]
+        else:
+            # Fallback to first match
+            killer_idx = killer_indices[0] if killer_indices else -1
+
+    # For victim, use the opposite team from the killer
+    if 0 <= killer_idx < 5:
+        # Team killer, so find opponent victim
+        opponent_victim_indices = [idx for idx in victim_indices if 5 <= idx < 10]
+        if opponent_victim_indices:
+            victim_idx = opponent_victim_indices[0]
+        else:
+            # Fallback to first match
+            victim_idx = victim_indices[0] if victim_indices else -1
+    else:
+        # Opponent killer, so find team victim
+        team_victim_indices = [idx for idx in victim_indices if 0 <= idx < 5]
+        if team_victim_indices:
+            victim_idx = team_victim_indices[0]
+        else:
+            # Fallback to first match
+            victim_idx = victim_indices[0] if victim_indices else -1
 
     # Get player names
     killer_player = player_list[killer_idx] if 0 <= killer_idx < len(player_list) else killer_agent
     victim_player = player_list[victim_idx] if 0 <= victim_idx < len(player_list) else victim_agent
-
-    # Determine side (team or opponent)
-    side = 'team' if 0 <= killer_idx < 5 else 'opponent'
 
     # Create event data
     event_data: EventData = {
@@ -787,8 +867,9 @@ def _format_kill_event(killer_agent: str, victim_agent: str, timestamp: int,
 
     return event_data, killer_player, victim_player
 
+
 def _format_utility_event(actor_agent: str, event_type: str, timestamp: int,
-                          player_list: List[str], agent_list: List[str]) -> EventData:
+                          player_list: List[str], agent_list: List[str], side: str) -> EventData:
     """
     Format a utility event (plant/defuse) into an EventData object
 
@@ -798,18 +879,34 @@ def _format_utility_event(actor_agent: str, event_type: str, timestamp: int,
         timestamp: Event timestamp
         player_list: List of player names
         agent_list: List of agent names
+        side: The side of the actor ('team' or 'opponent')
 
     Returns:
         EventData object
     """
-    # Get player index based on agent name
-    actor_idx = agent_list.index(actor_agent) if actor_agent in agent_list else -1
+    # Find all indices of actor_agent in agent_list
+    actor_indices = [i for i, agent in enumerate(agent_list) if agent == actor_agent]
+
+    # Use side information to choose the correct actor_idx
+    if side == 'team':
+        # For team events, pick an actor from team indices (0-4)
+        team_actor_indices = [idx for idx in actor_indices if 0 <= idx < 5]
+        if team_actor_indices:
+            actor_idx = team_actor_indices[0]
+        else:
+            # Fallback to first match
+            actor_idx = actor_indices[0] if actor_indices else -1
+    else:
+        # For opponent events, pick an actor from opponent indices (5-9)
+        opponent_actor_indices = [idx for idx in actor_indices if 5 <= idx < 10]
+        if opponent_actor_indices:
+            actor_idx = opponent_actor_indices[0]
+        else:
+            # Fallback to first match
+            actor_idx = actor_indices[0] if actor_indices else -1
 
     # Get player name
     actor_player = player_list[actor_idx] if 0 <= actor_idx < len(player_list) else actor_agent
-
-    # Determine side
-    side = 'team' if 0 <= actor_idx < 5 else 'opponent'
 
     # Create event data
     event_data: EventData = {

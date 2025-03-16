@@ -51,7 +51,7 @@ def detect_color(image: np.ndarray, position: Position, description: str = "pixe
 
     try:
         color = image[position.y, position.x]
-        logger.debug(f"Detected color at '{description}' ({position}): BGR={color}")
+        # logger.debug(f"Detected color at '{description}' ({position}): BGR={color}")
         return color
     except Exception as e:
         logger.error(f"Failed to detect color at '{description}' ({position}): {str(e)}")
