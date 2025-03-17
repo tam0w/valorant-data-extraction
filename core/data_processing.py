@@ -3,6 +3,8 @@ import numpy as np
 import cv2 as cv
 from typing import List, Dict, Tuple, Optional, Any, cast
 from datetime import datetime
+from core.config import load_config
+from core.api import get_valid_maps, get_valid_agents
 from core.types import RoundData, MatchData, PlayerData, EventData, Position, ImageRegion
 from core.constants import list_of_agents
 from core.ocr import extract_text
@@ -10,25 +12,179 @@ from core.image_processing import crop_image, detect_color, get_team_color_from_
 from core.logger import logger
 
 
-def normalize_agent_name(agent_name: str) -> str:
+def normalize_agent_name(agent_name: str, valid_agents=None, config=None) -> str:
     """Correct agent name by finding the closest match"""
-    closest_match = get_close_matches(agent_name, list_of_agents, n=1)
-    if closest_match:
-        return closest_match[0]
-    else:
-        # Ask for manual input as fallback
-        corrected = input(f"Could not recognize agent '{agent_name}'. Please enter correct name: ")
-        if corrected.lower() == 'kayo':
-            return 'KAY/O'
-        return corrected
+    logger.push_context(operation="normalize_agent_name", raw_input=agent_name)
+
+    try:
+        if valid_agents is None:
+            if config is None:
+                # Use default config if none provided
+                from core.config import load_config
+                config = load_config()
+            valid_agents = get_valid_agents(config)
+
+        # Handle the special case for KAY/O which might be entered as KAYO
+        if agent_name.upper() in ["KAYO", "KAY/O", "KAY O"]:
+            logger.info(f"Normalized agent name from '{agent_name}' to 'KAY/O'")
+            return "KAY/O"
+
+        # Convert to lowercase for matching
+        agent_name_lower = agent_name.lower()
+        agent_options_lower = [a.lower() for a in valid_agents]
+
+        # Try to find the closest match
+        closest_matches = get_close_matches(agent_name_lower, agent_options_lower, n=1, cutoff=0.6)
+
+        if closest_matches:
+            # Find original case from valid_agents
+            match_idx = agent_options_lower.index(closest_matches[0])
+            normalized = valid_agents[match_idx]
+
+            # Log similarity score for debugging
+            from difflib import SequenceMatcher
+            similarity = SequenceMatcher(None, agent_name_lower, closest_matches[0]).ratio()
+            logger.debug(f"Agent match: '{agent_name}' -> '{normalized}' (similarity: {similarity:.2f})")
+
+            if normalized.lower() != agent_name.lower():
+                logger.info(f"Normalized agent name from '{agent_name}' to '{normalized}'")
+            return normalized
+        else:
+            # Ask for manual input as fallback
+            logger.warning(f"Could not recognize agent '{agent_name}'")
+            logger.user_output(f"Could not recognize agent '{agent_name}'. Please enter correct name: ")
+            corrected = input(f"Could not recognize agent '{agent_name}'. Please enter correct name: ")
+
+            if corrected.lower() == 'kayo':
+                return 'KAY/O'
+
+            # Verify manual input against valid agents
+            corrected_lower = corrected.lower()
+            if corrected_lower in agent_options_lower:
+                match_idx = agent_options_lower.index(corrected_lower)
+                return valid_agents[match_idx]
+
+            return corrected
+    finally:
+        logger.clear_context()
+
+def normalize_timestamp(timestamp_str: str) -> int:
+    """
+    Convert a timestamp string to a normalized integer value in seconds
+
+    Handles formats:
+    - "0:XX" (under 60 seconds)
+    - "1:XX" (60+ seconds)
+    - Special cases like "N/A" (returns 0)
+
+    Args:
+        timestamp_str: String timestamp from OCR (e.g., "0:45", "1:20")
+
+    Returns:
+        Integer timestamp in seconds
+    """
+    logger.push_context(operation="normalize_timestamp", raw_timestamp=timestamp_str)
+
+    try:
+        if not timestamp_str or not isinstance(timestamp_str, str):
+            logger.debug("Empty or non-string timestamp, returning 0")
+            return 0
+
+        # Handle special cases
+        if timestamp_str.startswith('N'):
+            logger.debug("Special timestamp format (N/A), returning 0")
+            return 0
+
+        # Clean the timestamp string
+        cleaned = timestamp_str.replace('.', '').replace(':', '').replace('T', '').replace('l', '')
+
+        # Handle 0:XX format (under 60 seconds)
+        if timestamp_str.startswith('0'):
+            # Remove leading zeros
+            cleaned = cleaned.replace('0', '', 1)
+            result = int(cleaned) if cleaned.isdigit() else 0
+            logger.debug(f"Normalized '0:XX' format to {result} seconds")
+            return result
+
+        # Handle 1:XX format (60+ seconds)
+        elif timestamp_str.startswith('1'):
+            # Remove leading 1
+            cleaned = cleaned.replace('1', '', 1)
+            result = int(cleaned) + 60 if cleaned.isdigit() else 60
+            logger.debug(f"Normalized '1:XX' format to {result} seconds")
+            return result
+
+        # Default case - try to convert directly
+        logger.debug(f"Using default timestamp conversion for '{timestamp_str}'")
+        return int(cleaned) if cleaned.isdigit() else 0
+
+    except Exception as e:
+        logger.error(f"Failed to normalize timestamp '{timestamp_str}': {str(e)}")
+        return 0
+    finally:
+        logger.clear_context()
 
 
-def extract_player_data(image: np.ndarray) -> Tuple[List[str], List[str]]:
+def normalize_map_name(map_name: str, valid_maps=None, config=None) -> str:
+    """Correct map name by finding the closest match"""
+    logger.push_context(operation="normalize_map_name", raw_input=map_name)
+
+    try:
+        if valid_maps is None:
+            if config is None:
+                # Use default config if none provided
+                from core.config import load_config
+                config = load_config()
+            valid_maps = get_valid_maps(config)
+
+        # Convert to lowercase for matching
+        map_name_lower = map_name.lower()
+        map_options_lower = [m.lower() for m in valid_maps]
+
+        # Try to find closest match
+        closest_matches = get_close_matches(map_name_lower, map_options_lower, n=1, cutoff=0.6)
+
+        if closest_matches:
+            # Find original case from list_of_maps
+            match_idx = map_options_lower.index(closest_matches[0])
+            normalized = valid_maps[match_idx]
+
+            # Log similarity score for debugging
+            from difflib import SequenceMatcher
+            similarity = SequenceMatcher(None, map_name_lower, closest_matches[0]).ratio()
+            logger.debug(f"Map match: '{map_name}' -> '{normalized}' (similarity: {similarity:.2f})")
+
+            if normalized.lower() != map_name.lower():
+                logger.info(f"Normalized map name from '{map_name}' to '{normalized}'")
+            return normalized
+        else:
+            # No close match found, ask for manual input
+            logger.warning(f"Could not normalize map name '{map_name}'")
+            logger.user_output(f"Could not recognize map '{map_name}'. Please enter correct map name: ")
+            corrected = input(f"Could not recognize map '{map_name}'. Please enter correct map name: ")
+
+            # Verify manual input against valid maps
+            corrected_lower = corrected.lower()
+            if corrected_lower in map_options_lower:
+                match_idx = map_options_lower.index(corrected_lower)
+                return valid_maps[match_idx]
+
+            # If not in list, return corrected as-is
+            return corrected
+    finally:
+        logger.clear_context()
+
+
+def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List[str], List[str]]:
     """Extract player names and agent names from the scoreboard"""
     logger.push_context(operation="extract_player_data")
 
     player_list = []
     agent_list = []
+
+    # Get valid agents once to use throughout the function
+    valid_agents = get_valid_agents(config)
+    logger.info(f"Using agent list with {len(valid_agents)} agents")
 
     try:
         # Process team players (top section)
@@ -76,11 +232,11 @@ def extract_player_data(image: np.ndarray) -> Tuple[List[str], List[str]]:
                     player_name, agent_name = ocr_result[0], ocr_result[1]
                     logger.info(f"Successfully detected team player {i + 1}: '{player_name}' playing '{agent_name}'")
 
-                # Normalize agent name
-                if agent_name not in list_of_agents:
+                # Normalize agent name using the enhanced function
+                if agent_name not in valid_agents:
                     logger.debug(f"Agent name '{agent_name}' not in recognized list, normalizing")
                     original_name = agent_name
-                    agent_name = normalize_agent_name(agent_name)
+                    agent_name = normalize_agent_name(agent_name, valid_agents, config)
                     logger.info(f"Normalized agent name from '{original_name}' to '{agent_name}'")
 
                 player_list.append(player_name)
@@ -140,10 +296,10 @@ def extract_player_data(image: np.ndarray) -> Tuple[List[str], List[str]]:
                         f"Successfully detected opponent player {i + 1}: '{player_name}' playing '{agent_name}'")
 
                 # Normalize agent name
-                if agent_name not in list_of_agents:
+                if agent_name not in valid_agents:
                     logger.debug(f"Agent name '{agent_name}' not in recognized list, normalizing")
                     original_name = agent_name
-                    agent_name = normalize_agent_name(agent_name)
+                    agent_name = normalize_agent_name(agent_name, valid_agents, config)
                     logger.info(f"Normalized agent name from '{original_name}' to '{agent_name}'")
 
                 player_list.append(player_name)
@@ -172,48 +328,68 @@ def extract_player_data(image: np.ndarray) -> Tuple[List[str], List[str]]:
     return player_list, agent_list
 
 
-def extract_match_metadata(image: np.ndarray) -> Dict[str, Any]:
+def extract_match_metadata(image: np.ndarray, config: Dict[str, Any]) -> Dict[str, Any]:
     """Extract map name, scores, and other metadata from summary screen"""
-    # Extract sides (Attack/Defense)
-    sides_region = crop_image(image, ImageRegion(300, 400, 1300, 1500))
-    sides_text = extract_text(sides_region, detail=0)[0].lower()
+    logger.push_context(operation="extract_match_metadata")
 
-    if 'def' in sides_text:
-        first_half = "Defense"
-        second_half = "Attack"
-    else:
-        first_half = "Attack"
-        second_half = "Defense"
+    try:
+        # Extract sides (Attack/Defense)
+        sides_region = crop_image(image, ImageRegion(300, 400, 1300, 1500), "sides_region")
+        sides_text = extract_text(sides_region, detail=0, region_name="sides_text")[0].lower()
 
-    sides = [first_half] * 12 + [second_half] * 12
+        if 'def' in sides_text:
+            first_half = "Defense"
+            second_half = "Attack"
+        else:
+            first_half = "Attack"
+            second_half = "Defense"
 
-    # Extract score
-    score_region = crop_image(image, ImageRegion(70, 170, 700, 1150))
-    score_parts = extract_text(score_region, detail=0)
+        sides = [first_half] * 12 + [second_half] * 12
 
-    if len(score_parts) >= 3:
-        team_score, result, opponent_score = score_parts[0:3]
-    else:
-        team_score = input("Please enter your team's score: ")
-        opponent_score = input("Please enter opponent's score: ")
-        result = "WIN" if int(team_score) > int(opponent_score) else "LOSS"
+        # Extract score
+        score_region = crop_image(image, ImageRegion(70, 170, 700, 1150), "score_region")
+        score_parts = extract_text(score_region, detail=0, region_name="score_text")
 
-    # Extract map name
-    map_region = crop_image(image, ImageRegion(125, 145, 120, 210))
-    map_text = extract_text(map_region, detail=0)
-    map_name = map_text[0].lower() if map_text else input("Please enter map name: ")
+        if len(score_parts) >= 3:
+            team_score, result, opponent_score = score_parts[0:3]
+            logger.debug(f"Extracted scores: {team_score}-{opponent_score}, result: {result}")
+        else:
+            logger.warning("Score extraction failed, prompting for manual input")
+            logger.user_output("Please enter your team's score: ")
+            team_score = input("Please enter your team's score: ")
+            logger.user_output("Please enter opponent's score: ")
+            opponent_score = input("Please enter opponent's score: ")
+            result = "WIN" if int(team_score) > int(opponent_score) else "LOSS"
 
-    return {
-        'map_name': map_name,
-        'team_score': team_score,
-        'opponent_score': opponent_score,
-        'result': result,
-        'sides': sides,
-        'total_rounds': int(team_score) + int(opponent_score),
-        'final_score': f"{team_score} - {opponent_score}",
-        'date': datetime.now().strftime("%d/%m/%Y")
-    }
+        # Extract map name with normalization
+        map_region = crop_image(image, ImageRegion(125, 145, 120, 210), "map_region")
+        map_text = extract_text(map_region, detail=0, region_name="map_text")
 
+        if map_text:
+            raw_map_name = map_text[0]
+            logger.debug(f"Raw map name from OCR: '{raw_map_name}'")
+        else:
+            logger.warning("Map name extraction failed, prompting for manual input")
+            logger.user_output("Please enter map name: ")
+            raw_map_name = input("Please enter map name: ")
+
+        # Get valid maps and normalize
+        valid_maps = get_valid_maps(config)
+        map_name = normalize_map_name(raw_map_name, valid_maps, config)
+        logger.info(f"Using map: {map_name}")
+
+        return {
+            'map_name': map_name,
+            'team_score': team_score,
+            'opponent_score': opponent_score,
+            'result': result,
+            'sides': sides,
+            'total_rounds': int(team_score) + int(opponent_score),
+            'final_score': f"{team_score} - {opponent_score}",
+            'date': datetime.now().strftime("%d/%m/%Y")
+        }
+    finally:
+        logger.clear_context()
 
 def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndarray],
                          agent_list: List[str]) -> List[Tuple[str, str, int, str]]:
@@ -303,28 +479,6 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
 
     return events
 
-
-def normalize_timestamps(timestamps: List[str]) -> List[int]:
-    """Convert timestamp strings to normalized integers"""
-    normalized = []
-
-    for timestamp in timestamps:
-        if timestamp.startswith('0'):
-            # Format: 0:MM or 0:SS
-            ts = timestamp.replace('0:0', '').replace('0:', '').replace('.', '').replace(':', '')
-            normalized.append(int(ts) if ts.isdigit() else 0)
-        elif timestamp.startswith('N'):
-            normalized.append(0)
-        else:
-            # Format: 1:MM or 1:SS (add 60 seconds)
-            ts = timestamp.replace('1.', '').replace('1:', '').replace('.', '').replace(':', '').replace('T',
-                                                                                                         '').replace(
-                'l', '')
-            normalized.append(int(ts) + 60 if ts.isdigit() else 60)
-
-    return normalized
-
-
 def extract_first_bloods(timeline_images: List[np.ndarray]) -> List[str]:
     """Determine which team got first blood in each round"""
     first_bloods = []
@@ -340,7 +494,6 @@ def extract_first_bloods(timeline_images: List[np.ndarray]) -> List[str]:
 
     logger.clear_context()
     return first_bloods
-
 
 def determine_awp_info(awp_data: List[List[str]]) -> List[str]:
     """Determine AWP (Operator) usage in each round"""
@@ -369,7 +522,6 @@ def determine_awp_info(awp_data: List[List[str]]) -> List[str]:
 
     return awp_info
 
-
 def process_round_outcomes(timeline_images: List[np.ndarray]) -> List[str]:
     """Determine if each round was a win or loss"""
     outcomes = []
@@ -386,7 +538,6 @@ def process_round_outcomes(timeline_images: List[np.ndarray]) -> List[str]:
 
     logger.clear_context()
     return outcomes
-
 
 def create_match_data(
         timeline_images: List[np.ndarray],
@@ -438,61 +589,72 @@ def create_match_data(
         if i >= len(outcomes) or i >= len(first_bloods):
             continue
 
-        # Determine if spike was planted/defused
-        has_plant = False
-        has_defuse = False
-        for _, _, _, event_type in round_events[i]:
-            if event_type == 'plant':
-                has_plant = True
-            elif event_type == 'defuse':
-                has_defuse = True
+        logger.push_context(operation="process_round_data", round_number=i + 1)
 
-        # Calculate kills for each team
-        team_kills = 0
-        opponent_kills = 0
-        for killer, victim, _, event_type in round_events[i]:
-            if event_type == 'kill':
-                killer_idx = agent_list.index(killer) if killer in agent_list else -1
-                if 0 <= killer_idx < 5:  # Team player
-                    team_kills += 1
-                elif 5 <= killer_idx < 10:  # Opponent player
-                    opponent_kills += 1
+        try:
 
-        # Adjust for plants/defuses which are also counted as events
-        side = metadata['sides'][i] if i < len(metadata['sides']) else "Unknown"
-        if has_plant:
-            if side == 'Attack':
-                team_kills -= 1
-            else:
-                opponent_kills -= 1
+            # Determine if spike was planted/defused
+            has_plant = False
+            has_defuse = False
+            for _, _, _, event_type in round_events[i]:
+                if event_type == 'plant':
+                    has_plant = True
+                elif event_type == 'defuse':
+                    has_defuse = True
 
-        if has_defuse:
-            if side == 'Defense':
-                team_kills -= 1
-            else:
-                opponent_kills -= 1
+            # Calculate kills for each team
+            team_kills = 0
+            opponent_kills = 0
+            for killer, victim, _, event_type in round_events[i]:
+                if event_type == 'kill':
+                    killer_idx = agent_list.index(killer) if killer in agent_list else -1
+                    if 0 <= killer_idx < 5:  # Team player
+                        team_kills += 1
+                    elif 5 <= killer_idx < 10:  # Opponent player
+                        opponent_kills += 1
 
-        # Create the round data
-        round_data: RoundData = {
-            'round_number': i + 1,
-            'events': [],  # Will fill this later
-            'outcome': outcomes[i],
-            'side': side,
-            'team_economy': team_economy[i] if i < len(team_economy) else "0",
-            'opponent_economy': opponent_economy[i] if i < len(opponent_economy) else "0",
-            'first_blood': first_bloods[i] if i < len(first_bloods) else "unknown",
-            'true_first_blood': True,  # Simplified for now
-            'first_blood_player': "",  # Will fill this later
-            'first_death_player': "",  # Will fill this later
-            'site': plant_site_list[i] if i < len(plant_site_list) and plant_site_list[i] else None,
-            'plant': has_plant,
-            'defuse': has_defuse,
-            'awp_info': awp_info[i] if i < len(awp_info) else "none",
-            'kills_team': team_kills,
-            'kills_opponent': opponent_kills
-        }
+            # Adjust for plants/defuses which are also counted as events
+            side = metadata['sides'][i] if i < len(metadata['sides']) else "Unknown"
+            if has_plant:
+                if side == 'Attack':
+                    team_kills -= 1
+                else:
+                    opponent_kills -= 1
 
-        rounds.append(round_data)
+            if has_defuse:
+                if side == 'Defense':
+                    team_kills -= 1
+                else:
+                    opponent_kills -= 1
+
+            formatted_events, first_blood_player, first_death_player = format_round_events(
+                round_events[i], player_list, agent_list
+            )
+
+            # Create the round data
+            round_data: RoundData = {
+                'round_number': i + 1,
+                'events': formatted_events,
+                'outcome': outcomes[i],
+                'side': side,
+                'team_economy': team_economy[i] if i < len(team_economy) else "0",
+                'opponent_economy': opponent_economy[i] if i < len(opponent_economy) else "0",
+                'first_blood': first_bloods[i] if i < len(first_bloods) else "unknown",
+                'true_first_blood': True,  # Could be enhanced with additional logic
+                'first_blood_player': first_blood_player,
+                'first_death_player': first_death_player,
+                'site': plant_site_list[i] if i < len(plant_site_list) and plant_site_list[i] else None,
+                'plant': has_plant,
+                'defuse': has_defuse,
+                'awp_info': awp_info[i] if i < len(awp_info) else "none",
+                'kills_team': team_kills,
+                'kills_opponent': opponent_kills
+            }
+
+            rounds.append(round_data)
+
+        finally:
+           logger.clear_context()
 
     # Generate unique match ID
     match_time = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -509,4 +671,181 @@ def create_match_data(
         'total_rounds': metadata['total_rounds']
     }
 
+    valid_rounds = []
+    logger.push_context(operation="validate_match_data")
+    try:
+        for round_data in rounds:
+            if validate_round_data(round_data):
+                valid_rounds.append(round_data)
+            else:
+                logger.warning(f"Round {round_data['round_number']} validation failed, data may be incomplete")
+                # Still include the round data, just with a warning
+                valid_rounds.append(round_data)
+
+        match_data['rounds'] = valid_rounds
+    finally:
+        logger.clear_context()
+
     return match_data
+
+def format_round_events(round_events: List[Tuple[str, str, int, str]],
+                        player_list: List[str],
+                        agent_list: List[str]) -> Tuple[List[EventData], str, str]:
+    """
+    Format raw event tuples into EventData objects and identify first blood/death players
+
+    Args:
+        round_events: List of event tuples (killer_agent, victim_agent, timestamp, event_type)
+        player_list: List of player names
+        agent_list: List of agent names
+
+    Returns:
+        Tuple containing (formatted_events, first_blood_player, first_death_player)
+    """
+    logger.push_context(operation="format_round_events")
+
+    try:
+        # Sort events by timestamp for proper ordering
+        sorted_events = sorted(round_events, key=lambda x: x[2])
+
+        formatted_events = []
+        first_blood_player = ""
+        first_death_player = ""
+
+        for killer_agent, victim_agent, timestamp, event_type in sorted_events:
+            logger.push_context(event_type=event_type, timestamp=timestamp)
+
+            try:
+                if event_type == 'kill':
+                    event_data, killer_player, victim_player = _format_kill_event(
+                        killer_agent, victim_agent, timestamp, player_list, agent_list
+                    )
+                    formatted_events.append(event_data)
+
+                    # Record first blood/death if not already set
+                    if not first_blood_player:
+                        first_blood_player = killer_player
+                        first_death_player = victim_player
+                        logger.debug(f"Recorded first blood: {killer_player} killed {victim_player}")
+
+                elif event_type in ['plant', 'defuse']:
+                    event_data = _format_utility_event(
+                        killer_agent, event_type, timestamp, player_list, agent_list
+                    )
+                    formatted_events.append(event_data)
+            finally:
+                logger.clear_context()  # Clear event-specific context
+
+        return formatted_events, first_blood_player, first_death_player
+    finally:
+        logger.clear_context()  # Clear operation context
+
+def _format_kill_event(killer_agent: str, victim_agent: str, timestamp: int,
+                       player_list: List[str], agent_list: List[str]) -> Tuple[EventData, str, str]:
+    """
+    Format a kill event into an EventData object
+
+    Args:
+        killer_agent: The agent name of the killer
+        victim_agent: The agent name of the victim
+        timestamp: Event timestamp
+        player_list: List of player names
+        agent_list: List of agent names
+
+    Returns:
+        Tuple containing (event_data, killer_player_name, victim_player_name)
+    """
+    # Get player indices based on agent names
+    killer_idx = agent_list.index(killer_agent) if killer_agent in agent_list else -1
+    victim_idx = agent_list.index(victim_agent) if victim_agent in agent_list else -1
+
+    # Get player names
+    killer_player = player_list[killer_idx] if 0 <= killer_idx < len(player_list) else killer_agent
+    victim_player = player_list[victim_idx] if 0 <= victim_idx < len(player_list) else victim_agent
+
+    # Determine side (team or opponent)
+    side = 'team' if 0 <= killer_idx < 5 else 'opponent'
+
+    # Create event data
+    event_data: EventData = {
+        'timestamp': timestamp,
+        'event_type': 'kill',
+        'actor': killer_player,
+        'target': victim_player,
+        'side': side
+    }
+
+    return event_data, killer_player, victim_player
+
+def _format_utility_event(actor_agent: str, event_type: str, timestamp: int,
+                          player_list: List[str], agent_list: List[str]) -> EventData:
+    """
+    Format a utility event (plant/defuse) into an EventData object
+
+    Args:
+        actor_agent: The agent name of the actor
+        event_type: The type of event ('plant' or 'defuse')
+        timestamp: Event timestamp
+        player_list: List of player names
+        agent_list: List of agent names
+
+    Returns:
+        EventData object
+    """
+    # Get player index based on agent name
+    actor_idx = agent_list.index(actor_agent) if actor_agent in agent_list else -1
+
+    # Get player name
+    actor_player = player_list[actor_idx] if 0 <= actor_idx < len(player_list) else actor_agent
+
+    # Determine side
+    side = 'team' if 0 <= actor_idx < 5 else 'opponent'
+
+    # Create event data
+    event_data: EventData = {
+        'timestamp': timestamp,
+        'event_type': event_type,
+        'actor': actor_player,
+        'target': None,  # No target for plant/defuse
+        'side': side
+    }
+
+    return event_data
+
+def validate_round_data(round_data: RoundData) -> bool:
+    """
+    Validate that a round data object has all required fields properly populated
+
+    Args:
+        round_data: The RoundData object to validate
+
+    Returns:
+        True if data is valid, False otherwise
+    """
+    logger.push_context(operation="validate_round_data", round_number=round_data['round_number'])
+
+    try:
+        is_valid = True
+
+        # Check for events consistency
+        if (round_data['kills_team'] + round_data['kills_opponent'] > 0) and not round_data['events']:
+            logger.warning(f"Round has {round_data['kills_team'] + round_data['kills_opponent']} kills but no events")
+            is_valid = False
+
+        # Check first blood consistency
+        if round_data['first_blood'] != 'unknown' and not round_data['first_blood_player']:
+            logger.warning(f"Round has first blood team ({round_data['first_blood']}) but no player assigned")
+            is_valid = False
+
+        # Check for plant/defuse consistency
+        if round_data['plant'] and not any(e['event_type'] == 'plant' for e in round_data['events']):
+            logger.warning(f"Round has plant=True but no plant event")
+            is_valid = False
+
+        if round_data['defuse'] and not any(e['event_type'] == 'defuse' for e in round_data['events']):
+            logger.warning(f"Round has defuse=True but no defuse event")
+            is_valid = False
+
+        return is_valid
+    finally:
+        logger.clear_context()

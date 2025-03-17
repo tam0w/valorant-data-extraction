@@ -9,9 +9,24 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     default_config = {
         'output_dir': str(Path.home() / "Documents" / "practistics" / "matches"),
         'log_dir': str(Path.home() / "Documents" / "practistics" / "error_logs"),
+        'cache_dir': str(Path.home() / "Documents" / "practistics" / "cache"),
         'ocr': {
             'lang': ['en'],
             'download_enabled': True
+        },
+        'cache': {
+            'enabled': True,
+            'agents': {
+                'max_age_days': 7
+            },
+            'maps': {
+                'max_age_days': 14
+            }
+        },
+        'api': {
+            'enabled': True,
+            'timeout': 10,
+            'base_url': 'https://valorant-api.com/v1'
         }
     }
 
@@ -30,6 +45,7 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     # Ensure directories exist
     os.makedirs(default_config['output_dir'], exist_ok=True)
     os.makedirs(default_config['log_dir'], exist_ok=True)
+    os.makedirs(default_config['cache_dir'], exist_ok=True)
 
     return default_config
 
