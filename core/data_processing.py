@@ -539,154 +539,164 @@ def process_round_outcomes(timeline_images: List[np.ndarray]) -> List[str]:
     logger.clear_context()
     return outcomes
 
+
 def create_match_data(
         timeline_images: List[np.ndarray],
         scoreboard_image: np.ndarray,
-        summary_image: np.ndarray
+        summary_image: np.ndarray,
+        config: Dict[str, Any]
 ) -> MatchData:
     """Create a complete match data structure from screenshots"""
-    # Extract basic metadata
-    metadata = extract_match_metadata(summary_image)
+    logger.push_context(operation="create_match_data")
 
-    # Extract player and agent information
-    player_list, agent_list = extract_player_data(timeline_images[0])
-    players_agents = dict(zip(player_list, agent_list))
-
-    # Extract agent sprites for event matching
-    agent_sprites = extract_agent_sprites(timeline_images[0])
-
-    # Process round outcomes
-    outcomes = process_round_outcomes(timeline_images)
-
-    # Determine first bloods
-    first_bloods = extract_first_bloods(timeline_images)
-
-    # Extract round timestamps and events
-    round_events = []
-    for i, image in enumerate(timeline_images):
-        logger.push_context(operation="process_match_data", sub_operation="events", round=i)
-        events = extract_round_events(image, agent_sprites, agent_list)
-        round_events.append(events)
-        logger.clear_context()
-
-    # Process economy and other round data
-    economy_regions = [crop_image(img, ImageRegion(425, 480, 1020, 1145)) for img in timeline_images]
-    economy_data = [extract_text(region, detail=0) for region in economy_regions]
-    team_economy = [eco[0] if eco else "0" for eco in economy_data]
-    opponent_economy = [eco[1] if len(eco) > 1 else "0" for eco in economy_data]
-
-    # Extract AWP information
-    awp_regions = [crop_image(img, ImageRegion(450, 950, 650, 785)) for img in timeline_images]
-    awp_data = [extract_text(region, detail=0) for region in awp_regions]
-    awp_info = determine_awp_info(awp_data)
-
-    # Extract plant information
-    plant_site_list = [detect_plant_site(img, metadata['map_name']) for img in timeline_images]
-
-    # Create round data
-    rounds = []
-    for i in range(len(timeline_images)):
-        if i >= len(outcomes) or i >= len(first_bloods):
-            continue
-
-        logger.push_context(operation="process_round_data", round_number=i + 1)
-
-        try:
-
-            # Determine if spike was planted/defused
-            has_plant = False
-            has_defuse = False
-            for _, _, _, event_type in round_events[i]:
-                if event_type == 'plant':
-                    has_plant = True
-                elif event_type == 'defuse':
-                    has_defuse = True
-
-            # Calculate kills for each team
-            team_kills = 0
-            opponent_kills = 0
-            for killer, victim, _, event_type in round_events[i]:
-                if event_type == 'kill':
-                    killer_idx = agent_list.index(killer) if killer in agent_list else -1
-                    if 0 <= killer_idx < 5:  # Team player
-                        team_kills += 1
-                    elif 5 <= killer_idx < 10:  # Opponent player
-                        opponent_kills += 1
-
-            # Adjust for plants/defuses which are also counted as events
-            side = metadata['sides'][i] if i < len(metadata['sides']) else "Unknown"
-            if has_plant:
-                if side == 'Attack':
-                    team_kills -= 1
-                else:
-                    opponent_kills -= 1
-
-            if has_defuse:
-                if side == 'Defense':
-                    team_kills -= 1
-                else:
-                    opponent_kills -= 1
-
-            formatted_events, first_blood_player, first_death_player = format_round_events(
-                round_events[i], player_list, agent_list
-            )
-
-            # Create the round data
-            round_data: RoundData = {
-                'round_number': i + 1,
-                'events': formatted_events,
-                'outcome': outcomes[i],
-                'side': side,
-                'team_economy': team_economy[i] if i < len(team_economy) else "0",
-                'opponent_economy': opponent_economy[i] if i < len(opponent_economy) else "0",
-                'first_blood': first_bloods[i] if i < len(first_bloods) else "unknown",
-                'true_first_blood': True,  # Could be enhanced with additional logic
-                'first_blood_player': first_blood_player,
-                'first_death_player': first_death_player,
-                'site': plant_site_list[i] if i < len(plant_site_list) and plant_site_list[i] else None,
-                'plant': has_plant,
-                'defuse': has_defuse,
-                'awp_info': awp_info[i] if i < len(awp_info) else "none",
-                'kills_team': team_kills,
-                'kills_opponent': opponent_kills
-            }
-
-            rounds.append(round_data)
-
-        finally:
-           logger.clear_context()
-
-    # Generate unique match ID
-    match_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-    match_id = f"M_{metadata['map_name']}_{match_time}"
-
-    # Create complete match data
-    match_data: MatchData = {
-        'id': match_id,
-        'map_name': metadata['map_name'],
-        'date': metadata['date'],
-        'players_agents': players_agents,
-        'final_score': metadata['final_score'],
-        'rounds': rounds,
-        'total_rounds': metadata['total_rounds']
-    }
-
-    valid_rounds = []
-    logger.push_context(operation="validate_match_data")
     try:
-        for round_data in rounds:
-            if validate_round_data(round_data):
-                valid_rounds.append(round_data)
-            else:
-                logger.warning(f"Round {round_data['round_number']} validation failed, data may be incomplete")
-                # Still include the round data, just with a warning
-                valid_rounds.append(round_data)
+        # Get the latest agent and map lists at the start of processing
+        valid_agents = get_valid_agents(config)
+        valid_maps = get_valid_maps(config)
+        logger.info(f"Using {len(valid_agents)} agents and {len(valid_maps)} maps for match data processing")
 
-        match_data['rounds'] = valid_rounds
+        # Extract basic metadata with map normalization
+        metadata = extract_match_metadata(summary_image, config)
+
+        # Extract player and agent information with agent normalization
+        player_list, agent_list = extract_player_data(timeline_images[0], config)
+        players_agents = dict(zip(player_list, agent_list))
+
+        # Extract agent sprites for event matching
+        agent_sprites = extract_agent_sprites(timeline_images[0])
+
+        # Process round outcomes
+        outcomes = process_round_outcomes(timeline_images)
+
+        # Determine first bloods
+        first_bloods = extract_first_bloods(timeline_images)
+
+        # Extract round timestamps and events
+        round_events = []
+        for i, image in enumerate(timeline_images):
+            logger.push_context(operation="process_match_data", sub_operation="events", round=i)
+            events = extract_round_events(image, agent_sprites, agent_list)
+            round_events.append(events)
+            logger.clear_context()
+
+        # Process economy and other round data
+        economy_regions = [crop_image(img, ImageRegion(425, 480, 1020, 1145)) for img in timeline_images]
+        economy_data = [extract_text(region, detail=0, region_name="buy_data") for region in economy_regions]
+        team_economy = [eco[0] if eco else "0" for eco in economy_data]
+        opponent_economy = [eco[1] if len(eco) > 1 else "0" for eco in economy_data]
+
+        # Extract AWP information
+        awp_regions = [crop_image(img, ImageRegion(450, 950, 650, 785)) for img in timeline_images]
+        awp_data = [extract_text(region, detail=0) for region in awp_regions]
+        awp_info = determine_awp_info(awp_data)
+
+        # Extract plant information
+        plant_site_list = [detect_plant_site(img, metadata['map_name']) for img in timeline_images]
+
+        # Create round data
+        rounds = []
+        for i in range(len(timeline_images)):
+            if i >= len(outcomes) or i >= len(first_bloods):
+                continue
+
+            logger.push_context(operation="process_round_data", round_number=i + 1)
+
+            try:
+                # Format events and get first blood/death information
+                formatted_events, first_blood_player, first_death_player = format_round_events(
+                    round_events[i], player_list, agent_list
+                )
+
+                # Determine if spike was planted/defused
+                has_plant = False
+                has_defuse = False
+                for _, _, _, event_type in round_events[i]:
+                    if event_type == 'plant':
+                        has_plant = True
+                    elif event_type == 'defuse':
+                        has_defuse = True
+
+                # Calculate kills for each team
+                team_kills = 0
+                opponent_kills = 0
+                for killer, victim, _, event_type in round_events[i]:
+                    if event_type == 'kill':
+                        killer_idx = agent_list.index(killer) if killer in agent_list else -1
+                        if 0 <= killer_idx < 5:  # Team player
+                            team_kills += 1
+                        elif 5 <= killer_idx < 10:  # Opponent player
+                            opponent_kills += 1
+
+                # Adjust for plants/defuses which are also counted as events
+                side = metadata['sides'][i] if i < len(metadata['sides']) else "Unknown"
+                if has_plant:
+                    if side == 'Attack':
+                        team_kills -= 1
+                    else:
+                        opponent_kills -= 1
+
+                if has_defuse:
+                    if side == 'Defense':
+                        team_kills -= 1
+                    else:
+                        opponent_kills -= 1
+
+                # Create the round data with events and first blood/death info
+                round_data: RoundData = {
+                    'round_number': i + 1,
+                    'events': formatted_events,
+                    'outcome': outcomes[i],
+                    'side': side,
+                    'team_economy': team_economy[i] if i < len(team_economy) else "0",
+                    'opponent_economy': opponent_economy[i] if i < len(opponent_economy) else "0",
+                    'first_blood': first_bloods[i] if i < len(first_bloods) else "unknown",
+                    'true_first_blood': True,  # Could be enhanced with additional logic
+                    'first_blood_player': first_blood_player,
+                    'first_death_player': first_death_player,
+                    'site': plant_site_list[i] if i < len(plant_site_list) and plant_site_list[i] else None,
+                    'plant': has_plant,
+                    'defuse': has_defuse,
+                    'awp_info': awp_info[i] if i < len(awp_info) else "none",
+                    'kills_team': team_kills,
+                    'kills_opponent': opponent_kills
+                }
+
+                rounds.append(round_data)
+            finally:
+                logger.clear_context()
+
+        # Validate rounds after processing all of them
+        valid_rounds = []
+        logger.push_context(operation="validate_match_data")
+        try:
+            for round_data in rounds:
+                if validate_round_data(round_data):
+                    valid_rounds.append(round_data)
+                else:
+                    logger.warning(f"Round {round_data['round_number']} validation failed, data may be incomplete")
+                    # Still include the round data, just with a warning
+                    valid_rounds.append(round_data)
+        finally:
+            logger.clear_context()
+
+        # Generate unique match ID
+        match_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        match_id = f"M_{metadata['map_name']}_{match_time}"
+
+        # Create complete match data
+        match_data: MatchData = {
+            'id': match_id,
+            'map_name': metadata['map_name'],
+            'date': metadata['date'],
+            'players_agents': players_agents,
+            'final_score': metadata['final_score'],
+            'rounds': valid_rounds,  # Use validated rounds here
+            'total_rounds': metadata['total_rounds']
+        }
+
+        return match_data
     finally:
         logger.clear_context()
-
-    return match_data
 
 def format_round_events(round_events: List[Tuple[str, str, int, str]],
                         player_list: List[str],
