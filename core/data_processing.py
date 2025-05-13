@@ -438,6 +438,22 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
                 current_y, current_y + 36, 980, 1040), "timestamp_region")
             timestamp_text = extract_text(timestamp_region, detail=0, region_name="timestamp")
 
+            # Skip events where we can't read the timestamp
+            if not timestamp_text:
+                logger.warning(f"Failed to extract timestamp at y={current_y}, skipping event")
+                current_y += 36
+                continue
+
+            # Convert OCR timestamp to seconds using normalized format
+            ts_text = timestamp_text[0]
+            timestamp = normalize_timestamp(ts_text)
+            
+            # Skip events with invalid timestamps
+            if timestamp == 0:
+                logger.warning(f"Invalid timestamp '{ts_text}' at y={current_y}, skipping event")
+                current_y += 36
+                continue
+
             # Examine text on right side to distinguish plant/defuse from kills
             event_type_region = crop_image(timeline_image, ImageRegion(
                 current_y, current_y + 36, 1150, 1230), "event_type_region")
@@ -473,12 +489,6 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
             # Map indices back to agent names
             killer_agent = agent_list[killer_idx] if killer_idx < len(agent_list) else "Unknown"
             victim_agent = agent_list[victim_idx] if victim_idx < len(agent_list) else "Unknown"
-
-            # Convert OCR timestamp to seconds using normalized format
-            timestamp = 0
-            if timestamp_text:
-                ts_text = timestamp_text[0]
-                timestamp = normalize_timestamp(ts_text)
 
             # Determine event type based on extracted text
             if event_type_text and any('Plant' in t for t in event_type_text):
