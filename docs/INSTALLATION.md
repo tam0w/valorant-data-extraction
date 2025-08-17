@@ -16,7 +16,7 @@ Before we dive into installation, let's make sure your system meets the requirem
 
 Practistics is built on Python, so our first step is to make sure you have a compatible Python version installed. Here's how:
 
-1. Visit the [Python downloads page](https://www.python.org/downloads/) and download the installer for Python 3.11 or newer for your operating system.
+1. Visit the [Python downloads page](https://www.python.org/downloads/release/python-3116/) and download the installer for Python 3.11 or newer for your operating system.
    
 2. Run the installer. On Windows, make sure to check the "Add Python to PATH" option during installation. This makes it easier to run Python from the command line.
    

@@ -4,7 +4,7 @@ Practistics is an open-source OCR tool designed to capture and analyze VALORANT 
 
 ## Quick Start
 
-1. Install Python 3.11 from the [Python website](https://www.python.org/downloads/)
+1. Install Python 3.11 from the [Python website](https://www.python.org/downloads/release/python-3116/)
 2. Download and unzip Practistics
 3. Install Dependencies
 
@@ -12,7 +12,7 @@ GPU Acceleration (Optional but Recommended)
 If you have an **NVIDIA GPU** that supports **CUDA** for faster processing, follow these steps:
 
 1. Install the **NVIDIA CUDA Toolkit** incase you havent:  
-   [Download CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) (Recommended Toolkit Version=12.4)
+   [Download CUDA Toolkit](https://developer.nvidia.com/cuda-12-4-0-download-archive) (Recommended Toolkit Version=12.4)
 
 2. Verify the installation:
    ```sh

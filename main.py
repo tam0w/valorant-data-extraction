@@ -173,7 +173,7 @@ def parse_arguments():
 
     # Logging options
     parser.add_argument('--log-level', choices=['debug', 'info', 'warning', 'error', 'critical'],
-                        default='info', help='Set logging level (default: info)')
+                        default='critical', help='Set logging level (default: critical)')
     parser.add_argument('--dev', action='store_true', help='Enable development mode with verbose logging')
     parser.add_argument('--quiet', action='store_true', help='Suppress user output, show only logs')
 
