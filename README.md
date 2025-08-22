@@ -21,17 +21,22 @@ For a more detailed guide please refer: [Installation Guide](docs/INSTALLATION.m
 
 1. Install Python 3.11 from the [Python website](https://www.python.org/downloads/release/python-3116/)
 2. Download and unzip Practistics
-3. Install Dependencies (`pip install -r requirements.txt`)
+3. **Choose your installation path:**
+
+   **CPU Installation (Standard):**
+   ```
+   pip install -r requirements.txt
+   ```
+
+   **GPU Installation (NVIDIA CUDA - Recommended for faster processing):**
+   ```
+   pip install -r requirements.txt
+   pip install --force-reinstall -r requirements-cuda.txt
+   ```
+   *Requires [CUDA Toolkit 12.4](https://developer.nvidia.com/cuda-12-4-0-download-archive) to be installed first*
+
 4. Run the tool with the `python main.py` command
 5. Find your data in `Documents/practistics/matches/`
-  
-**GPU Accelerated Mode (Optional but Recommended)**
-
-If you have an **NVIDIA GPU** that supports **CUDA** for faster processing, follow these steps:
-
-   - [Download CUDA Toolkit](https://developer.nvidia.com/cuda-12-4-0-download-archive) (Recommended Toolkit Version=12.4)
-   - Verify the installation (`nvcc --version`)
-   - If you have **CUDA 12.4**, install PyTorch with the following command `shpip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124`
 
 ## Documentation
 

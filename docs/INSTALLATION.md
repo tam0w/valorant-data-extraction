@@ -44,7 +44,7 @@ With Python installed, we can now download Practistics itself:
 
 ## Step 3: Install Dependencies
 
-Practistics relies on a few other Python packages to do its job. We need to install these dependencies before we can run the tool:
+Practistics relies on a few other Python packages to do its job. Choose the installation path that matches your system:
 
 1. Open a terminal and navigate to the folder where you extracted Practistics. You can do this using the `cd` command. For example, if you extracted Practistics to a folder called `practistics` in your Documents folder, you would type:
    
@@ -52,19 +52,32 @@ Practistics relies on a few other Python packages to do its job. We need to inst
    cd Documents/practistics
    ```
 
-2. **If you have an CUDA Supported NVIDIA graphics card** and want up to 10x faster processing speed, run this command after installing the [Toolkit](https://developer.nvidia.com/cuda-12-4-0-download-archive) (this is optional):
-   
-   ```
-   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
-   ```
-   
-3. Now install the remaining required packages:
+2. **Choose your installation path:**
+
+### Installation Path A: CPU Version (Standard)
+
+For most users, this is the recommended starting point:
+
+```
+pip install -r requirements.txt
+```
+
+This installs all required packages for CPU-based processing.
+
+### Installation Path B: GPU Version (NVIDIA CUDA)
+
+If you have an **NVIDIA graphics card** and want up to 10x faster processing speed:
+
+1. **First**, install the [CUDA Toolkit 12.4](https://developer.nvidia.com/cuda-12-4-0-download-archive)
+2. **Verify** CUDA is installed correctly: `nvcc --version`
+3. **Install** base dependencies and then upgrade to CUDA versions:
    
    ```
    pip install -r requirements.txt
+   pip install --force-reinstall -r requirements-cuda.txt
    ```
-   
-   This tells Python's package manager, pip, to install all the packages listed in the `requirements.txt` file.
+
+This installs all dependencies first, then forces reinstallation of PyTorch with CUDA-enabled versions.
 
 ## Step 4: Verify Installation
 
@@ -89,37 +102,37 @@ Congratulations, you've installed Practistics! Let's do a quick test run to make
        ├── matches/        # Where your match data CSV files will be saved
    ```
 
-## Verifying GPU Acceleration (For NVIDIA Graphics Card Users)
+## Verifying GPU Acceleration (For CUDA Installation)
 
-If you installed the CUDA version of PyTorch in Step 3, you can verify it's working correctly:
-1. Check if CUDA Toolkit is installed properly 
-   ``` 
+If you installed using `requirements-cuda.txt`, you can verify GPU acceleration is working:
+
+1. **Check CUDA Toolkit installation:**
+   ```
    nvcc --version
    ```
+   This should show CUDA 12.4 information.
 
-2. Run this command to check if your GPU is detected by EasyOCR:
-   
+2. **Verify GPU detection:**
    ```
    python -c "import torch; print('GPU Available:', torch.cuda.is_available())"
    ```
    
-   If it prints "GPU Available: True", you're all set for 10x faster processing!
-   Please Note if it says "GPU Available: False" and you have followed all the steps correctly, there might be a version miss match between your CUDA toolkit and Pytorch.
-   Older CUDA versions might require pytorch to be built from Source.
-   
-4. When you run Practistics, you should briefly see a message in the terminal indicating that EasyOCR is using CUDA.
+   - **"GPU Available: True"** = Perfect! You'll get 10x faster processing.
+   - **"GPU Available: False"** = There may be a version mismatch between CUDA Toolkit and PyTorch.
+
+3. **Check during runtime:** When you run Practistics, you should see a message indicating EasyOCR is using CUDA.
 
 ### Troubleshooting GPU Setup
 
-- **Already had PyTorch installed?** You may need to uninstall it first:
+- **Already had PyTorch installed?** Uninstall existing versions first:
   ```
-  pip uninstall torch torchvision
+  pip uninstall torch torchvision torchaudio
   ```
-  Then follow the installation steps above.
+  Then follow the installation steps: `pip install -r requirements.txt` followed by `pip install --force-reinstall -r requirements-cuda.txt`
 
-- **Installation taking too long?** The CUDA packages are large (about 2GB). Make sure you have a good internet connection.
+- **Installation taking too long?** The CUDA packages are large (~2GB). Ensure good internet connection.
 
-- **Not working?** You can still use Practistics with CPU only - it will work, just not as quickly.
+- **Still not working?** You can always fall back to CPU installation using `requirements.txt` - it works fine, just slower.
 
 ## Updating Practistics
 
