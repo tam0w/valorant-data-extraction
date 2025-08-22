@@ -21,7 +21,7 @@ For a more detailed guide please refer: [Installation Guide](docs/INSTALLATION.m
 
 1. Install Python 3.11 from the [Python website](https://www.python.org/downloads/release/python-3116/)
 2. Download and unzip Practistics
-3. **Choose your installation path:**
+3. Choose your installation path:
 
    **CPU Installation (Standard):**
    ```
