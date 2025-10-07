@@ -15,6 +15,10 @@ Before using Practistics, please ensure:
    - `P` on each round timeline
    - `Q` when finished
 
+#### How to use:
+[![Watch the video](https://img.youtube.com/vi/l_ll1fAaahQ/maxresdefault.jpg)](https://youtu.be/l_ll1fAaahQ)
+
+
 ## Quick Start 
 
 For a more detailed guide please refer: [Installation Guide](docs/INSTALLATION.md)
@@ -37,7 +41,6 @@ For a more detailed guide please refer: [Installation Guide](docs/INSTALLATION.m
 
 5. Run the tool with the `python main.py` command.
 
-[![Watch the video](https://img.youtube.com/vi/l_ll1fAaahQ/maxresdefault.jpg)](https://youtu.be/l_ll1fAaahQ)
 6. Find your data in `Documents/practistics/matches/`
 
 ## Documentation
