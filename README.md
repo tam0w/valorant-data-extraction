@@ -35,7 +35,9 @@ For a more detailed guide please refer: [Installation Guide](docs/INSTALLATION.m
    ```
    *Requires [CUDA Toolkit 12.4](https://developer.nvidia.com/cuda-12-4-0-download-archive) to be installed first*
 
-5. Run the tool with the `python main.py` command. [Video on how to use](https://www.youtube.com/watch?v=l_ll1fAaahQ)
+5. Run the tool with the `python main.py` command.
+
+[![Watch the video](https://img.youtube.com/vi/l_ll1fAaahQ/maxresdefault.jpg)](https://youtu.be/l_ll1fAaahQ)
 6. Find your data in `Documents/practistics/matches/`
 
 ## Documentation
