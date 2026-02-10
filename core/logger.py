@@ -1,4 +1,5 @@
 import logging
+import logging.handlers
 import sys
 import random
 import string
@@ -65,6 +66,14 @@ class Logger:
         self.console_handler.setFormatter(self.console_formatter)
         self.console_handler.setLevel(logging.INFO)  # Default level
         self.logger.addHandler(self.console_handler)
+
+        # Buffer all log records so they can be flushed to file on error
+        self.memory_handler = logging.handlers.MemoryHandler(
+            capacity=10000,
+            flushLevel=logging.CRITICAL + 1  # never auto-flush, we flush manually
+        )
+        self.memory_handler.setLevel(logging.DEBUG)
+        self.logger.addHandler(self.memory_handler)
 
         # File handler will be created on demand
         self.file_handler = None
@@ -199,6 +208,11 @@ class Logger:
     def save_logs(self, config: Dict[str, Any], exception_info: Optional[str] = None) -> str:
         """Save logs and screenshots to disk in case of an error"""
         log_dir = self._setup_file_logging(config)
+
+        # Flush all buffered log records to the file handler so we get the full debug trail
+        if self.memory_handler and self.file_handler:
+            self.memory_handler.setTarget(self.file_handler)
+            self.memory_handler.flush()
 
         if exception_info:
             self.error(f"Exception Information: {exception_info}")
