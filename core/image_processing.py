@@ -4,7 +4,13 @@ import os
 from typing import Tuple, List, Dict, Optional, Any
 from core.types import ImageRegion, Position
 from core.ocr import extract_text
-from core.constants import list_of_agents
+from core.constants import (
+    list_of_agents,
+    TIMELINE_MINIMAP_REGION,
+    SPRITE_TEAM_START_Y, SPRITE_OPPONENT_START_Y, SPRITE_CHECK_X,
+    SPRITE_ICON_OFFSET, SPRITE_ICON_SIZE, SPRITE_ROW_SPACING,
+    SPRITE_TEAM_GREEN_THRESHOLD, SPRITE_OPPONENT_RED_THRESHOLD,
+)
 from core.logger import logger
 
 
@@ -155,7 +161,7 @@ def detect_plant_site(image: np.ndarray, map_name: str) -> Optional[str]:
             return None
 
         logger.debug("Cropping minimap region")
-        minimap = crop_image(image, ImageRegion(490, 990, 1270, 1770), "minimap")
+        minimap = crop_image(image, TIMELINE_MINIMAP_REGION, "minimap")
 
         logger.debug("Searching for spike on minimap")
         max_val, max_loc = find_template(minimap, spike, "spike")
@@ -231,60 +237,58 @@ def extract_agent_sprites(image: np.ndarray) -> List[np.ndarray]:
 
     try:
         # Team agents (top half)
-        start_y = 503
-        check_x = 161
+        start_y = SPRITE_TEAM_START_Y
+        check_x = SPRITE_CHECK_X
 
         logger.debug(f"Extracting team agent sprites starting from y={start_y}, x={check_x}")
 
         for i in range(5):
             y = start_y
-            while detect_color(image, Position(y, check_x), f"team_agent_{i + 1}_check")[1] < 100:  # green < 100
+            while detect_color(image, Position(y, check_x), f"team_agent_{i + 1}_check")[1] < SPRITE_TEAM_GREEN_THRESHOLD:
                 y += 1
                 if y > 700:  # Safety check
                     logger.warning(f"Safety limit reached while finding team agent {i + 1}")
                     break
 
-            icon_x = check_x + 3
+            icon_x = check_x + SPRITE_ICON_OFFSET
             logger.debug(f"Found team agent {i + 1} at y={y}, extracting sprite")
 
             try:
-                agent_sprite = crop_image(image, ImageRegion(y, y + 40, icon_x, icon_x + 40),
+                agent_sprite = crop_image(image, ImageRegion(y, y + SPRITE_ICON_SIZE, icon_x, icon_x + SPRITE_ICON_SIZE),
                                           f"team_agent_{i + 1}_sprite")
                 agent_sprites.append(agent_sprite)
                 logger.debug(f"Team agent {i + 1} sprite extracted with shape {agent_sprite.shape}")
             except Exception as e:
                 logger.error(f"Failed to extract team agent {i + 1} sprite: {str(e)}")
-                # Add a blank sprite to maintain indexing
-                agent_sprites.append(np.zeros((40, 40, 3), dtype=np.uint8))
+                agent_sprites.append(np.zeros((SPRITE_ICON_SIZE, SPRITE_ICON_SIZE, 3), dtype=np.uint8))
 
-            start_y = y + 42
+            start_y = y + SPRITE_ROW_SPACING
 
         # Opponent agents (bottom half)
-        start_y = 724
+        start_y = SPRITE_OPPONENT_START_Y
         logger.debug(f"Extracting opponent agent sprites starting from y={start_y}")
 
         for i in range(5):
             y = start_y
-            while detect_color(image, Position(y, check_x), f"opponent_agent_{i + 1}_check")[2] < 80:  # red < 80
+            while detect_color(image, Position(y, check_x), f"opponent_agent_{i + 1}_check")[2] < SPRITE_OPPONENT_RED_THRESHOLD:
                 y += 1
                 if y > 900:  # Safety check
                     logger.warning(f"Safety limit reached while finding opponent agent {i + 1}")
                     break
 
-            icon_x = check_x + 3
+            icon_x = check_x + SPRITE_ICON_OFFSET
             logger.debug(f"Found opponent agent {i + 1} at y={y}, extracting sprite")
 
             try:
-                agent_sprite = crop_image(image, ImageRegion(y, y + 40, icon_x, icon_x + 40),
+                agent_sprite = crop_image(image, ImageRegion(y, y + SPRITE_ICON_SIZE, icon_x, icon_x + SPRITE_ICON_SIZE),
                                           f"opponent_agent_{i + 1}_sprite")
                 agent_sprites.append(agent_sprite)
                 logger.debug(f"Opponent agent {i + 1} sprite extracted with shape {agent_sprite.shape}")
             except Exception as e:
                 logger.error(f"Failed to extract opponent agent {i + 1} sprite: {str(e)}")
-                # Add a blank sprite to maintain indexing
-                agent_sprites.append(np.zeros((40, 40, 3), dtype=np.uint8))
+                agent_sprites.append(np.zeros((SPRITE_ICON_SIZE, SPRITE_ICON_SIZE, 3), dtype=np.uint8))
 
-            start_y = y + 42
+            start_y = y + SPRITE_ROW_SPACING
 
         logger.info(f"Extracted {len(agent_sprites)} agent sprites in total")
         return agent_sprites

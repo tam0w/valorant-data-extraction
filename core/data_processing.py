@@ -6,7 +6,17 @@ from datetime import datetime
 from core.config import load_config
 from core.api import get_valid_maps, get_valid_agents
 from core.types import RoundData, MatchData, PlayerData, EventData, Position, ImageRegion
-from core.constants import list_of_agents
+from core.constants import (
+    list_of_agents,
+    SUMMARY_SIDES_REGION, SUMMARY_SCORE_REGION, SUMMARY_MAP_REGION,
+    TIMELINE_OUTCOME_REGION, TIMELINE_ECONOMY_REGION, TIMELINE_AWP_REGION,
+    EVENT_START_Y, EVENT_CHECK_X, EVENT_KILL_X, EVENT_DEATH_X,
+    EVENT_ROW_HEIGHT, EVENT_TIMESTAMP_X, EVENT_TYPE_X, EVENT_ICON_SIZE,
+    FIRST_BLOOD_CHECK_Y, FIRST_BLOOD_CHECK_X,
+    PLAYER_TEAM_START_Y, PLAYER_OPPONENT_START_Y, PLAYER_CHECK_X,
+    PLAYER_NAME_OFFSET, PLAYER_REGION_WIDTH, PLAYER_ROW_HEIGHT, PLAYER_ROW_SPACING,
+    PLAYER_TEAM_GREEN_THRESHOLD, PLAYER_OPPONENT_RED_THRESHOLD,
+)
 from core.ocr import extract_text
 from core.image_processing import crop_image, detect_color, get_team_color_from_pixel, detect_plant_site, extract_agent_sprites
 from core.logger import logger
@@ -188,8 +198,8 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
     try:
         # Process team players (top section)
-        start_y = 495
-        check_x = 200
+        start_y = PLAYER_TEAM_START_Y
+        check_x = PLAYER_CHECK_X
 
         logger.debug(f"Extracting team players starting at y={start_y}, x={check_x}")
 
@@ -198,7 +208,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
             try:
                 y = start_y
-                while detect_color(image, Position(y, check_x), f"team_player_{i + 1}_check")[1] < 90:  # green < 90
+                while detect_color(image, Position(y, check_x), f"team_player_{i + 1}_check")[1] < PLAYER_TEAM_GREEN_THRESHOLD:
                     y += 1
                     if y > 700:  # Safety check
                         logger.warning(f"Reached safety limit when searching for team player {i + 1}")
@@ -206,7 +216,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
                 # Extract player name and agent
                 logger.debug(f"Found team player {i + 1} at y={y}, extracting player region")
-                player_region = crop_image(image, ImageRegion(y, y + 40, check_x + 3, check_x + 183),
+                player_region = crop_image(image, ImageRegion(y, y + PLAYER_ROW_HEIGHT, check_x + PLAYER_NAME_OFFSET, check_x + PLAYER_REGION_WIDTH),
                                            f"team_player_{i + 1}_region")
 
                 logger.debug(f"Running OCR on team player {i + 1} region")
@@ -241,7 +251,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
                 player_list.append(player_name)
                 agent_list.append(agent_name)
-                start_y = y + 42
+                start_y = y + PLAYER_ROW_SPACING
 
             except Exception as e:
                 logger.error(f"Error processing team player {i + 1}: {str(e)}")
@@ -252,7 +262,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
                 logger.clear_context()  # Clear the player-specific context
 
         # Process opponent players (bottom section)
-        start_y = 726
+        start_y = PLAYER_OPPONENT_START_Y
         logger.debug(f"Extracting opponent players starting at y={start_y}")
 
         for i in range(5):
@@ -260,7 +270,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
             try:
                 y = start_y
-                while detect_color(image, Position(y, check_x), f"opponent_player_{i + 1}_check")[2] < 40:  # red < 40
+                while detect_color(image, Position(y, check_x), f"opponent_player_{i + 1}_check")[2] < PLAYER_OPPONENT_RED_THRESHOLD:
                     y += 1
                     if y > 900:  # Safety check
                         logger.warning(f"Reached safety limit when searching for opponent player {i + 1}")
@@ -268,7 +278,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
                 # Extract player name and agent
                 logger.debug(f"Found opponent player {i + 1} at y={y}, extracting player region")
-                player_region = crop_image(image, ImageRegion(y, y + 40, check_x + 3, check_x + 183),
+                player_region = crop_image(image, ImageRegion(y, y + PLAYER_ROW_HEIGHT, check_x + PLAYER_NAME_OFFSET, check_x + PLAYER_REGION_WIDTH),
                                            f"opponent_player_{i + 1}_region")
 
                 logger.debug(f"Running OCR on opponent player {i + 1} region")
@@ -304,7 +314,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
                 player_list.append(player_name)
                 agent_list.append(agent_name)
-                start_y = y + 42
+                start_y = y + PLAYER_ROW_SPACING
 
             except Exception as e:
                 logger.error(f"Error processing opponent player {i + 1}: {str(e)}")
@@ -334,7 +344,7 @@ def extract_match_metadata(image: np.ndarray, config: Dict[str, Any]) -> Dict[st
 
     try:
         # Extract sides (Attack/Defense)
-        sides_region = crop_image(image, ImageRegion(300, 400, 1300, 1500), "sides_region")
+        sides_region = crop_image(image, SUMMARY_SIDES_REGION, "sides_region")
         sides_text = extract_text(sides_region, detail=0, region_name="sides_text")[0].lower()
 
         if 'def' in sides_text:
@@ -347,12 +357,22 @@ def extract_match_metadata(image: np.ndarray, config: Dict[str, Any]) -> Dict[st
         sides = [first_half] * 12 + [second_half] * 12
 
         # Extract score
-        score_region = crop_image(image, ImageRegion(70, 170, 700, 1150), "score_region")
+        score_region = crop_image(image, SUMMARY_SCORE_REGION, "score_region")
         score_parts = extract_text(score_region, detail=0, region_name="score_text")
 
         if len(score_parts) >= 3:
             team_score, result, opponent_score = score_parts[0:3]
             logger.debug(f"Extracted scores: {team_score}-{opponent_score}, result: {result}")
+
+            # Validate OCR actually read numbers, not garbled text like 'Iq' instead of '13'
+            if not team_score.isdigit() or not opponent_score.isdigit():
+                logger.warning(f"OCR misread scores: '{team_score}' / '{opponent_score}', prompting for manual input")
+                logger.user_output(f"Score OCR failed (read '{team_score}' - '{opponent_score}'). Please correct:")
+                logger.user_output("Please enter your team's score: ")
+                team_score = input("Please enter your team's score: ")
+                logger.user_output("Please enter opponent's score: ")
+                opponent_score = input("Please enter opponent's score: ")
+                result = "WIN" if int(team_score) > int(opponent_score) else "LOSS"
         else:
             logger.warning("Score extraction failed, prompting for manual input")
             logger.user_output("Please enter your team's score: ")
@@ -362,7 +382,7 @@ def extract_match_metadata(image: np.ndarray, config: Dict[str, Any]) -> Dict[st
             result = "WIN" if int(team_score) > int(opponent_score) else "LOSS"
 
         # Extract map name with normalization
-        map_region = crop_image(image, ImageRegion(125, 145, 120, 210), "map_region")
+        map_region = crop_image(image, SUMMARY_MAP_REGION, "map_region")
         map_text = extract_text(map_region, detail=0, region_name="map_text")
 
         if map_text:
@@ -413,10 +433,10 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
 
     try:
         events = []
-        start_y = 500  # Vertical start position where events begin appearing
-        check_x = 940  # Horizontal position for detecting event color (team vs opponent)
-        kill_x = 945  # Horizontal position of the killer agent icon
-        death_x = 1231  # Horizontal position of the death/victim agent icon
+        start_y = EVENT_START_Y
+        check_x = EVENT_CHECK_X
+        kill_x = EVENT_KILL_X
+        death_x = EVENT_DEATH_X
 
         # Scan the timeline from top to bottom looking for events
         current_y = start_y
@@ -435,36 +455,36 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
 
             # Extract timestamp text, located to the left of the event
             timestamp_region = crop_image(timeline_image, ImageRegion(
-                current_y, current_y + 36, 980, 1040), "timestamp_region")
+                current_y, current_y + EVENT_ROW_HEIGHT, EVENT_TIMESTAMP_X[0], EVENT_TIMESTAMP_X[1]), "timestamp_region")
             timestamp_text = extract_text(timestamp_region, detail=0, region_name="timestamp")
 
             # Skip events where we can't read the timestamp
             if not timestamp_text:
                 logger.warning(f"Failed to extract timestamp at y={current_y}, skipping event")
-                current_y += 36
+                current_y += EVENT_ROW_HEIGHT
                 continue
 
             # Convert OCR timestamp to seconds using normalized format
             ts_text = timestamp_text[0]
             timestamp = normalize_timestamp(ts_text)
-            
+
             # Skip events with invalid timestamps
             if timestamp == 0:
                 logger.warning(f"Invalid timestamp '{ts_text}' at y={current_y}, skipping event")
-                current_y += 36
+                current_y += EVENT_ROW_HEIGHT
                 continue
 
             # Examine text on right side to distinguish plant/defuse from kills
             event_type_region = crop_image(timeline_image, ImageRegion(
-                current_y, current_y + 36, 1150, 1230), "event_type_region")
+                current_y, current_y + EVENT_ROW_HEIGHT, EVENT_TYPE_X[0], EVENT_TYPE_X[1]), "event_type_region")
             event_type_text = extract_text(event_type_region, detail=0, region_name="event_type")
 
             # Extract the agent icons that appear in the event
             # Killer icon is on the left, victim on the right for kill events
             killer_icon = crop_image(timeline_image, ImageRegion(
-                current_y, current_y + 36, kill_x, kill_x + 36), "killer_icon")
+                current_y, current_y + EVENT_ICON_SIZE, kill_x, kill_x + EVENT_ICON_SIZE), "killer_icon")
             victim_icon = crop_image(timeline_image, ImageRegion(
-                current_y, current_y + 36, death_x, death_x + 36), "victim_icon")
+                current_y, current_y + EVENT_ICON_SIZE, death_x, death_x + EVENT_ICON_SIZE), "victim_icon")
 
             # Identify agents by comparing extracted icons against reference sprites
             # using template matching (higher score = better match)
@@ -503,7 +523,7 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
             events.append((killer_agent, victim_agent, timestamp, event_type, side))
 
             # Move to next event
-            current_y += 36
+            current_y += EVENT_ROW_HEIGHT
 
         return events
 
@@ -520,7 +540,7 @@ def extract_first_bloods(timeline_images: List[np.ndarray]) -> List[str]:
     for i, image in enumerate(timeline_images):
         logger.push_context(operation="process_match_data", sub_operation="first_bloods", round=i)
         # Check pixel color at first blood position
-        b, g, r = detect_color(image, Position(520, 1150))
+        b, g, r = detect_color(image, Position(FIRST_BLOOD_CHECK_Y, FIRST_BLOOD_CHECK_X))
 
         # Green indicates team got first blood, otherwise opponent
         team = 'team' if g > 100 else 'opponent'
@@ -561,7 +581,7 @@ def process_round_outcomes(timeline_images: List[np.ndarray]) -> List[str]:
     outcomes = []
     for i, image in enumerate(timeline_images):
         logger.push_context(operation="process_match_data", sub_operation="round_outcomes", round=i)
-        outcome_region = crop_image(image, ImageRegion(430, 470, 130, 700))
+        outcome_region = crop_image(image, TIMELINE_OUTCOME_REGION)
         outcome_text = extract_text(outcome_region, detail=0)
 
         # Check if "LOSS" appears in the text
@@ -616,13 +636,13 @@ def create_match_data(
             logger.clear_context()
 
         # Process economy and other round data
-        economy_regions = [crop_image(img, ImageRegion(425, 480, 1020, 1145)) for img in timeline_images]
+        economy_regions = [crop_image(img, TIMELINE_ECONOMY_REGION) for img in timeline_images]
         economy_data = [extract_text(region, detail=0, region_name="buy_data") for region in economy_regions]
         team_economy = [eco[0] if eco else "0" for eco in economy_data]
         opponent_economy = [eco[1] if len(eco) > 1 else "0" for eco in economy_data]
 
         # Extract AWP information
-        awp_regions = [crop_image(img, ImageRegion(450, 950, 650, 785)) for img in timeline_images]
+        awp_regions = [crop_image(img, TIMELINE_AWP_REGION) for img in timeline_images]
         awp_data = [extract_text(region, detail=0) for region in awp_regions]
         awp_info = determine_awp_info(awp_data)
 
