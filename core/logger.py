@@ -3,10 +3,9 @@ import logging.handlers
 import sys
 import random
 import string
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, Dict, Any, Union
 import cv2
 import numpy as np
 import colorama
@@ -19,17 +18,22 @@ class ColoredFormatter(logging.Formatter):
     """
     Custom formatter that adds colors to the log output
     """
+
     COLORS = {
-        'DEBUG': colorama.Fore.CYAN,
-        'INFO': colorama.Fore.GREEN,
-        'WARNING': colorama.Fore.YELLOW,
-        'ERROR': colorama.Fore.RED,
-        'CRITICAL': colorama.Fore.RED + colorama.Style.BRIGHT
+        "DEBUG": colorama.Fore.CYAN,
+        "INFO": colorama.Fore.GREEN,
+        "WARNING": colorama.Fore.YELLOW,
+        "ERROR": colorama.Fore.RED,
+        "CRITICAL": colorama.Fore.RED + colorama.Style.BRIGHT,
     }
 
     def format(self, record):
         log_message = super().format(record)
-        return self.COLORS.get(record.levelname, colorama.Fore.WHITE) + log_message + colorama.Style.RESET_ALL
+        return (
+            self.COLORS.get(record.levelname, colorama.Fore.WHITE)
+            + log_message
+            + colorama.Style.RESET_ALL
+        )
 
 
 class Logger:
@@ -37,6 +41,7 @@ class Logger:
     Enhanced logger module that separates user-facing output from debug logs
     and provides contextual debugging information
     """
+
     _instance = None
 
     def __new__(cls):
@@ -53,13 +58,11 @@ class Logger:
 
         # Create formatters
         self.debug_formatter = ColoredFormatter(
-            '%(asctime)s - [%(levelname)s] - %(name)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            "%(asctime)s - [%(levelname)s] - %(name)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
 
-        self.console_formatter = ColoredFormatter(
-            '[%(levelname)s] %(message)s'
-        )
+        self.console_formatter = ColoredFormatter("[%(levelname)s] %(message)s")
 
         # Console handler for normal logs
         self.console_handler = logging.StreamHandler(sys.stdout)
@@ -70,7 +73,7 @@ class Logger:
         # Buffer all log records so they can be flushed to file on error
         self.memory_handler = logging.handlers.MemoryHandler(
             capacity=10000,
-            flushLevel=logging.CRITICAL + 1  # never auto-flush, we flush manually
+            flushLevel=logging.CRITICAL + 1,  # never auto-flush, we flush manually
         )
         self.memory_handler.setLevel(logging.DEBUG)
         self.logger.addHandler(self.memory_handler)
@@ -180,7 +183,7 @@ class Logger:
 
     def _generate_error_id(self) -> str:
         """Generate a unique error ID"""
-        return 'E' + ''.join(random.choices(string.digits, k=7))
+        return "E" + "".join(random.choices(string.digits, k=7))
 
     def _setup_file_logging(self, config: Dict[str, Any]) -> Path:
         """Set up file logging with the full debug information"""
@@ -188,7 +191,7 @@ class Logger:
         if not self.error_id:
             self.error_id = self._generate_error_id()
 
-        log_dir = Path(config['log_dir']) / self.error_id
+        log_dir = Path(config["log_dir"]) / self.error_id
         log_dir.mkdir(parents=True, exist_ok=True)
 
         # Create log file
@@ -205,7 +208,9 @@ class Logger:
 
         return log_dir
 
-    def save_logs(self, config: Dict[str, Any], exception_info: Optional[str] = None) -> str:
+    def save_logs(
+        self, config: Dict[str, Any], exception_info: Optional[str] = None
+    ) -> str:
         """Save logs and screenshots to disk in case of an error"""
         log_dir = self._setup_file_logging(config)
 

@@ -15,7 +15,7 @@ import time
 import traceback
 from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -25,15 +25,24 @@ sys.path.insert(0, str(project_root))
 
 from core.config import load_config
 from core.capture import read_images_from_folder
-from core.ocr import initialize_ocr, extract_text, extract_numeric_value
-from core.image_processing import crop_image, enhance_for_ocr
+from core.ocr import initialize_ocr, extract_text
+from core.image_processing import crop_image
 from core.types import ImageRegion
 from core.constants import (
-    SUMMARY_SIDES_REGION, SUMMARY_SCORE_REGION, SUMMARY_MAP_REGION,
-    TIMELINE_OUTCOME_REGION, TIMELINE_ECONOMY_REGION,
-    EVENT_START_Y, EVENT_ROW_HEIGHT, EVENT_TIMESTAMP_X,
-    PLAYER_TEAM_START_Y, PLAYER_CHECK_X, PLAYER_NAME_OFFSET,
-    PLAYER_ROW_HEIGHT, PLAYER_REGION_WIDTH, PLAYER_ROW_SPACING,
+    SUMMARY_SIDES_REGION,
+    SUMMARY_SCORE_REGION,
+    SUMMARY_MAP_REGION,
+    TIMELINE_OUTCOME_REGION,
+    TIMELINE_ECONOMY_REGION,
+    EVENT_START_Y,
+    EVENT_ROW_HEIGHT,
+    EVENT_TIMESTAMP_X,
+    PLAYER_TEAM_START_Y,
+    PLAYER_CHECK_X,
+    PLAYER_NAME_OFFSET,
+    PLAYER_ROW_HEIGHT,
+    PLAYER_REGION_WIDTH,
+    PLAYER_ROW_SPACING,
 )
 from core.logger import logger
 
@@ -43,7 +52,9 @@ class OCRProbe:
 
     def __init__(self, name: str, source: str, region: ImageRegion, image: np.ndarray):
         self.name = name
-        self.source = source  # which screenshot this came from (summary, scoreboard, timeline_N)
+        self.source = (
+            source  # which screenshot this came from (summary, scoreboard, timeline_N)
+        )
         self.region = region
         self.image = image  # the cropped region
         self.ocr_result: List[str] = []
@@ -56,7 +67,9 @@ class OCRProbe:
     def run_ocr(self, **kwargs):
         start = time.time()
         try:
-            self.ocr_result = extract_text(self.image, detail=0, region_name=self.name, **kwargs)
+            self.ocr_result = extract_text(
+                self.image, detail=0, region_name=self.name, **kwargs
+            )
             self.elapsed = time.time() - start
 
             if not self.ocr_result:
@@ -80,8 +93,8 @@ class OCRProbe:
 
 
 def image_to_base64(img: np.ndarray) -> str:
-    _, buffer = cv2.imencode('.png', img)
-    return base64.b64encode(buffer).decode('utf-8')
+    _, buffer = cv2.imencode(".png", img)
+    return base64.b64encode(buffer).decode("utf-8")
 
 
 def collect_probes(timeline_images, scoreboard_image, summary_image) -> List[OCRProbe]:
@@ -93,27 +106,38 @@ def collect_probes(timeline_images, scoreboard_image, summary_image) -> List[OCR
     sides_region = crop_image(summary_image, SUMMARY_SIDES_REGION, "sides_region")
     p = OCRProbe("sides", "summary", SUMMARY_SIDES_REGION, sides_region)
     p.run_ocr()
-    p.validate(lambda r: ("pass", f"detected: {r[0]}") if r and any(k in r[0].lower() for k in ['atk', 'def']) else ("fail", f"expected ATK/DEF, got: {r}"))
+    p.validate(
+        lambda r: (
+            ("pass", f"detected: {r[0]}")
+            if r and any(k in r[0].lower() for k in ["atk", "def"])
+            else ("fail", f"expected ATK/DEF, got: {r}")
+        )
+    )
     probes.append(p)
 
     # Score
     score_region = crop_image(summary_image, SUMMARY_SCORE_REGION, "score_region")
     p = OCRProbe("score", "summary", SUMMARY_SCORE_REGION, score_region)
     p.run_ocr()
+
     def validate_score(r):
         if len(r) < 3:
-            return ("fail", f"expected 3+ parts [score, result, score], got {len(r)}: {r}")
+            return (
+                "fail",
+                f"expected 3+ parts [score, result, score], got {len(r)}: {r}",
+            )
         team, result_text, opp = r[0], r[1], r[2]
         issues = []
         if not team.isdigit():
             issues.append(f"team score '{team}' is not numeric")
         if not opp.isdigit():
             issues.append(f"opponent score '{opp}' is not numeric")
-        if result_text.upper() not in ['VICTORY', 'DEFEAT', 'DRAW']:
+        if result_text.upper() not in ["VICTORY", "DEFEAT", "DRAW"]:
             issues.append(f"result '{result_text}' not recognized")
         if issues:
             return ("fail", "; ".join(issues))
         return ("pass", f"{team} - {opp} ({result_text})")
+
     p.validate(validate_score)
     probes.append(p)
 
@@ -121,24 +145,38 @@ def collect_probes(timeline_images, scoreboard_image, summary_image) -> List[OCR
     map_region = crop_image(summary_image, SUMMARY_MAP_REGION, "map_region")
     p = OCRProbe("map_name", "summary", SUMMARY_MAP_REGION, map_region)
     p.run_ocr()
-    p.validate(lambda r: ("pass", f"detected: {r[0]}") if r else ("fail", "no map name detected"))
+    p.validate(
+        lambda r: (
+            ("pass", f"detected: {r[0]}") if r else ("fail", "no map name detected")
+        )
+    )
     probes.append(p)
 
     # === SCOREBOARD - first timeline image (player names + agents) ===
     first_timeline = timeline_images[0]
 
     # Round outcome from first timeline
-    outcome_region = crop_image(first_timeline, TIMELINE_OUTCOME_REGION, "outcome_region")
+    outcome_region = crop_image(
+        first_timeline, TIMELINE_OUTCOME_REGION, "outcome_region"
+    )
     p = OCRProbe("round_outcome", "timeline_1", TIMELINE_OUTCOME_REGION, outcome_region)
     p.run_ocr()
-    p.validate(lambda r: ("pass", f"detected: {r}") if r else ("warn", "no outcome text"))
+    p.validate(
+        lambda r: ("pass", f"detected: {r}") if r else ("warn", "no outcome text")
+    )
     probes.append(p)
 
     # Economy from first timeline
     eco_region = crop_image(first_timeline, TIMELINE_ECONOMY_REGION, "economy_region")
     p = OCRProbe("economy", "timeline_1", TIMELINE_ECONOMY_REGION, eco_region)
     p.run_ocr()
-    p.validate(lambda r: ("pass", f"detected: {r}") if len(r) >= 2 else ("warn", f"expected 2 economy values, got: {r}"))
+    p.validate(
+        lambda r: (
+            ("pass", f"detected: {r}")
+            if len(r) >= 2
+            else ("warn", f"expected 2 economy values, got: {r}")
+        )
+    )
     probes.append(p)
 
     # Player names from first timeline (team side, first player)
@@ -147,11 +185,18 @@ def collect_probes(timeline_images, scoreboard_image, summary_image) -> List[OCR
     check_x = PLAYER_CHECK_X
     for i in range(2):
         y = start_y
-        region = ImageRegion(y, y + PLAYER_ROW_HEIGHT, check_x + PLAYER_NAME_OFFSET, check_x + PLAYER_REGION_WIDTH)
-        player_region = crop_image(first_timeline, region, f"player_{i+1}_region")
-        p = OCRProbe(f"player_{i+1}", "timeline_1", region, player_region)
+        region = ImageRegion(
+            y,
+            y + PLAYER_ROW_HEIGHT,
+            check_x + PLAYER_NAME_OFFSET,
+            check_x + PLAYER_REGION_WIDTH,
+        )
+        player_region = crop_image(first_timeline, region, f"player_{i + 1}_region")
+        p = OCRProbe(f"player_{i + 1}", "timeline_1", region, player_region)
         p.run_ocr(width_ths=25)
-        p.validate(lambda r: ("pass", f"detected: {r}") if r else ("warn", "no player text"))
+        p.validate(
+            lambda r: ("pass", f"detected: {r}") if r else ("warn", "no player text")
+        )
         probes.append(p)
         start_y += PLAYER_ROW_SPACING
 
@@ -162,9 +207,16 @@ def collect_probes(timeline_images, scoreboard_image, summary_image) -> List[OCR
         round_num = idx + 1
 
         # Timestamp region (first event slot) — matches main script's crop pattern
-        ts_box = ImageRegion(EVENT_START_Y, EVENT_START_Y + EVENT_ROW_HEIGHT, EVENT_TIMESTAMP_X[0], EVENT_TIMESTAMP_X[1])
+        ts_box = ImageRegion(
+            EVENT_START_Y,
+            EVENT_START_Y + EVENT_ROW_HEIGHT,
+            EVENT_TIMESTAMP_X[0],
+            EVENT_TIMESTAMP_X[1],
+        )
         ts_region = crop_image(img, ts_box, f"r{round_num}_timestamp")
-        p = OCRProbe(f"r{round_num}_timestamp", f"timeline_{round_num}", ts_box, ts_region)
+        p = OCRProbe(
+            f"r{round_num}_timestamp", f"timeline_{round_num}", ts_box, ts_region
+        )
         p.run_ocr(detail=0)
         probes.append(p)
 
@@ -174,7 +226,9 @@ def collect_probes(timeline_images, scoreboard_image, summary_image) -> List[OCR
     return probes
 
 
-def build_source_overlay(image: np.ndarray, regions: List[Tuple[str, ImageRegion]], label: str) -> np.ndarray:
+def build_source_overlay(
+    image: np.ndarray, regions: List[Tuple[str, ImageRegion]], label: str
+) -> np.ndarray:
     """Draw region rectangles on a copy of the source image."""
     overlay = image.copy()
     colors = {
@@ -192,17 +246,31 @@ def build_source_overlay(image: np.ndarray, regions: List[Tuple[str, ImageRegion
             if key in name:
                 color = c
                 break
-        cv2.rectangle(overlay,
-                      (region.x_start, region.y_start),
-                      (region.x_end, region.y_end),
-                      color, 2)
-        cv2.putText(overlay, name,
-                    (region.x_start, region.y_start - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
+        cv2.rectangle(
+            overlay,
+            (region.x_start, region.y_start),
+            (region.x_end, region.y_end),
+            color,
+            2,
+        )
+        cv2.putText(
+            overlay,
+            name,
+            (region.x_start, region.y_start - 5),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            color,
+            1,
+        )
     return overlay
 
 
-def generate_html(probes: List[OCRProbe], match_name: str, summary_img: np.ndarray, timeline_imgs: List[np.ndarray]) -> str:
+def generate_html(
+    probes: List[OCRProbe],
+    match_name: str,
+    summary_img: np.ndarray,
+    timeline_imgs: List[np.ndarray],
+) -> str:
     """Generate an HTML report from collected probes."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -232,8 +300,14 @@ def generate_html(probes: List[OCRProbe], match_name: str, summary_img: np.ndarr
     for p in probes:
         color = status_colors.get(p.status, "#6b7280")
         img_b64 = image_to_base64(p.image)
-        ocr_text = "<br>".join(f"<code>{t}</code>" for t in p.ocr_result) if p.ocr_result else "<em>nothing detected</em>"
-        error_block = f'<div class="error-block"><pre>{p.error}</pre></div>' if p.error else ""
+        ocr_text = (
+            "<br>".join(f"<code>{t}</code>" for t in p.ocr_result)
+            if p.ocr_result
+            else "<em>nothing detected</em>"
+        )
+        error_block = (
+            f'<div class="error-block"><pre>{p.error}</pre></div>' if p.error else ""
+        )
 
         probe_cards += f'''
         <div class="probe-card">
@@ -261,7 +335,7 @@ def generate_html(probes: List[OCRProbe], match_name: str, summary_img: np.ndarr
     summary_b64 = image_to_base64(summary_overlay)
     t1_b64 = image_to_base64(t1_overlay)
 
-    html = f'''<!DOCTYPE html>
+    html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -353,7 +427,7 @@ def generate_html(probes: List[OCRProbe], match_name: str, summary_img: np.ndarr
         }}
     </script>
 </body>
-</html>'''
+</html>"""
     return html
 
 
@@ -361,13 +435,17 @@ def run_report(match_name: str, config: dict) -> bool:
     logger.set_log_level("DEBUG")
     logger.user_output(f"\nprocessing: {match_name}")
 
-    timeline_images, scoreboard_image, summary_image = read_images_from_folder(config, match_name)
+    timeline_images, scoreboard_image, summary_image = read_images_from_folder(
+        config, match_name
+    )
 
     if not timeline_images or scoreboard_image is None or summary_image is None:
         logger.user_output(f"missing images for {match_name}")
         return False
 
-    logger.user_output(f"loaded {len(timeline_images)} timelines, running ocr probes...")
+    logger.user_output(
+        f"loaded {len(timeline_images)} timelines, running ocr probes..."
+    )
 
     probes = collect_probes(timeline_images, scoreboard_image, summary_image)
 
@@ -388,11 +466,11 @@ def run_report(match_name: str, config: dict) -> bool:
 
 def main():
     parser = argparse.ArgumentParser(description="OCR diagnostic report generator")
-    parser.add_argument('--match', help='specific match folder (e.g. match-1)')
+    parser.add_argument("--match", help="specific match folder (e.g. match-1)")
     args = parser.parse_args()
 
     config = load_config()
-    config['log_dir'] = str(Path(__file__).parent / "data")
+    config["log_dir"] = str(Path(__file__).parent / "data")
 
     logger.user_output("initializing ocr...")
     initialize_ocr()

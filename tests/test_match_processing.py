@@ -9,7 +9,6 @@ Usage:
 
 import argparse
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path so imports work
@@ -26,11 +25,13 @@ from core.logger import logger
 def run_match(match_name: str, config: dict):
     """Run the full processing pipeline on a single match folder."""
     logger.set_log_level("DEBUG")
-    logger.user_output(f"\n{'='*50}")
+    logger.user_output(f"\n{'=' * 50}")
     logger.user_output(f"processing: {match_name}")
-    logger.user_output(f"{'='*50}")
+    logger.user_output(f"{'=' * 50}")
 
-    timeline_images, scoreboard_image, summary_image = read_images_from_folder(config, match_name)
+    timeline_images, scoreboard_image, summary_image = read_images_from_folder(
+        config, match_name
+    )
 
     if not timeline_images or scoreboard_image is None or summary_image is None:
         logger.user_output(f"FAIL: {match_name} - missing images")
@@ -39,8 +40,10 @@ def run_match(match_name: str, config: dict):
     logger.user_output(f"loaded {len(timeline_images)} timelines, scoreboard, summary")
 
     try:
-        match_data = create_match_data(timeline_images, scoreboard_image, summary_image, config)
-        logger.user_output(f"\nresults:")
+        match_data = create_match_data(
+            timeline_images, scoreboard_image, summary_image, config
+        )
+        logger.user_output("\nresults:")
         logger.user_output(f"  map: {match_data['map_name']}")
         logger.user_output(f"  score: {match_data['final_score']}")
         logger.user_output(f"  result: {match_data['result']}")
@@ -51,18 +54,21 @@ def run_match(match_name: str, config: dict):
     except Exception as e:
         logger.user_output(f"\nFAIL: {match_name} - {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Test match processing with real screenshots")
-    parser.add_argument('--match', help='Specific match folder to test (e.g. match-1)')
+    parser = argparse.ArgumentParser(
+        description="Test match processing with real screenshots"
+    )
+    parser.add_argument("--match", help="Specific match folder to test (e.g. match-1)")
     args = parser.parse_args()
 
     config = load_config()
     # Point log_dir at our test data directory
-    config['log_dir'] = str(Path(__file__).parent / "data")
+    config["log_dir"] = str(Path(__file__).parent / "data")
 
     logger.user_output("initializing ocr...")
     initialize_ocr()
@@ -81,9 +87,9 @@ def main():
     for match_name in matches:
         results[match_name] = run_match(match_name, config)
 
-    logger.user_output(f"\n{'='*50}")
+    logger.user_output(f"\n{'=' * 50}")
     logger.user_output("summary")
-    logger.user_output(f"{'='*50}")
+    logger.user_output(f"{'=' * 50}")
     for name, passed in results.items():
         status = "PASS" if passed else "FAIL"
         logger.user_output(f"  {name}: {status}")

@@ -13,8 +13,11 @@ from core.config import get_config_value
 def _ensure_cache_dir(config: Dict[str, Any]) -> Path:
     """Ensure the cache directory exists and return its path"""
     # Get cache directory from config, with fallback
-    cache_dir = Path(get_config_value(config, 'cache_dir',
-                                      str(Path.home() / ".practistics" / "cache")))
+    cache_dir = Path(
+        get_config_value(
+            config, "cache_dir", str(Path.home() / ".practistics" / "cache")
+        )
+    )
     os.makedirs(cache_dir, exist_ok=True)
     return cache_dir
 
@@ -25,8 +28,8 @@ def _get_from_cache(config: Dict[str, Any], cache_name: str) -> Optional[List[st
 
     try:
         # Get cache settings from config
-        max_age_days = get_config_value(config, f'cache.{cache_name}.max_age_days', 7)
-        enabled = get_config_value(config, f'cache.enabled', True)
+        max_age_days = get_config_value(config, f"cache.{cache_name}.max_age_days", 7)
+        enabled = get_config_value(config, "cache.enabled", True)
 
         if not enabled:
             logger.debug("Cache is disabled in config")
@@ -44,10 +47,12 @@ def _get_from_cache(config: Dict[str, Any], cache_name: str) -> Optional[List[st
         max_age_seconds = max_age_days * 24 * 60 * 60
 
         if cache_age > max_age_seconds:
-            logger.debug(f"Cache is too old: {cache_age / 86400:.1f} days (max: {max_age_days} days)")
+            logger.debug(
+                f"Cache is too old: {cache_age / 86400:.1f} days (max: {max_age_days} days)"
+            )
             return None
 
-        with open(cache_file, 'r') as f:
+        with open(cache_file, "r") as f:
             data = json.load(f)
             logger.debug(f"Using cached {cache_name} data: {len(data)} items")
             return data
@@ -64,7 +69,7 @@ def _save_to_cache(config: Dict[str, Any], cache_name: str, data: List[str]) -> 
 
     try:
         # Check if cache is enabled
-        enabled = get_config_value(config, f'cache.enabled', True)
+        enabled = get_config_value(config, "cache.enabled", True)
         if not enabled:
             logger.debug("Cache is disabled in config, skipping save")
             return False
@@ -72,7 +77,7 @@ def _save_to_cache(config: Dict[str, Any], cache_name: str, data: List[str]) -> 
         cache_dir = _ensure_cache_dir(config)
         cache_file = cache_dir / f"{cache_name}_cache.json"
 
-        with open(cache_file, 'w') as f:
+        with open(cache_file, "w") as f:
             json.dump(data, f)
 
         logger.debug(f"Saved {len(data)} items to {cache_name} cache")
@@ -84,15 +89,19 @@ def _save_to_cache(config: Dict[str, Any], cache_name: str, data: List[str]) -> 
         logger.clear_context()
 
 
-def _fetch_from_api(config: Dict[str, Any], endpoint: str, extract_key: str, filter_func=None) -> Optional[List[str]]:
+def _fetch_from_api(
+    config: Dict[str, Any], endpoint: str, extract_key: str, filter_func=None
+) -> Optional[List[str]]:
     """Fetch data from the VALORANT API"""
     logger.push_context(operation="fetch_from_api", endpoint=endpoint)
 
     try:
         # Get API settings from config
-        api_timeout = get_config_value(config, 'api.timeout', 10)
-        api_enabled = get_config_value(config, 'api.enabled', True)
-        api_base_url = get_config_value(config, 'api.base_url', "https://valorant-api.com/v1")
+        api_timeout = get_config_value(config, "api.timeout", 10)
+        api_enabled = get_config_value(config, "api.enabled", True)
+        api_base_url = get_config_value(
+            config, "api.base_url", "https://valorant-api.com/v1"
+        )
 
         if not api_enabled:
             logger.info("API is disabled in config")
@@ -132,9 +141,7 @@ def fetch_agents_from_api(config: Dict[str, Any]) -> List[str]:
 
         # Fetch from API
         agents = _fetch_from_api(
-            config,
-            "agents?isPlayableCharacter=true",
-            extract_key="displayName"
+            config, "agents?isPlayableCharacter=true", extract_key="displayName"
         )
 
         if agents:
@@ -167,10 +174,7 @@ def fetch_maps_from_api(config: Dict[str, Any]) -> List[str]:
             return name != "The Range" and "RANGE" not in name.upper()
 
         maps = _fetch_from_api(
-            config,
-            "maps",
-            extract_key="displayName",
-            filter_func=is_standard_map
+            config, "maps", extract_key="displayName", filter_func=is_standard_map
         )
 
         if maps:
@@ -269,7 +273,9 @@ def get_cache_info(config: Dict[str, Any], cache_name: str = None) -> Dict[str, 
         logger.clear_context()
 
 
-def _get_single_cache_info(cache_file: Path, cache_name: str, config: Dict[str, Any]) -> Dict[str, Any]:
+def _get_single_cache_info(
+    cache_file: Path, cache_name: str, config: Dict[str, Any]
+) -> Dict[str, Any]:
     """Get information about a single cache file"""
     if not cache_file.exists():
         return {"exists": False}
@@ -279,10 +285,10 @@ def _get_single_cache_info(cache_file: Path, cache_name: str, config: Dict[str, 
         age_seconds = time.time() - modified_time
 
         # Get max age from config
-        max_age_days = get_config_value(config, f'cache.{cache_name}.max_age_days', 7)
+        max_age_days = get_config_value(config, f"cache.{cache_name}.max_age_days", 7)
         max_age_seconds = max_age_days * 24 * 60 * 60
 
-        with open(cache_file, 'r') as f:
+        with open(cache_file, "r") as f:
             data = json.load(f)
 
         return {
@@ -293,7 +299,7 @@ def _get_single_cache_info(cache_file: Path, cache_name: str, config: Dict[str, 
             "max_age_days": max_age_days,
             "item_count": len(data),
             "items": data,
-            "file_size": os.path.getsize(cache_file)
+            "file_size": os.path.getsize(cache_file),
         }
     except Exception as e:
         return {"exists": True, "error": str(e)}

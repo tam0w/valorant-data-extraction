@@ -7,34 +7,27 @@ from pathlib import Path
 def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     """Load configuration from YAML file"""
     default_config = {
-        'output_dir': str(Path.home() / "Documents" / "practistics" / "matches"),
-        'log_dir': str(Path.home() / "Documents" / "practistics" / "error_logs"),
-        'cache_dir': str(Path.home() / "Documents" / "practistics" / "cache"),
-        'ocr': {
-            'lang': ['en'],
-            'download_enabled': True
+        "output_dir": str(Path.home() / "Documents" / "practistics" / "matches"),
+        "log_dir": str(Path.home() / "Documents" / "practistics" / "error_logs"),
+        "cache_dir": str(Path.home() / "Documents" / "practistics" / "cache"),
+        "ocr": {"lang": ["en"], "download_enabled": True},
+        "cache": {
+            "enabled": True,
+            "agents": {"max_age_days": 7},
+            "maps": {"max_age_days": 14},
         },
-        'cache': {
-            'enabled': True,
-            'agents': {
-                'max_age_days': 7
-            },
-            'maps': {
-                'max_age_days': 14
-            }
+        "api": {
+            "enabled": True,
+            "timeout": 10,
+            "base_url": "https://valorant-api.com/v1",
         },
-        'api': {
-            'enabled': True,
-            'timeout': 10,
-            'base_url': 'https://valorant-api.com/v1'
-        }
     }
 
     if not config_path:
         return default_config
 
     try:
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             user_config = yaml.safe_load(f)
             if user_config:
                 # Merge user config with default
@@ -43,16 +36,16 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
         print(f"Error loading config: {e}")
 
     # Ensure directories exist
-    os.makedirs(default_config['output_dir'], exist_ok=True)
-    os.makedirs(default_config['log_dir'], exist_ok=True)
-    os.makedirs(default_config['cache_dir'], exist_ok=True)
+    os.makedirs(default_config["output_dir"], exist_ok=True)
+    os.makedirs(default_config["log_dir"], exist_ok=True)
+    os.makedirs(default_config["cache_dir"], exist_ok=True)
 
     return default_config
 
 
 def get_config_value(config: Dict[str, Any], key: str, default: Any = None) -> Any:
     """Get configuration value with dot notation support"""
-    keys = key.split('.')
+    keys = key.split(".")
     value = config
 
     try:

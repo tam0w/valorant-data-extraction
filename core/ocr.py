@@ -1,14 +1,14 @@
 import easyocr
 import numpy as np
 import time
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List
 from core.logger import logger
 
 # Global reader instance
 reader = None
 
 
-def initialize_ocr(lang: List[str] = ['en'], download_enabled: bool = True):
+def initialize_ocr(lang: List[str] = ["en"], download_enabled: bool = True):
     """Initialize the OCR reader"""
     global reader
 
@@ -30,7 +30,9 @@ def initialize_ocr(lang: List[str] = ['en'], download_enabled: bool = True):
     return reader
 
 
-def extract_text(image: np.ndarray, detail: int = 0, region_name: str = "unnamed", **kwargs) -> List[str]:
+def extract_text(
+    image: np.ndarray, detail: int = 0, region_name: str = "unnamed", **kwargs
+) -> List[str]:
     """
     Extract text from image with options
 
@@ -52,24 +54,26 @@ def extract_text(image: np.ndarray, detail: int = 0, region_name: str = "unnamed
 
     try:
         image_shape = image.shape
-        logger.debug(f"Extracting text from {region_name} region "
-                     f"(shape: {image_shape}, detail: {detail}, kwargs: {kwargs})")
+        logger.debug(
+            f"Extracting text from {region_name} region "
+            f"(shape: {image_shape}, detail: {detail}, kwargs: {kwargs})"
+        )
 
         start_time = time.time()
         result = reader.readtext(image, detail=detail, **kwargs)
         elapsed_time = time.time() - start_time
 
         if detail == 0:
-            # Only text strings in result
             text_count = len(result)
             logger.debug(
-                f"Extracted {text_count} text items in {elapsed_time:.2f}s: {result[:3]}{'...' if text_count > 3 else ''}")
+                f"Extracted {text_count} text items in {elapsed_time:.2f}s: {result[:3]}{'...' if text_count > 3 else ''}"
+            )
         else:
-            # Results include bounding boxes
             text_count = len(result)
             texts = [item[1] for item in result]
             logger.debug(
-                f"Extracted {text_count} text items in {elapsed_time:.2f}s: {texts[:3]}{'...' if text_count > 3 else ''}")
+                f"Extracted {text_count} text items in {elapsed_time:.2f}s: {texts[:3]}{'...' if text_count > 3 else ''}"
+            )
 
         if text_count == 0:
             logger.warning(f"No text detected in {region_name} region")
@@ -104,11 +108,7 @@ def extract_numeric_value(image: np.ndarray, region_name: str = "numeric") -> in
         logger.debug(f"Extracting numeric value from {region_name} region")
 
         start_time = time.time()
-        result = reader.readtext(
-            image,
-            allowlist='0123456789',
-            detail=0
-        )
+        result = reader.readtext(image, allowlist="0123456789", detail=0)
         elapsed_time = time.time() - start_time
 
         if result and len(result) > 0:
@@ -117,14 +117,18 @@ def extract_numeric_value(image: np.ndarray, region_name: str = "numeric") -> in
                 logger.debug(f"Extracted numeric value: {value} in {elapsed_time:.2f}s")
                 return value
             except ValueError:
-                logger.warning(f"Failed to convert extracted value '{result[0]}' to integer")
+                logger.warning(
+                    f"Failed to convert extracted value '{result[0]}' to integer"
+                )
                 return 0
         else:
             logger.warning(f"No numeric value detected in {region_name} region")
             return 0
 
     except Exception as e:
-        logger.error(f"Numeric OCR extraction failed for {region_name} region: {str(e)}")
+        logger.error(
+            f"Numeric OCR extraction failed for {region_name} region: {str(e)}"
+        )
         return 0
     finally:
         logger.clear_context()

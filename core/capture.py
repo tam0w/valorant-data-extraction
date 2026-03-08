@@ -20,8 +20,9 @@ def generate_session_id() -> str:
     return session_id
 
 
-def read_images_from_folder(config: Dict, sub_dir: str) -> Tuple[
-    List[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
+def read_images_from_folder(
+    config: Dict, sub_dir: str
+) -> Tuple[List[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
     """
     Read images from a specific folder
 
@@ -31,7 +32,7 @@ def read_images_from_folder(config: Dict, sub_dir: str) -> Tuple[
     """
     logger.push_context(operation="read_images", folder=sub_dir)
 
-    base_dir = Path(config['log_dir'])
+    base_dir = Path(config["log_dir"])
     target_dir = base_dir / sub_dir
 
     timeline_images = []
@@ -46,11 +47,13 @@ def read_images_from_folder(config: Dict, sub_dir: str) -> Tuple[
         # Function to extract number from filename for sorting
         def extract_number(filepath):
             filename = os.path.basename(filepath)
-            match = re.search(r'\d+', filename)
-            return int(match.group()) if match else float('inf')
+            match = re.search(r"\d+", filename)
+            return int(match.group()) if match else float("inf")
 
         # Get all PNG files in the directory and sort them
-        image_files = sorted(glob.glob(os.path.join(target_dir, "*.png")), key=extract_number)
+        image_files = sorted(
+            glob.glob(os.path.join(target_dir, "*.png")), key=extract_number
+        )
         logger.debug(f"Found {len(image_files)} PNG files in {target_dir}")
 
         for image_file in image_files:
@@ -62,7 +65,9 @@ def read_images_from_folder(config: Dict, sub_dir: str) -> Tuple[
                     logger.warning(f"Failed to read image: {image_file}")
                     continue
 
-                logger.debug(f"Successfully read image: {image_file}, shape: {image.shape}")
+                logger.debug(
+                    f"Successfully read image: {image_file}, shape: {image.shape}"
+                )
 
                 if "scoreboard" in image_file:
                     scoreboard_image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
@@ -89,16 +94,28 @@ def read_images_from_folder(config: Dict, sub_dir: str) -> Tuple[
 
         # Warn about missing required images
         if scoreboard_image is None:
-            logger.warning('SCOREBOARD DATA NOT READ: No scoreboard image found in the folder')
-            logger.user_output('SCOREBOARD DATA NOT READ: Please ensure a scoreboard image is present in the folder.')
+            logger.warning(
+                "SCOREBOARD DATA NOT READ: No scoreboard image found in the folder"
+            )
+            logger.user_output(
+                "SCOREBOARD DATA NOT READ: Please ensure a scoreboard image is present in the folder."
+            )
 
         if summary_image is None:
-            logger.warning('SUMMARY DATA NOT READ: No summary image found in the folder')
-            logger.user_output('SUMMARY DATA NOT READ: Please ensure a summary image is present in the folder.')
+            logger.warning(
+                "SUMMARY DATA NOT READ: No summary image found in the folder"
+            )
+            logger.user_output(
+                "SUMMARY DATA NOT READ: Please ensure a summary image is present in the folder."
+            )
 
         if not timeline_images:
-            logger.warning('TIMELINE DATA NOT READ: No timeline images found in the folder')
-            logger.user_output('TIMELINE DATA NOT READ: Please ensure timeline images are present in the folder.')
+            logger.warning(
+                "TIMELINE DATA NOT READ: No timeline images found in the folder"
+            )
+            logger.user_output(
+                "TIMELINE DATA NOT READ: Please ensure timeline images are present in the folder."
+            )
         else:
             logger.info(f"Successfully read {len(timeline_images)} timeline images")
 
@@ -111,7 +128,9 @@ def read_images_from_folder(config: Dict, sub_dir: str) -> Tuple[
     return timeline_images, scoreboard_image, summary_image
 
 
-def screenshot_pages() -> Tuple[List[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
+def screenshot_pages() -> Tuple[
+    List[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]
+]:
     """Capture screenshots of match pages using keyboard input"""
     logger.push_context(operation="screenshot_pages")
 
@@ -120,40 +139,46 @@ def screenshot_pages() -> Tuple[List[np.ndarray], Optional[np.ndarray], Optional
     summary_image = None
 
     try:
-        logger.info('Waiting for user to capture screenshots')
-        logger.user_output('Waiting to read your game data..')
+        logger.info("Waiting for user to capture screenshots")
+        logger.user_output("Waiting to read your game data..")
 
         # Wait for summary screenshot
-        logger.debug('Waiting for summary screenshot (press S)')
+        logger.debug("Waiting for summary screenshot (press S)")
         while True:
-            if keyboard.is_pressed('s'):
-                logger.debug('S key pressed, capturing summary screenshot')
+            if keyboard.is_pressed("s"):
+                logger.debug("S key pressed, capturing summary screenshot")
                 image = py.screenshot()
                 summary_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
                 logger.info("Meta data obtained")
                 logger.user_output("Meta data obtained.")
                 logger.store_summary(summary_image)
-                logger.debug(f"Summary screenshot captured, shape: {summary_image.shape}")
+                logger.debug(
+                    f"Summary screenshot captured, shape: {summary_image.shape}"
+                )
                 time.sleep(0.15)
                 break
 
         # Wait for scoreboard and timeline screenshots
-        logger.debug('Waiting for scoreboard (press B) and timeline (press P) screenshots')
-        logger.debug('Press Q to finish capturing')
+        logger.debug(
+            "Waiting for scoreboard (press B) and timeline (press P) screenshots"
+        )
+        logger.debug("Press Q to finish capturing")
 
         while True:
-            if keyboard.is_pressed('b'):
-                logger.debug('B key pressed, capturing scoreboard screenshot')
+            if keyboard.is_pressed("b"):
+                logger.debug("B key pressed, capturing scoreboard screenshot")
                 image = py.screenshot()
                 scoreboard_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
                 logger.store_scoreboard(scoreboard_image)
                 logger.info("Scoreboard data read")
                 logger.user_output("Scoreboard data read.")
-                logger.debug(f"Scoreboard screenshot captured, shape: {scoreboard_image.shape}")
+                logger.debug(
+                    f"Scoreboard screenshot captured, shape: {scoreboard_image.shape}"
+                )
                 time.sleep(0.3)
 
-            if keyboard.is_pressed('p'):
-                logger.debug('P key pressed, capturing timeline screenshot')
+            if keyboard.is_pressed("p"):
+                logger.debug("P key pressed, capturing timeline screenshot")
                 image = py.screenshot()
                 timeline_screen = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
                 logger.store_timeline(timeline_screen)
@@ -161,34 +186,42 @@ def screenshot_pages() -> Tuple[List[np.ndarray], Optional[np.ndarray], Optional
                 round_num = len(timeline_images)
                 logger.info(f"Round {round_num} data read")
                 logger.user_output(f"Round {round_num} data read. ")
-                logger.debug(f"Timeline screenshot {round_num} captured, shape: {timeline_screen.shape}")
+                logger.debug(
+                    f"Timeline screenshot {round_num} captured, shape: {timeline_screen.shape}"
+                )
                 time.sleep(0.3)
 
-            if keyboard.is_pressed('q'):
-                logger.info('Timeline data reading complete')
-                logger.user_output('Timeline data reading complete.')
+            if keyboard.is_pressed("q"):
+                logger.info("Timeline data reading complete")
+                logger.user_output("Timeline data reading complete.")
                 break
 
         # Make sure scoreboard is captured
         if scoreboard_image is None:
-            logger.warning('SCOREBOARD DATA NOT READ: Prompting user to capture scoreboard')
-            logger.user_output('SCOREBOARD DATA NOT READ: Please press B to capture the scoreboard.')
+            logger.warning(
+                "SCOREBOARD DATA NOT READ: Prompting user to capture scoreboard"
+            )
+            logger.user_output(
+                "SCOREBOARD DATA NOT READ: Please press B to capture the scoreboard."
+            )
 
-            logger.debug('Waiting for scoreboard screenshot (press B)')
+            logger.debug("Waiting for scoreboard screenshot (press B)")
             while True:
-                if keyboard.is_pressed('b'):
-                    logger.debug('B key pressed, capturing scoreboard screenshot')
+                if keyboard.is_pressed("b"):
+                    logger.debug("B key pressed, capturing scoreboard screenshot")
                     image = py.screenshot()
                     scoreboard_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
                     logger.store_scoreboard(scoreboard_image)
                     logger.info("Scoreboard data read")
                     logger.user_output("Scoreboard data read.")
-                    logger.debug(f"Scoreboard screenshot captured, shape: {scoreboard_image.shape}")
+                    logger.debug(
+                        f"Scoreboard screenshot captured, shape: {scoreboard_image.shape}"
+                    )
                     time.sleep(0.3)
                     break
 
-        logger.info('Processing data')
-        logger.user_output('Processing data..')
+        logger.info("Processing data")
+        logger.user_output("Processing data..")
 
         # Log summary of captured data
         logger.info(f"Captured {len(timeline_images)} timeline images")
