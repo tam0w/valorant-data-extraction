@@ -211,7 +211,8 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
                 logger.debug(f"Running OCR on team player {i + 1} region")
                 ocr_result = extract_text(player_region, detail=0, width_ths=25, region_name=f"team_player_{i + 1}")
-
+                print(f"[DEBUG] Row OCR raw result: {ocr_result}")
+                
                 if len(ocr_result) < 2:
                     # Handle case where OCR didn't detect both player and agent
                     logger.warning(f"OCR failed to detect both player and agent for team player {i + 1}")
