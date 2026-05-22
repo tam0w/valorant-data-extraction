@@ -212,7 +212,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
                 logger.debug(f"Running OCR on team player {i + 1} region")
                 ocr_result = extract_text(player_region, detail=0, width_ths=25, region_name=f"team_player_{i + 1}")
                 print(f"[DEBUG] Row OCR raw result: {ocr_result}")
-                
+
                 if len(ocr_result) < 2:
                     # Handle case where OCR didn't detect both player and agent
                     logger.warning(f"OCR failed to detect both player and agent for team player {i + 1}")
@@ -253,7 +253,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
                 logger.clear_context()  # Clear the player-specific context
 
         # Process opponent players (bottom section)
-        start_y = 468
+        start_y = 306
         logger.debug(f"Extracting opponent players starting at y={start_y}")
 
         for i in range(5):
@@ -261,7 +261,10 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
             try:
                 y = start_y
-                while detect_color(image, Position(y, check_x), f"opponent_player_{i + 1}_check")[2] < 40:  # red < 40
+                while True:
+                    b, g, r = detect_color(image, Position(y, check_x), f"opponent_player_{i + 1}_check")
+                    if b > 200 and r < 100 and g < 100:
+                        break
                     y += 1
                     if y > 900:  # Safety check
                         logger.warning(f"Reached safety limit when searching for opponent player {i + 1}")
@@ -296,12 +299,14 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
                     agent_idx = -1
                     agent_options_lower = [a.lower() for a in valid_agents]
 
-                    for idx, text in enumerate(ocr_result):
+                    for idx in range(len(ocr_result) - 1, -1, -1):
+                        text = ocr_result[idx]
                         matches = get_close_matches(text.lower(), agent_options_lower, n=1, cutoff=0.4)
                         if matches:
                             agent_name = normalize_agent_name(text, valid_agents, config)
                             agent_idx = idx
                             break
+
 
                     if agent_name is None:
                         # fallback to old behaviour
@@ -321,7 +326,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
                 player_list.append(player_name)
                 agent_list.append(agent_name)
-                start_y = y + 42
+                start_y = y + 54
 
             except Exception as e:
                 logger.error(f"Error processing opponent player {i + 1}: {str(e)}")
