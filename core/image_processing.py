@@ -231,8 +231,8 @@ def extract_agent_sprites(image: np.ndarray) -> List[np.ndarray]:
 
     try:
         # Team agents (top half)
-        start_y = 503
-        check_x = 161
+        start_y = 306
+        check_x = 276 
 
         logger.debug(f"Extracting team agent sprites starting from y={start_y}, x={check_x}")
 
@@ -260,7 +260,7 @@ def extract_agent_sprites(image: np.ndarray) -> List[np.ndarray]:
             start_y = y + 42
 
         # Opponent agents (bottom half)
-        start_y = 724
+        start_y = 468
         logger.debug(f"Extracting opponent agent sprites starting from y={start_y}")
 
         for i in range(5):
