@@ -435,84 +435,88 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
 
     try:
         events = []
-        start_y = 500  # Vertical start position where events begin appearing
-        check_x = 940  # Horizontal position for detecting event color (team vs opponent)
-        kill_x = 945  # Horizontal position of the killer agent icon
-        death_x = 1231  # Horizontal position of the death/victim agent icon
+        start_y = 446   # First event row y position
+        check_x = 160   # Vertical team indicator bar (same color scheme as scoreboard)
+        kill_x = 166    # Left agent icon (killer)
+        death_x = 496   # Right agent icon (victim)
 
-        # Scan the timeline from top to bottom looking for events
+        def skip_row(y):
+            """Advance past the current colored row by scanning until the bar goes dark."""
+            y += 1
+            while y < 1060:
+                b2, g2, r2 = detect_color(timeline_image, Position(y, check_x))
+                is_colored = (g2 > 100) or (b2 > 200 and r2 < 100 and g2 < 100) or (r2 > 200 and g2 < 100 and b2 < 100)
+                if not is_colored:
+                    break
+                y += 1
+            return y
+
         current_y = start_y
-        while current_y < 1060:  # Stop at bottom of timeline area
-            # Events appear as colored pixels; no event = dark/black
+        while current_y < 1060:
             b, g, r = detect_color(timeline_image, Position(current_y, check_x))
 
-            # Skip empty rows (dark pixels indicate no event)
-            if g < 100 and r < 100 and b < 100:
+            is_team = g > 100
+            is_opponent = b > 200 and r < 100 and g < 100
+            is_plant_row = r > 200 and g < 100 and b < 100  # red bar = plant/defuse event
+
+            if not is_team and not is_opponent and not is_plant_row:
                 current_y += 1
                 continue
 
-            # Green pixels (g > 100) indicate team events, red pixels indicate opponent events
-            side = 'team' if g > 100 else 'opponent'
+            if is_team:
+                side = 'team'
+            elif is_opponent:
+                side = 'opponent'
+            else:
+                side = 'opponent'  # red bar — opponent action (plant/defuse)
             logger.debug(f"Found event at y={current_y}, side={side}")
 
-            # Extract timestamp text, located to the left of the event
+            # Timestamp text (round elapsed time, e.g. "0:24") at x=220-251
             timestamp_region = crop_image(timeline_image, ImageRegion(
-                current_y, current_y + 36, 980, 1040), "timestamp_region")
+                current_y, current_y + 36, 220, 251), "timestamp_region")
             timestamp_text = extract_text(timestamp_region, detail=0, region_name="timestamp")
 
-            # Skip events where we can't read the timestamp
             if not timestamp_text:
                 logger.warning(f"Failed to extract timestamp at y={current_y}, skipping event")
-                current_y += 36
+                current_y = skip_row(current_y)
                 continue
 
-            # Convert OCR timestamp to seconds using normalized format
             ts_text = timestamp_text[0]
             timestamp = normalize_timestamp(ts_text)
-            
-            # Skip events with invalid timestamps
+
             if timestamp == 0:
                 logger.warning(f"Invalid timestamp '{ts_text}' at y={current_y}, skipping event")
-                current_y += 36
+                current_y = skip_row(current_y)
                 continue
 
-            # Examine text on right side to distinguish plant/defuse from kills
+            # Central area of row for "Planted"/"Defuse" text detection
             event_type_region = crop_image(timeline_image, ImageRegion(
-                current_y, current_y + 36, 1150, 1230), "event_type_region")
+                current_y, current_y + 36, 420, 510), "event_type_region")
             event_type_text = extract_text(event_type_region, detail=0, region_name="event_type")
 
-            # Extract the agent icons that appear in the event
-            # Killer icon is on the left, victim on the right for kill events
             killer_icon = crop_image(timeline_image, ImageRegion(
                 current_y, current_y + 36, kill_x, kill_x + 36), "killer_icon")
             victim_icon = crop_image(timeline_image, ImageRegion(
                 current_y, current_y + 36, death_x, death_x + 36), "victim_icon")
 
-            # Identify agents by comparing extracted icons against reference sprites
-            # using template matching (higher score = better match)
             killer_scores = []
             victim_scores = []
 
             for agent_sprite in agent_sprites:
-                # Match killer agent icon
                 killer_result = cv.matchTemplate(killer_icon, agent_sprite, cv.TM_CCOEFF_NORMED)
                 _, killer_max_val, _, _ = cv.minMaxLoc(killer_result)
                 killer_scores.append(killer_max_val)
 
-                # Match victim agent icon
                 victim_result = cv.matchTemplate(victim_icon, agent_sprite, cv.TM_CCOEFF_NORMED)
                 _, victim_max_val, _, _ = cv.minMaxLoc(victim_result)
                 victim_scores.append(victim_max_val)
 
-            # Get indices of best-matching agents
             killer_idx = killer_scores.index(max(killer_scores))
             victim_idx = victim_scores.index(max(victim_scores))
 
-            # Map indices back to agent names
             killer_agent = agent_list[killer_idx] if killer_idx < len(agent_list) else "Unknown"
             victim_agent = agent_list[victim_idx] if victim_idx < len(agent_list) else "Unknown"
 
-            # Determine event type based on extracted text
             if event_type_text and any('Plant' in t for t in event_type_text):
                 event_type = 'plant'
             elif event_type_text and any('Defuse' in t for t in event_type_text):
@@ -520,12 +524,10 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
             else:
                 event_type = 'kill'
 
-            # Record the event WITH side information
             logger.info(f"Extracted {event_type} ({side}): {killer_agent} → {victim_agent} at {timestamp}s")
             events.append((killer_agent, victim_agent, timestamp, event_type, side))
 
-            # Move to next event
-            current_y += 36
+            current_y = skip_row(current_y)
 
         return events
 
