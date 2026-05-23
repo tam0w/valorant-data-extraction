@@ -230,21 +230,22 @@ def extract_agent_sprites(image: np.ndarray) -> List[np.ndarray]:
     agent_sprites = []
 
     try:
-        # Team agents (top half)
-        start_y = 306
-        check_x = 276 
+        # Both teams are ACS-sorted (mixed order); scan full scoreboard for each
+        check_x = 272
+        icon_x = check_x + 3
 
+        # Team sprites: walk scoreboard looking for green indicator bar (g > 90)
+        start_y = 306
         logger.debug(f"Extracting team agent sprites starting from y={start_y}, x={check_x}")
 
         for i in range(5):
             y = start_y
-            while detect_color(image, Position(y, check_x), f"team_agent_{i + 1}_check")[1] < 100:  # green < 100
+            while detect_color(image, Position(y, check_x), f"team_agent_{i + 1}_check")[1] <= 90:
                 y += 1
-                if y > 700:  # Safety check
+                if y > 900:
                     logger.warning(f"Safety limit reached while finding team agent {i + 1}")
                     break
 
-            icon_x = check_x + 3
             logger.debug(f"Found team agent {i + 1} at y={y}, extracting sprite")
 
             try:
@@ -254,24 +255,25 @@ def extract_agent_sprites(image: np.ndarray) -> List[np.ndarray]:
                 logger.debug(f"Team agent {i + 1} sprite extracted with shape {agent_sprite.shape}")
             except Exception as e:
                 logger.error(f"Failed to extract team agent {i + 1} sprite: {str(e)}")
-                # Add a blank sprite to maintain indexing
                 agent_sprites.append(np.zeros((40, 40, 3), dtype=np.uint8))
 
-            start_y = y + 42
+            start_y = y + 54
 
-        # Opponent agents (bottom half)
-        start_y = 468
+        # Opponent sprites: walk scoreboard looking for blue indicator bar (b > 200, r < 100, g < 100)
+        start_y = 306
         logger.debug(f"Extracting opponent agent sprites starting from y={start_y}")
 
         for i in range(5):
             y = start_y
-            while detect_color(image, Position(y, check_x), f"opponent_agent_{i + 1}_check")[2] < 80:  # red < 80
+            while True:
+                b, g, r = detect_color(image, Position(y, check_x), f"opponent_agent_{i + 1}_check")
+                if b > 200 and r < 100 and g < 100:
+                    break
                 y += 1
-                if y > 900:  # Safety check
+                if y > 900:
                     logger.warning(f"Safety limit reached while finding opponent agent {i + 1}")
                     break
 
-            icon_x = check_x + 3
             logger.debug(f"Found opponent agent {i + 1} at y={y}, extracting sprite")
 
             try:
@@ -281,10 +283,9 @@ def extract_agent_sprites(image: np.ndarray) -> List[np.ndarray]:
                 logger.debug(f"Opponent agent {i + 1} sprite extracted with shape {agent_sprite.shape}")
             except Exception as e:
                 logger.error(f"Failed to extract opponent agent {i + 1} sprite: {str(e)}")
-                # Add a blank sprite to maintain indexing
                 agent_sprites.append(np.zeros((40, 40, 3), dtype=np.uint8))
 
-            start_y = y + 42
+            start_y = y + 54
 
         logger.info(f"Extracted {len(agent_sprites)} agent sprites in total")
         return agent_sprites
