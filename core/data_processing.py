@@ -263,7 +263,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
                 y = start_y
                 while True:
                     b, g, r = detect_color(image, Position(y, check_x), f"opponent_player_{i + 1}_check")
-                    if b > 200 and r < 100 and g < 100:
+                    if r > 200 and g < 100 and b < 100:
                         break
                     y += 1
                     if y > 900:  # Safety check
@@ -356,7 +356,7 @@ def extract_match_metadata(image: np.ndarray, config: Dict[str, Any]) -> Dict[st
 
     try:
         # Extract sides (Attack/Defense)
-        sides_region = crop_image(image, ImageRegion(300, 400, 1300, 1500), "sides_region")
+        sides_region = crop_image(image, ImageRegion(202, 967, 1222, 1771), "sides_region")
         sides_text = extract_text(sides_region, detail=0, region_name="sides_text")[0].lower()
 
         if 'def' in sides_text:
@@ -369,13 +369,23 @@ def extract_match_metadata(image: np.ndarray, config: Dict[str, Any]) -> Dict[st
         sides = [first_half] * 12 + [second_half] * 12
 
         # Extract score
-        score_region = crop_image(image, ImageRegion(70, 170, 700, 1150), "score_region")
+        score_region = crop_image(image, ImageRegion(86, 165, 727, 1140), "score_region")
         score_parts = extract_text(score_region, detail=0, region_name="score_text")
 
         if len(score_parts) >= 3:
             team_score, result, opponent_score = score_parts[0:3]
             logger.debug(f"Extracted scores: {team_score}-{opponent_score}, result: {result}")
-        else:
+        elif len(score_parts) == 1:
+            # OCR returned the full line as one string e.g. "16 VICTORY 14"
+            parts = score_parts[0].split()
+            if len(parts) >= 3:
+                team_score = parts[0]
+                opponent_score = parts[-1]
+                result = "WIN" if int(team_score) > int(opponent_score) else "LOSS"
+                logger.debug(f"Extracted scores from single string: {team_score}-{opponent_score}")
+            else:
+                score_parts = []  # fall through to manual input
+        if not score_parts or (len(score_parts) == 1 and len(score_parts[0].split()) < 3):
             logger.warning("Score extraction failed, prompting for manual input")
             logger.user_output("Please enter your team's score: ")
             team_score = input("Please enter your team's score: ")
@@ -383,20 +393,32 @@ def extract_match_metadata(image: np.ndarray, config: Dict[str, Any]) -> Dict[st
             opponent_score = input("Please enter opponent's score: ")
             result = "WIN" if int(team_score) > int(opponent_score) else "LOSS"
 
-        # Extract map name with normalization
-        map_region = crop_image(image, ImageRegion(125, 145, 120, 210), "map_region")
+        # Map name appears in top-left info block as "MAP - MAPNAME // time"
+        # Use a large crop of the full info block and search all OCR results for a valid map
+        map_region = crop_image(image, ImageRegion(80, 210, 0, 420), "map_region")
         map_text = extract_text(map_region, detail=0, region_name="map_text")
 
+        valid_maps = get_valid_maps(config)
+        raw_map_name = None
+
         if map_text:
-            raw_map_name = map_text[0]
-            logger.debug(f"Raw map name from OCR: '{raw_map_name}'")
-        else:
+            for idx, item in enumerate(map_text):
+                cleaned = item.strip()
+                if cleaned.upper().startswith('MAP'):
+                    after_map = cleaned[3:].lstrip(' -').split('//')[0].strip()
+                    if after_map:
+                        raw_map_name = after_map
+                    elif idx + 1 < len(map_text):
+                        raw_map_name = map_text[idx + 1].strip().split('//')[0].strip()
+                    if raw_map_name:
+                        logger.debug(f"Raw map name from OCR: '{raw_map_name}'")
+                        break
+
+        if not raw_map_name:
             logger.warning("Map name extraction failed, prompting for manual input")
             logger.user_output("Please enter map name: ")
             raw_map_name = input("Please enter map name: ")
 
-        # Get valid maps and normalize
-        valid_maps = get_valid_maps(config)
         map_name = normalize_map_name(raw_map_name, valid_maps, config)
         logger.info(f"Using map: {map_name}")
 
@@ -456,7 +478,7 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
             b, g, r = detect_color(timeline_image, Position(current_y, check_x))
 
             is_team = g > 100
-            is_opponent = b > 200 and r < 100 and g < 100
+            is_opponent = r > 200 and g < 100 and b < 100
             is_plant_row = r > 200 and g < 100 and b < 100  # red bar = plant/defuse event
 
             if not is_team and not is_opponent and not is_plant_row:
@@ -495,9 +517,9 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
             event_type_text = extract_text(event_type_region, detail=0, region_name="event_type")
 
             killer_icon = crop_image(timeline_image, ImageRegion(
-                current_y, current_y + 36, kill_x, kill_x + 36), "killer_icon")
+                current_y, current_y + 40, kill_x, kill_x + 40), "killer_icon")
             victim_icon = crop_image(timeline_image, ImageRegion(
-                current_y, current_y + 36, death_x, death_x + 36), "victim_icon")
+                current_y, current_y + 40, death_x, death_x + 40), "victim_icon")
 
             killer_scores = []
             victim_scores = []
@@ -524,7 +546,7 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
             else:
                 event_type = 'kill'
 
-            logger.info(f"Extracted {event_type} ({side}): {killer_agent} → {victim_agent} at {timestamp}s")
+            logger.info(f"Extracted {event_type} ({side}): {killer_agent} -> {victim_agent} at {timestamp}s")
             events.append((killer_agent, victim_agent, timestamp, event_type, side))
 
             current_y = skip_row(current_y)
@@ -551,7 +573,7 @@ def extract_first_bloods(timeline_images: List[np.ndarray]) -> List[str]:
             if g > 100:
                 team = 'team'
                 break
-            if b > 200 and r < 100 and g < 100:
+            if r > 200 and g < 100 and b < 100:
                 team = 'opponent'
                 break
         first_bloods.append(team)
@@ -591,7 +613,7 @@ def process_round_outcomes(timeline_images: List[np.ndarray]) -> List[str]:
     outcomes = []
     for i, image in enumerate(timeline_images):
         logger.push_context(operation="process_match_data", sub_operation="round_outcomes", round=i)
-        outcome_region = crop_image(image, ImageRegion(430, 470, 130, 700))
+        outcome_region = crop_image(image, ImageRegion(393, 412, 1147, 1353))
         outcome_text = extract_text(outcome_region, detail=0)
 
         # Check if "LOSS" appears in the text
@@ -623,11 +645,11 @@ def create_match_data(
         metadata = extract_match_metadata(summary_image, config)
 
         # Extract player and agent information with agent normalization
-        player_list, agent_list = extract_player_data(timeline_images[0], config)
+        player_list, agent_list = extract_player_data(scoreboard_image, config)
         players_agents = dict(zip(player_list, agent_list))
 
         # Extract agent sprites for event matching
-        agent_sprites = extract_agent_sprites(timeline_images[0])
+        agent_sprites = extract_agent_sprites(scoreboard_image)
 
         # Process round outcomes
         outcomes = process_round_outcomes(timeline_images)

@@ -267,7 +267,7 @@ def extract_agent_sprites(image: np.ndarray) -> List[np.ndarray]:
             y = start_y
             while True:
                 b, g, r = detect_color(image, Position(y, check_x), f"opponent_agent_{i + 1}_check")
-                if b > 200 and r < 100 and g < 100:
+                if r > 200 and g < 100 and b < 100:
                     break
                 y += 1
                 if y > 900:
