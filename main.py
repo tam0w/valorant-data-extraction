@@ -175,6 +175,7 @@ def parse_arguments():
     parser.add_argument('--log-level', choices=['debug', 'info', 'warning', 'error', 'critical'],
                         default='critical', help='Set logging level (default: critical)')
     parser.add_argument('--dev', action='store_true', help='Enable development mode with verbose logging')
+    parser.add_argument('--log-file', action='store_true', help='Write debug logs to a file in log_dir')
     parser.add_argument('--quiet', action='store_true', help='Suppress user output, show only logs')
 
     # Cache management
