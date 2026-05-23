@@ -1,4 +1,5 @@
 from difflib import get_close_matches
+import re
 import numpy as np
 import cv2 as cv
 from typing import List, Dict, Tuple, Optional, Any, cast
@@ -668,10 +669,21 @@ def create_match_data(
             logger.clear_context()
 
         # Process economy and other round data
-        economy_regions = [crop_image(img, ImageRegion(425, 480, 1020, 1145)) for img in timeline_images]
+        economy_regions = [crop_image(img, ImageRegion(850, 895, 152, 333)) for img in timeline_images]
+        economy_regions = [cv.resize(r, None, fx=2.0, fy=2.0, interpolation=cv.INTER_CUBIC) for r in economy_regions]
         economy_data = [extract_text(region, detail=0, region_name="buy_data") for region in economy_regions]
-        team_economy = [eco[0] if eco else "0" for eco in economy_data]
-        opponent_economy = [eco[1] if len(eco) > 1 else "0" for eco in economy_data]
+        team_economy = []
+        opponent_economy = []
+        for eco in economy_data:
+            text = ' '.join(eco).replace(',', '')
+            m = re.search(r'[Ll]oadout[^B]*', text)
+            if m:
+                nums = [n for n in re.findall(r'\d+', m.group(0)) if int(n) >= 100]
+                team_economy.append(nums[0] if len(nums) > 0 else "0")
+                opponent_economy.append(nums[1] if len(nums) > 1 else "0")
+            else:
+                team_economy.append("0")
+                opponent_economy.append("0")
 
         # Extract AWP information
         awp_regions = [crop_image(img, ImageRegion(450, 950, 650, 785)) for img in timeline_images]

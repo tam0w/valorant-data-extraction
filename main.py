@@ -24,17 +24,16 @@ def main():
         else:
             logger.set_log_level(args.log_level.upper())
 
-        if args.log_file:
-            logger._setup_file_logging(config)
-            logger.set_log_level('DEBUG')
-
-
         if args.quiet:
             logger.enable_user_output(False)
 
         # Load configuration
         config = load_config()
         logger.debug("Configuration loaded")
+
+        if args.log_file:
+            logger._setup_file_logging(config)
+            logger.set_log_level('DEBUG')
 
         # Handle cache info request
         if args.cache_info:
