@@ -543,11 +543,17 @@ def extract_first_bloods(timeline_images: List[np.ndarray]) -> List[str]:
 
     for i, image in enumerate(timeline_images):
         logger.push_context(operation="process_match_data", sub_operation="first_bloods", round=i)
-        # Check pixel color at first blood position
-        b, g, r = detect_color(image, Position(520, 1150))
 
-        # Green indicates team got first blood, otherwise opponent
-        team = 'team' if g > 100 else 'opponent'
+        # Scan down from first event row looking for the first kill (skip plant/defuse rows)
+        team = 'unknown'
+        for y in range(446, 1060):
+            b, g, r = detect_color(image, Position(y, 160))
+            if g > 100:
+                team = 'team'
+                break
+            if b > 200 and r < 100 and g < 100:
+                team = 'opponent'
+                break
         first_bloods.append(team)
 
     logger.clear_context()

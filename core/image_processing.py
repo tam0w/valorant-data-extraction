@@ -155,7 +155,7 @@ def detect_plant_site(image: np.ndarray, map_name: str) -> Optional[str]:
             return None
 
         logger.debug("Cropping minimap region")
-        minimap = crop_image(image, ImageRegion(490, 990, 1270, 1770), "minimap")
+        minimap = crop_image(image, ImageRegion(439, 848, 556, 984), "minimap")
 
         logger.debug("Searching for spike on minimap")
         max_val, max_loc = find_template(minimap, spike, "spike")
