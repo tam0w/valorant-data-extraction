@@ -669,9 +669,10 @@ def create_match_data(
             logger.clear_context()
 
         # Process economy and other round data
-        economy_regions = [crop_image(img, ImageRegion(850, 895, 152, 333)) for img in timeline_images]
+        economy_regions = [crop_image(img, ImageRegion(619, 940, 152, 333)) for img in timeline_images]
         economy_regions = [cv.resize(r, None, fx=2.0, fy=2.0, interpolation=cv.INTER_CUBIC) for r in economy_regions]
-        economy_data = [extract_text(region, detail=0, region_name="buy_data") for region in economy_regions]
+        economy_data = [extract_text(region, detail=0, region_name="buy_data",
+                                     allowlist='0123456789,/.LoadutBnkAvg: ') for region in economy_regions]
         team_economy = []
         opponent_economy = []
         for eco in economy_data:
