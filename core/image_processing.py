@@ -207,10 +207,14 @@ def detect_plant_site(image: np.ndarray, map_name: str) -> Optional[str]:
             site = 'A' if x > 250 else 'B'
         elif map_name == 'icebox':
             site = 'A' if y > 200 else 'B'
+        elif map_name == 'abyss':
+            site = 'B' if y > 200 else 'A'
+        elif map_name == 'corrode':
+            site = 'b' if y > 200 else 'A'
         else:
             site = 'unclear'
 
-        logger.info(f"Detected spike planted at site {site} on {map_name}")
+        logger.info(f"Detected spike planted at site {site} o   n {map_name}")
         return site
 
     except Exception as e:
