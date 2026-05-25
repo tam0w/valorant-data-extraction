@@ -611,12 +611,12 @@ def determine_awp_info(awp_data: List[List[str]]) -> List[str]:
             awp_info.append('none')
         elif len(indices) == 1:
             # Single AWP - determine if team or opponent
-            awp_info.append('team' if indices[0] < 11 else 'opponent')
+            awp_info.append('team' if indices[0] < 10 else 'opponent')
         elif len(indices) == 2:
             # Two AWPs - determine if same team or both teams
-            if all(idx < 11 for idx in indices):
+            if all(idx < 10 for idx in indices):
                 awp_info.append('team')
-            elif all(idx >= 11 for idx in indices):
+            elif all(idx >= 10 for idx in indices):
                 awp_info.append('opponent')
             else:
                 awp_info.append('both')
@@ -704,7 +704,7 @@ def create_match_data(
                 opponent_economy.append("0")
 
         # Extract AWP information
-        awp_regions = [crop_image(img, ImageRegion(450, 950, 650, 785)) for img in timeline_images]
+        awp_regions = [crop_image(img, ImageRegion(433, 877, 1546, 1700)) for img in timeline_images]
         awp_data = [extract_text(region, detail=0) for region in awp_regions]
         awp_info = determine_awp_info(awp_data)
 
