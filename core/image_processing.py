@@ -155,7 +155,7 @@ def detect_plant_site(image: np.ndarray, map_name: str) -> Optional[str]:
             return None
 
         logger.debug("Cropping minimap region")
-        minimap = crop_image(image, ImageRegion(439, 848, 556, 984), "minimap")
+        minimap = crop_image(image, ImageRegion(442, 877, 571, 1012), "minimap")
 
         logger.debug("Searching for spike on minimap")
         max_val, max_loc = find_template(minimap, spike, "spike")
@@ -170,6 +170,7 @@ def detect_plant_site(image: np.ndarray, map_name: str) -> Optional[str]:
 
         # Logic for determining site based on map and location
         site = None
+        map_name = map_name.lower() if map_name else ''
         if map_name == 'bind':
             site = 'B' if x < 250 else 'A'
         elif map_name == 'ascent':
