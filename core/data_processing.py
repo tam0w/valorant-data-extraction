@@ -468,7 +468,7 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
             y += 1
             while y < 1060:
                 b2, g2, r2 = detect_color(timeline_image, Position(y, check_x))
-                is_colored = (g2 > 100) or (b2 > 200 and r2 < 100 and g2 < 100) or (r2 > 200 and g2 < 100 and b2 < 100)
+                is_colored = (g2 > 100) or (r2 > 200 and g2 < 100 and b2 < 100)
                 if not is_colored:
                     break
                 y += 1
@@ -522,17 +522,34 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
             victim_icon = crop_image(timeline_image, ImageRegion(
                 current_y, current_y + 40, death_x, death_x + 40), "victim_icon")
 
+            # Scoreboard sprites are zoomed relative to the kill-feed icons in the new UI.
+            # Try a few scales and keep the best score per sprite.
+            SPRITE_SCALES = [0.65, 0.75, 0.85, 1.0]
             killer_scores = []
             victim_scores = []
 
             for agent_sprite in agent_sprites:
-                killer_result = cv.matchTemplate(killer_icon, agent_sprite, cv.TM_CCOEFF_NORMED)
-                _, killer_max_val, _, _ = cv.minMaxLoc(killer_result)
-                killer_scores.append(killer_max_val)
-
-                victim_result = cv.matchTemplate(victim_icon, agent_sprite, cv.TM_CCOEFF_NORMED)
-                _, victim_max_val, _, _ = cv.minMaxLoc(victim_result)
-                victim_scores.append(victim_max_val)
+                if agent_sprite.shape[0] < 10 or agent_sprite.shape[1] < 10:
+                    killer_scores.append(-1.0)
+                    victim_scores.append(-1.0)
+                    continue
+                best_k, best_v = -1.0, -1.0
+                for sc in SPRITE_SCALES:
+                    h = max(5, int(agent_sprite.shape[0] * sc))
+                    w = max(5, int(agent_sprite.shape[1] * sc))
+                    if h > killer_icon.shape[0] or w > killer_icon.shape[1]:
+                        continue
+                    small = cv.resize(agent_sprite, (w, h), interpolation=cv.INTER_AREA)
+                    kr = cv.matchTemplate(killer_icon, small, cv.TM_CCOEFF_NORMED)
+                    _, kv, _, _ = cv.minMaxLoc(kr)
+                    if kv > best_k:
+                        best_k = kv
+                    vr = cv.matchTemplate(victim_icon, small, cv.TM_CCOEFF_NORMED)
+                    _, vv, _, _ = cv.minMaxLoc(vr)
+                    if vv > best_v:
+                        best_v = vv
+                killer_scores.append(best_k)
+                victim_scores.append(best_v)
 
             killer_idx = killer_scores.index(max(killer_scores))
             victim_idx = victim_scores.index(max(victim_scores))
@@ -724,30 +741,18 @@ def create_match_data(
                     elif event_type == 'defuse':
                         has_defuse = True
 
-                # Calculate kills for each team
+                # Calculate kills for each team using the per-event side field
+                # (agent_list.index() is unreliable here — same agent can be on both teams)
                 team_kills = 0
                 opponent_kills = 0
-                for killer, victim, _, event_type, _ in round_events[i]:
+                for _, _, _, event_type, ev_side in round_events[i]:
                     if event_type == 'kill':
-                        killer_idx = agent_list.index(killer) if killer in agent_list else -1
-                        if 0 <= killer_idx < 5:  # Team player
+                        if ev_side == 'team':
                             team_kills += 1
-                        elif 5 <= killer_idx < 10:  # Opponent player
+                        elif ev_side == 'opponent':
                             opponent_kills += 1
 
-                # Adjust for plants/defuses which are also counted as events
                 side = metadata['sides'][i] if i < len(metadata['sides']) else "Unknown"
-                if has_plant:
-                    if side == 'Attack':
-                        team_kills -= 1
-                    else:
-                        opponent_kills -= 1
-
-                if has_defuse:
-                    if side == 'Defense':
-                        team_kills -= 1
-                    else:
-                        opponent_kills -= 1
 
                 # Create the round data with events and first blood/death info
                 round_data: RoundData = {
@@ -891,14 +896,13 @@ def _format_kill_event(killer_agent: str, victim_agent: str, timestamp: int,
     victim_indices = [i for i, agent in enumerate(agent_list) if agent == victim_agent]
 
     # Use side information to choose the correct killer_idx
-    # Team side = indices 0-4, Opponent side = indices 5-9
+    # In agent_list/player_list: indices 0-4 are our team, 5-9 are opponents
     if side == 'team':
         # For team kills, pick a killer from team indices (0-4)
         team_killer_indices = [idx for idx in killer_indices if 0 <= idx < 5]
         if team_killer_indices:
             killer_idx = team_killer_indices[0]
         else:
-            # Fallback to first match
             killer_idx = killer_indices[0] if killer_indices else -1
     else:
         # For opponent kills, pick a killer from opponent indices (5-9)
@@ -906,25 +910,22 @@ def _format_kill_event(killer_agent: str, victim_agent: str, timestamp: int,
         if opponent_killer_indices:
             killer_idx = opponent_killer_indices[0]
         else:
-            # Fallback to first match
             killer_idx = killer_indices[0] if killer_indices else -1
 
     # For victim, use the opposite team from the killer
     if 0 <= killer_idx < 5:
-        # Team killer, so find opponent victim
+        # Team killer, so find opponent victim (5-9)
         opponent_victim_indices = [idx for idx in victim_indices if 5 <= idx < 10]
         if opponent_victim_indices:
             victim_idx = opponent_victim_indices[0]
         else:
-            # Fallback to first match
             victim_idx = victim_indices[0] if victim_indices else -1
     else:
-        # Opponent killer, so find team victim
+        # Opponent killer, so find team victim (0-4)
         team_victim_indices = [idx for idx in victim_indices if 0 <= idx < 5]
         if team_victim_indices:
             victim_idx = team_victim_indices[0]
         else:
-            # Fallback to first match
             victim_idx = victim_indices[0] if victim_indices else -1
 
     # Get player names
