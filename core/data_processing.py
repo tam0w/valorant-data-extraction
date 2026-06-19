@@ -9,8 +9,12 @@ from core.api import get_valid_maps, get_valid_agents
 from core.types import RoundData, MatchData, PlayerData, EventData, Position, ImageRegion
 from core.constants import list_of_agents
 from core.ocr import extract_text
-from core.image_processing import crop_image, detect_color, get_team_color_from_pixel, detect_plant_site, extract_agent_sprites
+from core.image_processing import crop_image, detect_color, get_team_color_from_pixel, detect_plant_site, extract_agent_sprites, detect_round_number
 from core.logger import logger
+
+
+def _ocr_digits(s: str) -> str:
+    return s.translate(str.maketrans({'I': '1', 'l': '1', 'O': '0', 'o': '0', 'S': '5', 'B': '8'}))
 
 
 def normalize_agent_name(agent_name: str, valid_agents=None, config=None) -> str:
@@ -380,8 +384,8 @@ def extract_match_metadata(image: np.ndarray, config: Dict[str, Any]) -> Dict[st
             # OCR returned the full line as one string e.g. "16 VICTORY 14"
             parts = score_parts[0].split()
             if len(parts) >= 3:
-                team_score = parts[0]
-                opponent_score = parts[-1]
+                team_score = _ocr_digits(parts[0])
+                opponent_score = _ocr_digits(parts[-1])
                 result = "WIN" if int(team_score) > int(opponent_score) else "LOSS"
                 logger.debug(f"Extracted scores from single string: {team_score}-{opponent_score}")
             else:
@@ -644,8 +648,34 @@ def process_round_outcomes(timeline_images: List[np.ndarray]) -> List[str]:
     return outcomes
 
 
+def group_timeline_images_by_round(images: List[np.ndarray]) -> List[List[np.ndarray]]:
+    groups: Dict[int, List[np.ndarray]] = {}
+    for idx, img in enumerate(images):
+        n = detect_round_number(img)
+        if n is None:
+            logger.warning(f"Could not detect round number for timeline image {idx}, skipping")
+            continue
+        groups.setdefault(n, []).append(img)
+    return [groups[k] for k in sorted(groups)]
+
+
+def _merge_round_events(images: List[np.ndarray], agent_sprites, agent_list) -> List[Tuple]:
+    seen = set()
+    merged = []
+    for img in images:
+        for ev in extract_round_events(img, agent_sprites, agent_list):
+            killer, victim, ts, etype, side = ev
+            key = (ts, killer, victim, etype)
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(ev)
+    merged.sort(key=lambda e: e[2])
+    return merged
+
+
 def create_match_data(
-        timeline_images: List[np.ndarray],
+        timeline_image_groups: List[List[np.ndarray]],
         scoreboard_image: np.ndarray,
         summary_image: np.ndarray,
         config: Dict[str, Any]
@@ -669,21 +699,14 @@ def create_match_data(
         # Extract agent sprites for event matching
         agent_sprites = extract_agent_sprites(scoreboard_image)
 
+        # First image per round, used for static-position UI (economy, AWP, plant, outcomes, first-blood color)
+        timeline_images = [grp[0] for grp in timeline_image_groups if grp]
+
         # Process round outcomes
         outcomes = process_round_outcomes(timeline_images)
 
         # Determine first bloods
         first_bloods = extract_first_bloods(timeline_images)
-
-        # Extract round timestamps and events
-        round_events = []
-        for i, image in enumerate(timeline_images):
-            logger.push_context(operation="process_match_data", sub_operation="events", round=i+1)
-            logger.info(f"Extracting events for round {i+1}")
-
-            events = extract_round_events(image, agent_sprites, agent_list)
-            round_events.append(events)
-            logger.clear_context()
 
         # Process economy and other round data
         economy_regions = [crop_image(img, ImageRegion(619, 940, 152, 333)) for img in timeline_images]
@@ -711,16 +734,18 @@ def create_match_data(
         # Extract plant information
         plant_site_list = [detect_plant_site(img, metadata['map_name']) for img in timeline_images]
 
+        # Extract events from each round's screenshot group, merging + deduping if multiple shots exist
         round_events = []
-        for i, image in enumerate(timeline_images):
-            logger.push_context(operation="process_match_data", sub_operation="events", round=i)
-            events = extract_round_events(image, agent_sprites, agent_list)
+        for i, group in enumerate(timeline_image_groups):
+            logger.push_context(operation="process_match_data", sub_operation="events", round=i + 1)
+            logger.info(f"Extracting events for round {i + 1} ({len(group)} screenshot(s))")
+            events = _merge_round_events(group, agent_sprites, agent_list)
             round_events.append(events)
             logger.clear_context()
 
         # Create round data
         rounds = []
-        for i in range(len(timeline_images)):
+        for i in range(len(timeline_image_groups)):
             if i >= len(outcomes) or i >= len(first_bloods):
                 continue
 
@@ -763,7 +788,7 @@ def create_match_data(
                     'team_economy': team_economy[i] if i < len(team_economy) else "0",
                     'opponent_economy': opponent_economy[i] if i < len(opponent_economy) else "0",
                     'first_blood': first_bloods[i] if i < len(first_bloods) else "unknown",
-                    'true_first_blood': True,  # Could be enhanced with additional logic
+                    'true_first_blood': _is_true_first_blood(formatted_events, first_blood_player),
                     'first_blood_player': first_blood_player,
                     'first_death_player': first_death_player,
                     'site': plant_site_list[i] if i < len(plant_site_list) and plant_site_list[i] else None,
@@ -873,6 +898,24 @@ def format_round_events(round_events: List[Tuple[str, str, int, str, str]],
         return formatted_events, first_blood_player, first_death_player
     finally:
         logger.clear_context()  # Clear operation context
+
+
+def _is_true_first_blood(formatted_events: List[EventData], first_blood_player: str) -> bool:
+    if not first_blood_player:
+        return False
+
+    kills = [e for e in formatted_events if e.get('event_type') == 'kill']
+    if not kills:
+        return False
+
+    fb = kills[0]
+    fb_killer = fb['actor']
+    fb_ts = fb['timestamp']
+
+    for trade in kills[1:3]:  # next two kill events
+        if trade['target'] == fb_killer and (trade['timestamp'] - fb_ts) <= 15:
+            return False
+    return True
 
 
 def _format_kill_event(killer_agent: str, victim_agent: str, timestamp: int,

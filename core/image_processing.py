@@ -1,11 +1,26 @@
 import cv2 as cv
 import numpy as np
 import os
+import re
 from typing import Tuple, List, Dict, Optional, Any
 from core.types import ImageRegion, Position
 from core.ocr import extract_text
 from core.constants import list_of_agents
 from core.logger import logger
+
+
+def detect_round_number(image: np.ndarray) -> Optional[int]:
+    try:
+        region = image[390:410, 1010:1160]
+        if region.size == 0:
+            return None
+        region = cv.resize(region, None, fx=2.0, fy=2.0, interpolation=cv.INTER_CUBIC)
+        text = extract_text(region, detail=0, region_name="round_number", allowlist='0123456789ROUNDround ')
+        nums = re.findall(r'\d+', ' '.join(text))
+        return int(nums[0]) if nums else None
+    except Exception as e:
+        logger.error(f"detect_round_number failed: {e}")
+        return None
 
 
 def crop_image(image: np.ndarray, region: ImageRegion, description: str = "unnamed") -> np.ndarray:
@@ -210,7 +225,7 @@ def detect_plant_site(image: np.ndarray, map_name: str) -> Optional[str]:
         elif map_name == 'abyss':
             site = 'B' if y > 200 else 'A'
         elif map_name == 'corrode':
-            site = 'b' if y > 200 else 'A'
+            site = 'B' if y > 200 else 'A'
         else:
             site = 'unclear'
 

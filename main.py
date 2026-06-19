@@ -110,7 +110,7 @@ def main():
             timeline_images, scoreboard_image, summary_image = screenshot_pages()
             logger.clear_context()
 
-        if timeline_images is None:
+        if not timeline_images:
             logger.error("No timeline images captured")
             logger.user_output("Error: No timeline images captured. Please try again.")
             return
