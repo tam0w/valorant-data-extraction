@@ -2,6 +2,7 @@ import cv2 as cv
 import numpy as np
 import os
 import re
+from functools import lru_cache
 from typing import Tuple, List, Dict, Optional, Any
 from core.types import ImageRegion, Position
 from core.ocr import extract_text
@@ -145,6 +146,18 @@ def get_team_color_from_pixel(image: np.ndarray, position: Position, description
         return 'unknown'
 
 
+@lru_cache(maxsize=1)
+def _load_spike_template() -> Optional[np.ndarray]:
+    path = os.path.join(os.getcwd(), "spike.png")
+    if not os.path.exists(path):
+        logger.warning(f"Spike template image not found at {path}")
+        return None
+    spike = cv.imread(path)
+    if spike is None:
+        logger.warning("Failed to load spike template image")
+    return spike
+
+
 def detect_plant_site(image: np.ndarray, map_name: str) -> Optional[str]:
     """
     Detect planted spike location on the minimap
@@ -156,17 +169,8 @@ def detect_plant_site(image: np.ndarray, map_name: str) -> Optional[str]:
     logger.push_context(operation="detect_plant_site", map=map_name)
 
     try:
-        spike_path = os.path.join(os.getcwd(), "spike.png")
-
-        if not os.path.exists(spike_path):
-            logger.warning(f"Spike template image not found at {spike_path}")
-            logger.clear_context()
-            return None
-
-        logger.debug(f"Loading spike template from {spike_path}")
-        spike = cv.imread(spike_path)
+        spike = _load_spike_template()
         if spike is None:
-            logger.warning("Failed to load spike template image")
             logger.clear_context()
             return None
 

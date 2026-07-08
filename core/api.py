@@ -187,30 +187,37 @@ def fetch_maps_from_api(config: Dict[str, Any]) -> List[str]:
         logger.clear_context()
 
 
+_memo: Dict[str, List[str]] = {}
+
+
 def get_valid_agents(config: Dict[str, Any], offline_mode: bool = False) -> List[str]:
     """Get the list of valid agents, preferring API data if available"""
     if offline_mode:
-        logger.info("Using offline mode with hardcoded agent list")
         return list_of_agents
-
+    if 'agents' in _memo:
+        return _memo['agents']
     try:
-        return fetch_agents_from_api(config)
+        result = fetch_agents_from_api(config)
     except Exception as e:
         logger.warning(f"Error getting valid agents: {str(e)}")
-        return list_of_agents
+        result = list_of_agents
+    _memo['agents'] = result
+    return result
 
 
 def get_valid_maps(config: Dict[str, Any], offline_mode: bool = False) -> List[str]:
     """Get the list of valid maps, preferring API data if available"""
     if offline_mode:
-        logger.info("Using offline mode with hardcoded map list")
         return list_of_maps
-
+    if 'maps' in _memo:
+        return _memo['maps']
     try:
-        return fetch_maps_from_api(config)
+        result = fetch_maps_from_api(config)
     except Exception as e:
         logger.warning(f"Error getting valid maps: {str(e)}")
-        return list_of_maps
+        result = list_of_maps
+    _memo['maps'] = result
+    return result
 
 
 def clear_cache(config: Dict[str, Any], cache_name: str = None) -> bool:
@@ -228,12 +235,14 @@ def clear_cache(config: Dict[str, Any], cache_name: str = None) -> bool:
                 os.remove(cache_file)
                 logger.info(f"Cleared {cache_name} cache")
                 success = True
+            _memo.pop(cache_name, None)
         else:
             # Clear all caches
             for cache_file in cache_dir.glob("*_cache.json"):
                 os.remove(cache_file)
                 logger.info(f"Cleared cache: {cache_file.name}")
                 success = True
+            _memo.clear()
 
         return success
     except Exception as e:
