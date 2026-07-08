@@ -21,7 +21,7 @@ def generate_session_id() -> str:
 
 
 def read_images_from_folder(config: Dict, sub_dir: str) -> Tuple[
-    List[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
+    List[List[np.ndarray]], Optional[np.ndarray], Optional[np.ndarray]]:
     """
     Read images from a specific folder
 
@@ -65,19 +65,19 @@ def read_images_from_folder(config: Dict, sub_dir: str) -> Tuple[
                 logger.debug(f"Successfully read image: {image_file}, shape: {image.shape}")
 
                 if "scoreboard" in image_file:
-                    scoreboard_image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
+                    scoreboard_image = image
                     logger.store_scoreboard(scoreboard_image)
                     logger.info("Scoreboard data read")
                     logger.user_output("Scoreboard data read.")
 
                 elif "summary" in image_file:
-                    summary_image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
+                    summary_image = image
                     logger.store_summary(summary_image)
                     logger.info("Summary data read")
                     logger.user_output("Summary data read.")
 
                 else:
-                    timeline = cv.cvtColor(image, cv.COLOR_RGB2BGR)
+                    timeline = image
                     logger.store_timeline(timeline)
                     timeline_images.append(timeline)
                     round_num = len(timeline_images)
@@ -108,10 +108,13 @@ def read_images_from_folder(config: Dict, sub_dir: str) -> Tuple[
     finally:
         logger.clear_context()
 
-    return timeline_images, scoreboard_image, summary_image
+    from core.data_processing import group_timeline_images_by_round
+    timeline_image_groups = group_timeline_images_by_round(timeline_images)
+    logger.info(f"Grouped into {len(timeline_image_groups)} rounds")
+    return timeline_image_groups, scoreboard_image, summary_image
 
 
-def screenshot_pages() -> Tuple[List[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
+def screenshot_pages() -> Tuple[List[List[np.ndarray]], Optional[np.ndarray], Optional[np.ndarray]]:
     """Capture screenshots of match pages using keyboard input"""
     logger.push_context(operation="screenshot_pages")
 
@@ -203,4 +206,7 @@ def screenshot_pages() -> Tuple[List[np.ndarray], Optional[np.ndarray], Optional
     finally:
         logger.clear_context()
 
-    return timeline_images, scoreboard_image, summary_image
+    from core.data_processing import group_timeline_images_by_round
+    timeline_image_groups = group_timeline_images_by_round(timeline_images)
+    logger.info(f"Grouped into {len(timeline_image_groups)} rounds")
+    return timeline_image_groups, scoreboard_image, summary_image

@@ -1,4 +1,5 @@
 from difflib import get_close_matches
+import re
 import numpy as np
 import cv2 as cv
 from typing import List, Dict, Tuple, Optional, Any, cast
@@ -6,10 +7,14 @@ from datetime import datetime
 from core.config import load_config
 from core.api import get_valid_maps, get_valid_agents
 from core.types import RoundData, MatchData, PlayerData, EventData, Position, ImageRegion
-from core.constants import list_of_agents
+from core.constants import list_of_agents, scoreboard as sb, timeline as tl, summary as sm
 from core.ocr import extract_text
-from core.image_processing import crop_image, detect_color, get_team_color_from_pixel, detect_plant_site, extract_agent_sprites
+from core.image_processing import crop_image, detect_color, get_team_color_from_pixel, detect_plant_site, extract_agent_sprites, detect_round_number
 from core.logger import logger
+
+
+def _ocr_digits(s: str) -> str:
+    return s.translate(str.maketrans({'I': '1', 'l': '1', 'O': '0', 'o': '0', 'S': '5', 'B': '8'}))
 
 
 def normalize_agent_name(agent_name: str, valid_agents=None, config=None) -> str:
@@ -34,7 +39,7 @@ def normalize_agent_name(agent_name: str, valid_agents=None, config=None) -> str
         agent_options_lower = [a.lower() for a in valid_agents]
 
         # Try to find the closest match
-        closest_matches = get_close_matches(agent_name_lower, agent_options_lower, n=1, cutoff=0.6)
+        closest_matches = get_close_matches(agent_name_lower, agent_options_lower, n=1, cutoff=0.4)
 
         if closest_matches:
             # Find original case from valid_agents
@@ -188,8 +193,8 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
     try:
         # Process team players (top section)
-        start_y = 495
-        check_x = 200
+        start_y = sb.ROWS_START_Y
+        check_x = sb.BAR_X
 
         logger.debug(f"Extracting team players starting at y={start_y}, x={check_x}")
 
@@ -200,17 +205,18 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
                 y = start_y
                 while detect_color(image, Position(y, check_x), f"team_player_{i + 1}_check")[1] < 90:  # green < 90
                     y += 1
-                    if y > 700:  # Safety check
+                    if y > sb.SAFETY_LIMIT_Y:
                         logger.warning(f"Reached safety limit when searching for team player {i + 1}")
                         break
 
                 # Extract player name and agent
                 logger.debug(f"Found team player {i + 1} at y={y}, extracting player region")
-                player_region = crop_image(image, ImageRegion(y, y + 40, check_x + 3, check_x + 183),
+                player_region = crop_image(image, ImageRegion(y, y + sb.ROW_TEXT_HEIGHT, check_x + sb.ICON_OFFSET_X, check_x + sb.ICON_OFFSET_X + sb.NAME_WIDTH),
                                            f"team_player_{i + 1}_region")
 
                 logger.debug(f"Running OCR on team player {i + 1} region")
                 ocr_result = extract_text(player_region, detail=0, width_ths=25, region_name=f"team_player_{i + 1}")
+                print(f"[DEBUG] Row OCR raw result: {ocr_result}")
 
                 if len(ocr_result) < 2:
                     # Handle case where OCR didn't detect both player and agent
@@ -241,7 +247,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
                 player_list.append(player_name)
                 agent_list.append(agent_name)
-                start_y = y + 42
+                start_y = y + sb.ROW_HEIGHT
 
             except Exception as e:
                 logger.error(f"Error processing team player {i + 1}: {str(e)}")
@@ -252,7 +258,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
                 logger.clear_context()  # Clear the player-specific context
 
         # Process opponent players (bottom section)
-        start_y = 726
+        start_y = sb.ROWS_START_Y
         logger.debug(f"Extracting opponent players starting at y={start_y}")
 
         for i in range(5):
@@ -260,15 +266,18 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
             try:
                 y = start_y
-                while detect_color(image, Position(y, check_x), f"opponent_player_{i + 1}_check")[2] < 40:  # red < 40
+                while True:
+                    b, g, r = detect_color(image, Position(y, check_x), f"opponent_player_{i + 1}_check")
+                    if r > 200 and g < 100 and b < 100:
+                        break
                     y += 1
-                    if y > 900:  # Safety check
+                    if y > sb.SAFETY_LIMIT_Y + 50:
                         logger.warning(f"Reached safety limit when searching for opponent player {i + 1}")
                         break
 
                 # Extract player name and agent
                 logger.debug(f"Found opponent player {i + 1} at y={y}, extracting player region")
-                player_region = crop_image(image, ImageRegion(y, y + 40, check_x + 3, check_x + 183),
+                player_region = crop_image(image, ImageRegion(y, y + sb.ROW_TEXT_HEIGHT, check_x + sb.ICON_OFFSET_X, check_x + sb.ICON_OFFSET_X + sb.NAME_WIDTH),
                                            f"opponent_player_{i + 1}_region")
 
                 logger.debug(f"Running OCR on opponent player {i + 1} region")
@@ -289,11 +298,29 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
                         logger.user_output(f"Please enter opponent player name for position {i + 1}: ")
                         player_name = input(f"Please enter opponent player name for position {i + 1}: ")
                         logger.user_output(f"Please enter agent for {player_name}: ")
-                        agent_name = input(f"Please enter agent for {player_name}: ").title()
+                        agent_name = input(f"Please enter agent for {player_name}: ").title()    
                 else:
-                    player_name, agent_name = ocr_result[0], ocr_result[1]
-                    logger.info(
-                        f"Successfully detected opponent player {i + 1}: '{player_name}' playing '{agent_name}'")
+                    agent_name = None
+                    agent_idx = -1
+                    agent_options_lower = [a.lower() for a in valid_agents]
+
+                    for idx in range(len(ocr_result) - 1, -1, -1):
+                        text = ocr_result[idx]
+                        matches = get_close_matches(text.lower(), agent_options_lower, n=1, cutoff=0.4)
+                        if matches:
+                            agent_name = normalize_agent_name(text, valid_agents, config)
+                            agent_idx = idx
+                            break
+
+
+                    if agent_name is None:
+                        # fallback to old behaviour
+                        player_name = ocr_result[0]
+                        agent_name = normalize_agent_name(ocr_result[1], valid_agents, config)
+                    else:
+                        # join all non-agent items as the player name
+                        player_name = ' '.join(t for i, t in enumerate(ocr_result) if i != agent_idx)
+
 
                 # Normalize agent name
                 if agent_name not in valid_agents:
@@ -304,7 +331,7 @@ def extract_player_data(image: np.ndarray, config: Dict[str, Any]) -> Tuple[List
 
                 player_list.append(player_name)
                 agent_list.append(agent_name)
-                start_y = y + 42
+                start_y = y + sb.ROW_HEIGHT
 
             except Exception as e:
                 logger.error(f"Error processing opponent player {i + 1}: {str(e)}")
@@ -334,7 +361,7 @@ def extract_match_metadata(image: np.ndarray, config: Dict[str, Any]) -> Dict[st
 
     try:
         # Extract sides (Attack/Defense)
-        sides_region = crop_image(image, ImageRegion(300, 400, 1300, 1500), "sides_region")
+        sides_region = crop_image(image, ImageRegion(*sm.SIDES_REGION), "sides_region")
         sides_text = extract_text(sides_region, detail=0, region_name="sides_text")[0].lower()
 
         if 'def' in sides_text:
@@ -347,13 +374,23 @@ def extract_match_metadata(image: np.ndarray, config: Dict[str, Any]) -> Dict[st
         sides = [first_half] * 12 + [second_half] * 12
 
         # Extract score
-        score_region = crop_image(image, ImageRegion(70, 170, 700, 1150), "score_region")
+        score_region = crop_image(image, ImageRegion(*sm.SCORE_REGION), "score_region")
         score_parts = extract_text(score_region, detail=0, region_name="score_text")
 
         if len(score_parts) >= 3:
             team_score, result, opponent_score = score_parts[0:3]
             logger.debug(f"Extracted scores: {team_score}-{opponent_score}, result: {result}")
-        else:
+        elif len(score_parts) == 1:
+            # OCR returned the full line as one string e.g. "16 VICTORY 14"
+            parts = score_parts[0].split()
+            if len(parts) >= 3:
+                team_score = _ocr_digits(parts[0])
+                opponent_score = _ocr_digits(parts[-1])
+                result = "WIN" if int(team_score) > int(opponent_score) else "LOSS"
+                logger.debug(f"Extracted scores from single string: {team_score}-{opponent_score}")
+            else:
+                score_parts = []  # fall through to manual input
+        if not score_parts or (len(score_parts) == 1 and len(score_parts[0].split()) < 3):
             logger.warning("Score extraction failed, prompting for manual input")
             logger.user_output("Please enter your team's score: ")
             team_score = input("Please enter your team's score: ")
@@ -361,20 +398,32 @@ def extract_match_metadata(image: np.ndarray, config: Dict[str, Any]) -> Dict[st
             opponent_score = input("Please enter opponent's score: ")
             result = "WIN" if int(team_score) > int(opponent_score) else "LOSS"
 
-        # Extract map name with normalization
-        map_region = crop_image(image, ImageRegion(125, 145, 120, 210), "map_region")
+        # Map name appears in top-left info block as "MAP - MAPNAME // time"
+        # Use a large crop of the full info block and search all OCR results for a valid map
+        map_region = crop_image(image, ImageRegion(*sm.MAP_REGION), "map_region")
         map_text = extract_text(map_region, detail=0, region_name="map_text")
 
+        valid_maps = get_valid_maps(config)
+        raw_map_name = None
+
         if map_text:
-            raw_map_name = map_text[0]
-            logger.debug(f"Raw map name from OCR: '{raw_map_name}'")
-        else:
+            for idx, item in enumerate(map_text):
+                cleaned = item.strip()
+                if cleaned.upper().startswith('MAP'):
+                    after_map = cleaned[3:].lstrip(' -').split('//')[0].strip()
+                    if after_map:
+                        raw_map_name = after_map
+                    elif idx + 1 < len(map_text):
+                        raw_map_name = map_text[idx + 1].strip().split('//')[0].strip()
+                    if raw_map_name:
+                        logger.debug(f"Raw map name from OCR: '{raw_map_name}'")
+                        break
+
+        if not raw_map_name:
             logger.warning("Map name extraction failed, prompting for manual input")
             logger.user_output("Please enter map name: ")
             raw_map_name = input("Please enter map name: ")
 
-        # Get valid maps and normalize
-        valid_maps = get_valid_maps(config)
         map_name = normalize_map_name(raw_map_name, valid_maps, config)
         logger.info(f"Using map: {map_name}")
 
@@ -413,84 +462,104 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
 
     try:
         events = []
-        start_y = 500  # Vertical start position where events begin appearing
-        check_x = 940  # Horizontal position for detecting event color (team vs opponent)
-        kill_x = 945  # Horizontal position of the killer agent icon
-        death_x = 1231  # Horizontal position of the death/victim agent icon
+        start_y = tl.FIRST_EVENT_Y
+        check_x = tl.BAR_X
+        kill_x = tl.KILLER_ICON_X
+        death_x = tl.VICTIM_ICON_X
 
-        # Scan the timeline from top to bottom looking for events
+        def skip_row(y):
+            y += 1
+            while y < tl.MAX_Y:
+                b2, g2, r2 = detect_color(timeline_image, Position(y, check_x))
+                is_colored = (g2 > 100) or (r2 > 200 and g2 < 100 and b2 < 100)
+                if not is_colored:
+                    break
+                y += 1
+            return y
+
         current_y = start_y
-        while current_y < 1060:  # Stop at bottom of timeline area
-            # Events appear as colored pixels; no event = dark/black
+        while current_y < tl.MAX_Y:
             b, g, r = detect_color(timeline_image, Position(current_y, check_x))
 
-            # Skip empty rows (dark pixels indicate no event)
-            if g < 100 and r < 100 and b < 100:
+            is_team = g > 100
+            is_opponent = r > 200 and g < 100 and b < 100
+            is_plant_row = r > 200 and g < 100 and b < 100  # red bar = plant/defuse event
+
+            if not is_team and not is_opponent and not is_plant_row:
                 current_y += 1
                 continue
 
-            # Green pixels (g > 100) indicate team events, red pixels indicate opponent events
-            side = 'team' if g > 100 else 'opponent'
+            if is_team:
+                side = 'team'
+            elif is_opponent:
+                side = 'opponent'
+            else:
+                side = 'opponent'  # red bar — opponent action (plant/defuse)
             logger.debug(f"Found event at y={current_y}, side={side}")
 
-            # Extract timestamp text, located to the left of the event
+            # Timestamp text (round elapsed time, e.g. "0:24") at x=220-251
             timestamp_region = crop_image(timeline_image, ImageRegion(
-                current_y, current_y + 36, 980, 1040), "timestamp_region")
+                current_y, current_y + 36, tl.TIMESTAMP_X[0], tl.TIMESTAMP_X[1]), "timestamp_region")
             timestamp_text = extract_text(timestamp_region, detail=0, region_name="timestamp")
 
-            # Skip events where we can't read the timestamp
             if not timestamp_text:
                 logger.warning(f"Failed to extract timestamp at y={current_y}, skipping event")
-                current_y += 36
+                current_y = skip_row(current_y)
                 continue
 
-            # Convert OCR timestamp to seconds using normalized format
             ts_text = timestamp_text[0]
             timestamp = normalize_timestamp(ts_text)
-            
-            # Skip events with invalid timestamps
+
             if timestamp == 0:
                 logger.warning(f"Invalid timestamp '{ts_text}' at y={current_y}, skipping event")
-                current_y += 36
+                current_y = skip_row(current_y)
                 continue
 
-            # Examine text on right side to distinguish plant/defuse from kills
+            # Central area of row for "Planted"/"Defuse" text detection
             event_type_region = crop_image(timeline_image, ImageRegion(
-                current_y, current_y + 36, 1150, 1230), "event_type_region")
+                current_y, current_y + 36, tl.EVENT_TYPE_X[0], tl.EVENT_TYPE_X[1]), "event_type_region")
             event_type_text = extract_text(event_type_region, detail=0, region_name="event_type")
 
-            # Extract the agent icons that appear in the event
-            # Killer icon is on the left, victim on the right for kill events
             killer_icon = crop_image(timeline_image, ImageRegion(
-                current_y, current_y + 36, kill_x, kill_x + 36), "killer_icon")
+                current_y, current_y + tl.ICON_SIZE, kill_x, kill_x + tl.ICON_SIZE), "killer_icon")
             victim_icon = crop_image(timeline_image, ImageRegion(
-                current_y, current_y + 36, death_x, death_x + 36), "victim_icon")
+                current_y, current_y + tl.ICON_SIZE, death_x, death_x + tl.ICON_SIZE), "victim_icon")
 
-            # Identify agents by comparing extracted icons against reference sprites
-            # using template matching (higher score = better match)
+            # Scoreboard sprites are zoomed relative to the kill-feed icons in the new UI.
+            # Try a few scales and keep the best score per sprite.
+            SPRITE_SCALES = [0.65, 0.75, 0.85, 1.0]
             killer_scores = []
             victim_scores = []
 
             for agent_sprite in agent_sprites:
-                # Match killer agent icon
-                killer_result = cv.matchTemplate(killer_icon, agent_sprite, cv.TM_CCOEFF_NORMED)
-                _, killer_max_val, _, _ = cv.minMaxLoc(killer_result)
-                killer_scores.append(killer_max_val)
+                if agent_sprite.shape[0] < 10 or agent_sprite.shape[1] < 10:
+                    killer_scores.append(-1.0)
+                    victim_scores.append(-1.0)
+                    continue
+                best_k, best_v = -1.0, -1.0
+                for sc in SPRITE_SCALES:
+                    h = max(5, int(agent_sprite.shape[0] * sc))
+                    w = max(5, int(agent_sprite.shape[1] * sc))
+                    if h > killer_icon.shape[0] or w > killer_icon.shape[1]:
+                        continue
+                    small = cv.resize(agent_sprite, (w, h), interpolation=cv.INTER_AREA)
+                    kr = cv.matchTemplate(killer_icon, small, cv.TM_CCOEFF_NORMED)
+                    _, kv, _, _ = cv.minMaxLoc(kr)
+                    if kv > best_k:
+                        best_k = kv
+                    vr = cv.matchTemplate(victim_icon, small, cv.TM_CCOEFF_NORMED)
+                    _, vv, _, _ = cv.minMaxLoc(vr)
+                    if vv > best_v:
+                        best_v = vv
+                killer_scores.append(best_k)
+                victim_scores.append(best_v)
 
-                # Match victim agent icon
-                victim_result = cv.matchTemplate(victim_icon, agent_sprite, cv.TM_CCOEFF_NORMED)
-                _, victim_max_val, _, _ = cv.minMaxLoc(victim_result)
-                victim_scores.append(victim_max_val)
-
-            # Get indices of best-matching agents
             killer_idx = killer_scores.index(max(killer_scores))
             victim_idx = victim_scores.index(max(victim_scores))
 
-            # Map indices back to agent names
             killer_agent = agent_list[killer_idx] if killer_idx < len(agent_list) else "Unknown"
             victim_agent = agent_list[victim_idx] if victim_idx < len(agent_list) else "Unknown"
 
-            # Determine event type based on extracted text
             if event_type_text and any('Plant' in t for t in event_type_text):
                 event_type = 'plant'
             elif event_type_text and any('Defuse' in t for t in event_type_text):
@@ -498,12 +567,10 @@ def extract_round_events(timeline_image: np.ndarray, agent_sprites: List[np.ndar
             else:
                 event_type = 'kill'
 
-            # Record the event WITH side information
-            logger.info(f"Extracted {event_type} ({side}): {killer_agent} → {victim_agent} at {timestamp}s")
+            logger.info(f"Extracted {event_type} ({side}): {killer_agent} -> {victim_agent} at {timestamp}s")
             events.append((killer_agent, victim_agent, timestamp, event_type, side))
 
-            # Move to next event
-            current_y += 36
+            current_y = skip_row(current_y)
 
         return events
 
@@ -519,11 +586,17 @@ def extract_first_bloods(timeline_images: List[np.ndarray]) -> List[str]:
 
     for i, image in enumerate(timeline_images):
         logger.push_context(operation="process_match_data", sub_operation="first_bloods", round=i)
-        # Check pixel color at first blood position
-        b, g, r = detect_color(image, Position(520, 1150))
 
-        # Green indicates team got first blood, otherwise opponent
-        team = 'team' if g > 100 else 'opponent'
+        # Scan down from first event row looking for the first kill (skip plant/defuse rows)
+        team = 'unknown'
+        for y in range(tl.FIRST_EVENT_Y, tl.MAX_Y):
+            b, g, r = detect_color(image, Position(y, tl.BAR_X))
+            if g > 100:
+                team = 'team'
+                break
+            if r > 200 and g < 100 and b < 100:
+                team = 'opponent'
+                break
         first_bloods.append(team)
 
     logger.clear_context()
@@ -541,12 +614,12 @@ def determine_awp_info(awp_data: List[List[str]]) -> List[str]:
             awp_info.append('none')
         elif len(indices) == 1:
             # Single AWP - determine if team or opponent
-            awp_info.append('team' if indices[0] < 11 else 'opponent')
+            awp_info.append('team' if indices[0] < 10 else 'opponent')
         elif len(indices) == 2:
             # Two AWPs - determine if same team or both teams
-            if all(idx < 11 for idx in indices):
+            if all(idx < 10 for idx in indices):
                 awp_info.append('team')
-            elif all(idx >= 11 for idx in indices):
+            elif all(idx >= 10 for idx in indices):
                 awp_info.append('opponent')
             else:
                 awp_info.append('both')
@@ -561,7 +634,7 @@ def process_round_outcomes(timeline_images: List[np.ndarray]) -> List[str]:
     outcomes = []
     for i, image in enumerate(timeline_images):
         logger.push_context(operation="process_match_data", sub_operation="round_outcomes", round=i)
-        outcome_region = crop_image(image, ImageRegion(430, 470, 130, 700))
+        outcome_region = crop_image(image, ImageRegion(*tl.OUTCOME_REGION))
         outcome_text = extract_text(outcome_region, detail=0)
 
         # Check if "LOSS" appears in the text
@@ -574,8 +647,34 @@ def process_round_outcomes(timeline_images: List[np.ndarray]) -> List[str]:
     return outcomes
 
 
+def group_timeline_images_by_round(images: List[np.ndarray]) -> List[List[np.ndarray]]:
+    groups: Dict[int, List[np.ndarray]] = {}
+    for idx, img in enumerate(images):
+        n = detect_round_number(img)
+        if n is None:
+            logger.warning(f"Could not detect round number for timeline image {idx}, skipping")
+            continue
+        groups.setdefault(n, []).append(img)
+    return [groups[k] for k in sorted(groups)]
+
+
+def _merge_round_events(images: List[np.ndarray], agent_sprites, agent_list) -> List[Tuple]:
+    seen = set()
+    merged = []
+    for img in images:
+        for ev in extract_round_events(img, agent_sprites, agent_list):
+            killer, victim, ts, etype, side = ev
+            key = (ts, killer, victim, etype)
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(ev)
+    merged.sort(key=lambda e: e[2])
+    return merged
+
+
 def create_match_data(
-        timeline_images: List[np.ndarray],
+        timeline_image_groups: List[List[np.ndarray]],
         scoreboard_image: np.ndarray,
         summary_image: np.ndarray,
         config: Dict[str, Any]
@@ -593,11 +692,14 @@ def create_match_data(
         metadata = extract_match_metadata(summary_image, config)
 
         # Extract player and agent information with agent normalization
-        player_list, agent_list = extract_player_data(timeline_images[0], config)
+        player_list, agent_list = extract_player_data(scoreboard_image, config)
         players_agents = dict(zip(player_list, agent_list))
 
         # Extract agent sprites for event matching
-        agent_sprites = extract_agent_sprites(timeline_images[0])
+        agent_sprites = extract_agent_sprites(scoreboard_image)
+
+        # First image per round, used for static-position UI (economy, AWP, plant, outcomes, first-blood color)
+        timeline_images = [grp[0] for grp in timeline_image_groups if grp]
 
         # Process round outcomes
         outcomes = process_round_outcomes(timeline_images)
@@ -605,40 +707,44 @@ def create_match_data(
         # Determine first bloods
         first_bloods = extract_first_bloods(timeline_images)
 
-        # Extract round timestamps and events
-        round_events = []
-        for i, image in enumerate(timeline_images):
-            logger.push_context(operation="process_match_data", sub_operation="events", round=i+1)
-            logger.info(f"Extracting events for round {i+1}")
-
-            events = extract_round_events(image, agent_sprites, agent_list)
-            round_events.append(events)
-            logger.clear_context()
-
         # Process economy and other round data
-        economy_regions = [crop_image(img, ImageRegion(425, 480, 1020, 1145)) for img in timeline_images]
-        economy_data = [extract_text(region, detail=0, region_name="buy_data") for region in economy_regions]
-        team_economy = [eco[0] if eco else "0" for eco in economy_data]
-        opponent_economy = [eco[1] if len(eco) > 1 else "0" for eco in economy_data]
+        economy_regions = [crop_image(img, ImageRegion(*tl.ECONOMY_REGION)) for img in timeline_images]
+        economy_regions = [cv.resize(r, None, fx=2.0, fy=2.0, interpolation=cv.INTER_CUBIC) for r in economy_regions]
+        economy_data = [extract_text(region, detail=0, region_name="buy_data",
+                                     allowlist='0123456789,/.LoadutBnkAvg: ') for region in economy_regions]
+        team_economy = []
+        opponent_economy = []
+        for eco in economy_data:
+            text = ' '.join(eco).replace(',', '')
+            m = re.search(r'[Ll]oadout[^B]*', text)
+            if m:
+                nums = [n for n in re.findall(r'\d+', m.group(0)) if int(n) >= 100]
+                team_economy.append(nums[0] if len(nums) > 0 else "0")
+                opponent_economy.append(nums[1] if len(nums) > 1 else "0")
+            else:
+                team_economy.append("0")
+                opponent_economy.append("0")
 
         # Extract AWP information
-        awp_regions = [crop_image(img, ImageRegion(450, 950, 650, 785)) for img in timeline_images]
+        awp_regions = [crop_image(img, ImageRegion(*tl.AWP_REGION)) for img in timeline_images]
         awp_data = [extract_text(region, detail=0) for region in awp_regions]
         awp_info = determine_awp_info(awp_data)
 
         # Extract plant information
         plant_site_list = [detect_plant_site(img, metadata['map_name']) for img in timeline_images]
 
+        # Extract events from each round's screenshot group, merging + deduping if multiple shots exist
         round_events = []
-        for i, image in enumerate(timeline_images):
-            logger.push_context(operation="process_match_data", sub_operation="events", round=i)
-            events = extract_round_events(image, agent_sprites, agent_list)
+        for i, group in enumerate(timeline_image_groups):
+            logger.push_context(operation="process_match_data", sub_operation="events", round=i + 1)
+            logger.info(f"Extracting events for round {i + 1} ({len(group)} screenshot(s))")
+            events = _merge_round_events(group, agent_sprites, agent_list)
             round_events.append(events)
             logger.clear_context()
 
         # Create round data
         rounds = []
-        for i in range(len(timeline_images)):
+        for i in range(len(timeline_image_groups)):
             if i >= len(outcomes) or i >= len(first_bloods):
                 continue
 
@@ -659,30 +765,18 @@ def create_match_data(
                     elif event_type == 'defuse':
                         has_defuse = True
 
-                # Calculate kills for each team
+                # Calculate kills for each team using the per-event side field
+                # (agent_list.index() is unreliable here — same agent can be on both teams)
                 team_kills = 0
                 opponent_kills = 0
-                for killer, victim, _, event_type, _ in round_events[i]:
+                for _, _, _, event_type, ev_side in round_events[i]:
                     if event_type == 'kill':
-                        killer_idx = agent_list.index(killer) if killer in agent_list else -1
-                        if 0 <= killer_idx < 5:  # Team player
+                        if ev_side == 'team':
                             team_kills += 1
-                        elif 5 <= killer_idx < 10:  # Opponent player
+                        elif ev_side == 'opponent':
                             opponent_kills += 1
 
-                # Adjust for plants/defuses which are also counted as events
                 side = metadata['sides'][i] if i < len(metadata['sides']) else "Unknown"
-                if has_plant:
-                    if side == 'Attack':
-                        team_kills -= 1
-                    else:
-                        opponent_kills -= 1
-
-                if has_defuse:
-                    if side == 'Defense':
-                        team_kills -= 1
-                    else:
-                        opponent_kills -= 1
 
                 # Create the round data with events and first blood/death info
                 round_data: RoundData = {
@@ -693,7 +787,7 @@ def create_match_data(
                     'team_economy': team_economy[i] if i < len(team_economy) else "0",
                     'opponent_economy': opponent_economy[i] if i < len(opponent_economy) else "0",
                     'first_blood': first_bloods[i] if i < len(first_bloods) else "unknown",
-                    'true_first_blood': True,  # Could be enhanced with additional logic
+                    'true_first_blood': _is_true_first_blood(formatted_events, first_blood_player),
                     'first_blood_player': first_blood_player,
                     'first_death_player': first_death_player,
                     'site': plant_site_list[i] if i < len(plant_site_list) and plant_site_list[i] else None,
@@ -805,6 +899,24 @@ def format_round_events(round_events: List[Tuple[str, str, int, str, str]],
         logger.clear_context()  # Clear operation context
 
 
+def _is_true_first_blood(formatted_events: List[EventData], first_blood_player: str) -> bool:
+    if not first_blood_player:
+        return False
+
+    kills = [e for e in formatted_events if e.get('event_type') == 'kill']
+    if not kills:
+        return False
+
+    fb = kills[0]
+    fb_killer = fb['actor']
+    fb_ts = fb['timestamp']
+
+    for trade in kills[1:3]:  # next two kill events
+        if trade['target'] == fb_killer and (trade['timestamp'] - fb_ts) <= 15:
+            return False
+    return True
+
+
 def _format_kill_event(killer_agent: str, victim_agent: str, timestamp: int,
                        player_list: List[str], agent_list: List[str], side: str) -> Tuple[EventData, str, str]:
     """
@@ -826,14 +938,13 @@ def _format_kill_event(killer_agent: str, victim_agent: str, timestamp: int,
     victim_indices = [i for i, agent in enumerate(agent_list) if agent == victim_agent]
 
     # Use side information to choose the correct killer_idx
-    # Team side = indices 0-4, Opponent side = indices 5-9
+    # In agent_list/player_list: indices 0-4 are our team, 5-9 are opponents
     if side == 'team':
         # For team kills, pick a killer from team indices (0-4)
         team_killer_indices = [idx for idx in killer_indices if 0 <= idx < 5]
         if team_killer_indices:
             killer_idx = team_killer_indices[0]
         else:
-            # Fallback to first match
             killer_idx = killer_indices[0] if killer_indices else -1
     else:
         # For opponent kills, pick a killer from opponent indices (5-9)
@@ -841,25 +952,22 @@ def _format_kill_event(killer_agent: str, victim_agent: str, timestamp: int,
         if opponent_killer_indices:
             killer_idx = opponent_killer_indices[0]
         else:
-            # Fallback to first match
             killer_idx = killer_indices[0] if killer_indices else -1
 
     # For victim, use the opposite team from the killer
     if 0 <= killer_idx < 5:
-        # Team killer, so find opponent victim
+        # Team killer, so find opponent victim (5-9)
         opponent_victim_indices = [idx for idx in victim_indices if 5 <= idx < 10]
         if opponent_victim_indices:
             victim_idx = opponent_victim_indices[0]
         else:
-            # Fallback to first match
             victim_idx = victim_indices[0] if victim_indices else -1
     else:
-        # Opponent killer, so find team victim
+        # Opponent killer, so find team victim (0-4)
         team_victim_indices = [idx for idx in victim_indices if 0 <= idx < 5]
         if team_victim_indices:
             victim_idx = team_victim_indices[0]
         else:
-            # Fallback to first match
             victim_idx = victim_indices[0] if victim_indices else -1
 
     # Get player names

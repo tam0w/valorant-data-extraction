@@ -1,11 +1,28 @@
 import cv2 as cv
 import numpy as np
 import os
+import re
+from functools import lru_cache
 from typing import Tuple, List, Dict, Optional, Any
 from core.types import ImageRegion, Position
 from core.ocr import extract_text
-from core.constants import list_of_agents
+from core.constants import list_of_agents, scoreboard as sb, timeline as tl
 from core.logger import logger
+
+
+def detect_round_number(image: np.ndarray) -> Optional[int]:
+    try:
+        y1, y2, x1, x2 = tl.ROUND_NUMBER_REGION
+        region = image[y1:y2, x1:x2]
+        if region.size == 0:
+            return None
+        region = cv.resize(region, None, fx=2.0, fy=2.0, interpolation=cv.INTER_CUBIC)
+        text = extract_text(region, detail=0, region_name="round_number", allowlist='0123456789ROUNDround ')
+        nums = re.findall(r'\d+', ' '.join(text))
+        return int(nums[0]) if nums else None
+    except Exception as e:
+        logger.error(f"detect_round_number failed: {e}")
+        return None
 
 
 def crop_image(image: np.ndarray, region: ImageRegion, description: str = "unnamed") -> np.ndarray:
@@ -129,6 +146,18 @@ def get_team_color_from_pixel(image: np.ndarray, position: Position, description
         return 'unknown'
 
 
+@lru_cache(maxsize=1)
+def _load_spike_template() -> Optional[np.ndarray]:
+    path = os.path.join(os.getcwd(), "spike.png")
+    if not os.path.exists(path):
+        logger.warning(f"Spike template image not found at {path}")
+        return None
+    spike = cv.imread(path)
+    if spike is None:
+        logger.warning("Failed to load spike template image")
+    return spike
+
+
 def detect_plant_site(image: np.ndarray, map_name: str) -> Optional[str]:
     """
     Detect planted spike location on the minimap
@@ -140,22 +169,13 @@ def detect_plant_site(image: np.ndarray, map_name: str) -> Optional[str]:
     logger.push_context(operation="detect_plant_site", map=map_name)
 
     try:
-        spike_path = os.path.join(os.getcwd(), "spike.png")
-
-        if not os.path.exists(spike_path):
-            logger.warning(f"Spike template image not found at {spike_path}")
-            logger.clear_context()
-            return None
-
-        logger.debug(f"Loading spike template from {spike_path}")
-        spike = cv.imread(spike_path)
+        spike = _load_spike_template()
         if spike is None:
-            logger.warning("Failed to load spike template image")
             logger.clear_context()
             return None
 
         logger.debug("Cropping minimap region")
-        minimap = crop_image(image, ImageRegion(490, 990, 1270, 1770), "minimap")
+        minimap = crop_image(image, ImageRegion(*tl.MINIMAP_REGION), "minimap")
 
         logger.debug("Searching for spike on minimap")
         max_val, max_loc = find_template(minimap, spike, "spike")
@@ -170,6 +190,7 @@ def detect_plant_site(image: np.ndarray, map_name: str) -> Optional[str]:
 
         # Logic for determining site based on map and location
         site = None
+        map_name = map_name.lower() if map_name else ''
         if map_name == 'bind':
             site = 'B' if x < 250 else 'A'
         elif map_name == 'ascent':
@@ -206,10 +227,14 @@ def detect_plant_site(image: np.ndarray, map_name: str) -> Optional[str]:
             site = 'A' if x > 250 else 'B'
         elif map_name == 'icebox':
             site = 'A' if y > 200 else 'B'
+        elif map_name == 'abyss':
+            site = 'B' if y > 200 else 'A'
+        elif map_name == 'corrode':
+            site = 'B' if y > 200 else 'A'
         else:
             site = 'unclear'
 
-        logger.info(f"Detected spike planted at site {site} on {map_name}")
+        logger.info(f"Detected spike planted at site {site} o   n {map_name}")
         return site
 
     except Exception as e:
@@ -230,61 +255,59 @@ def extract_agent_sprites(image: np.ndarray) -> List[np.ndarray]:
     agent_sprites = []
 
     try:
-        # Team agents (top half)
-        start_y = 503
-        check_x = 161
+        check_x = sb.BAR_X
+        icon_x = check_x + sb.ICON_OFFSET_X
 
+        start_y = sb.ROWS_START_Y
         logger.debug(f"Extracting team agent sprites starting from y={start_y}, x={check_x}")
 
         for i in range(5):
             y = start_y
-            while detect_color(image, Position(y, check_x), f"team_agent_{i + 1}_check")[1] < 100:  # green < 100
+            while detect_color(image, Position(y, check_x), f"team_agent_{i + 1}_check")[1] <= 90:
                 y += 1
-                if y > 700:  # Safety check
+                if y > sb.SAFETY_LIMIT_Y + 50:
                     logger.warning(f"Safety limit reached while finding team agent {i + 1}")
                     break
 
-            icon_x = check_x + 3
             logger.debug(f"Found team agent {i + 1} at y={y}, extracting sprite")
 
             try:
-                agent_sprite = crop_image(image, ImageRegion(y, y + 40, icon_x, icon_x + 40),
+                agent_sprite = crop_image(image, ImageRegion(y, y + sb.ICON_SIZE, icon_x, icon_x + sb.ICON_SIZE),
                                           f"team_agent_{i + 1}_sprite")
                 agent_sprites.append(agent_sprite)
                 logger.debug(f"Team agent {i + 1} sprite extracted with shape {agent_sprite.shape}")
             except Exception as e:
                 logger.error(f"Failed to extract team agent {i + 1} sprite: {str(e)}")
-                # Add a blank sprite to maintain indexing
-                agent_sprites.append(np.zeros((40, 40, 3), dtype=np.uint8))
+                agent_sprites.append(np.zeros((sb.ICON_SIZE, sb.ICON_SIZE, 3), dtype=np.uint8))
 
-            start_y = y + 42
+            start_y = y + sb.ROW_HEIGHT
 
-        # Opponent agents (bottom half)
-        start_y = 724
+        start_y = sb.ROWS_START_Y
         logger.debug(f"Extracting opponent agent sprites starting from y={start_y}")
 
         for i in range(5):
             y = start_y
-            while detect_color(image, Position(y, check_x), f"opponent_agent_{i + 1}_check")[2] < 80:  # red < 80
+            while True:
+                b, g, r = detect_color(image, Position(y, check_x), f"opponent_agent_{i + 1}_check")
+                if r > 200 and g < 100 and b < 100:
+                    break
                 y += 1
-                if y > 900:  # Safety check
+                if y > sb.SAFETY_LIMIT_Y + 50:
                     logger.warning(f"Safety limit reached while finding opponent agent {i + 1}")
                     break
 
-            icon_x = check_x + 3
             logger.debug(f"Found opponent agent {i + 1} at y={y}, extracting sprite")
 
             try:
-                agent_sprite = crop_image(image, ImageRegion(y, y + 40, icon_x, icon_x + 40),
+                agent_sprite = crop_image(image, ImageRegion(y, y + sb.ICON_SIZE, icon_x, icon_x + sb.ICON_SIZE),
                                           f"opponent_agent_{i + 1}_sprite")
                 agent_sprites.append(agent_sprite)
                 logger.debug(f"Opponent agent {i + 1} sprite extracted with shape {agent_sprite.shape}")
             except Exception as e:
                 logger.error(f"Failed to extract opponent agent {i + 1} sprite: {str(e)}")
-                # Add a blank sprite to maintain indexing
-                agent_sprites.append(np.zeros((40, 40, 3), dtype=np.uint8))
+                agent_sprites.append(np.zeros((sb.ICON_SIZE, sb.ICON_SIZE, 3), dtype=np.uint8))
 
-            start_y = y + 42
+            start_y = y + sb.ROW_HEIGHT
 
         logger.info(f"Extracted {len(agent_sprites)} agent sprites in total")
         return agent_sprites

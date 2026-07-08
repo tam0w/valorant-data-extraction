@@ -31,6 +31,10 @@ def main():
         config = load_config()
         logger.debug("Configuration loaded")
 
+        if args.log_file:
+            logger._setup_file_logging(config)
+            logger.set_log_level('DEBUG')
+
         # Handle cache info request
         if args.cache_info:
             cache_info = get_cache_info(config)
@@ -106,7 +110,7 @@ def main():
             timeline_images, scoreboard_image, summary_image = screenshot_pages()
             logger.clear_context()
 
-        if timeline_images is None:
+        if not timeline_images:
             logger.error("No timeline images captured")
             logger.user_output("Error: No timeline images captured. Please try again.")
             return
@@ -175,6 +179,7 @@ def parse_arguments():
     parser.add_argument('--log-level', choices=['debug', 'info', 'warning', 'error', 'critical'],
                         default='critical', help='Set logging level (default: critical)')
     parser.add_argument('--dev', action='store_true', help='Enable development mode with verbose logging')
+    parser.add_argument('--log-file', action='store_true', help='Write debug logs to a file in log_dir')
     parser.add_argument('--quiet', action='store_true', help='Suppress user output, show only logs')
 
     # Cache management
